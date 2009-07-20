@@ -1,0 +1,665 @@
+check_logfiles Nagios Plugin README
+---------------------
+
+This plugin looks for patterns in files. It is capable of detecting
+logfile rotation. If you tell it how the rotated archives look like, it
+will also examine these files. Traditional logfile plugins were not aware
+of the gap which could occur, so under some circumstances they ignored
+what had happened between their checks. In a production environment 
+this is not tolerable, that's why check_logfiles came into being.
+
+* For instructions on installing this plugin for use with Nagios,
+  see below. In addition, generic instructions for the GNU toolchain
+  can be found in the INSTALL file.
+
+* For major changes between releases, read the CHANGES file.
+
+* For information on detailed changes that have been made,
+  read the Changelog file.
+
+* This plugins is self documenting.  All plugins that comply with
+  the basic guidelines for development will provide detailed help when
+  invoked with the '-h' or '--help' options.
+
+* The file check_logfiles.cfg contains example configurations for many of the
+  plugins
+
+You can check for the latest plugin at:
+  http://sourceforge.net/projects/check-logfiles/ or
+
+The documentation in this README covers only the most common features.
+To view the full documentation and examples, go to 
+  http://www.consol.com/opensource/nagios/check-logfiles or
+  http://www.consol.de/opensource/nagios/check-logfiles
+
+Send mail to gerhard.lausser@consol.de or use the sourceforge forum 
+for assistance.  Please include the OS type and version that you are using.
+Also, run the plugin with the '-vvv' option and provide the resulting 
+version information.  Of course, there may be additional diagnostic information
+required as well.  Use good judgment.
+
+For patch submissions and bug reports, please use the appropriate resources at
+http://sourceforge.net/projects/check-logfiles/ (navigate to the bug tool and/or
+patch tool from the summary page).  Patches should be relative to the current
+CVS head (development), or to the head of the current stable branch. Also, 
+please include version information for your OS and the plugin(s) your are 
+patching/reporting.
+
+
+
+
+How to "compile" the check_logfiles script.
+--------------------------------------------------------
+
+1) Run the configure script to initialize variables and create a Makefile, etc.
+
+	./configure --prefix=BASEDIRECTORY --with-nagios-user=SOMEUSER --with-nagios-group=SOMEGROUP --with-perl=PATH_TO_PERL --with-gzip=PATH_TO_GZIP --with-trusted-path=PATH_YOU_TRUST --with-seekfiles-dir=SEEKFILES_DIR --with-protocols-dir=PROTOCOLS_DIR
+
+   a) Replace BASEDIRECTORY with the path of the directory under which Nagios
+      is installed (default is '/usr/local/nagios')
+   b) Replace SOMEUSER with the name of a user on your system that will be
+      assigned permissions to the installed plugins (default is 'nagios')
+   c) Replace SOMEGRP with the name of a group on your system that will be
+      assigned permissions to the installed plugins (default is 'nagios')
+   d) Replace PATH_TO_PERL with the path where a perl binary can be found.
+      Besides the system wide perl you might have installed a private perl
+      just for the nagios plugins (default is the perl in your path).
+   e) Replace PATH_TO_GZIP with the path where a gzip binary can be found.
+      On some operating systems gzip is not in the standard path.
+      (default is the gzip in your path).
+   f) Replace PATH_YOU_TRUST with the path where you want the plugin to
+      look for scripts which will be called if a certain pattern has been
+      found. (default is /sbin:/usr/sbin:/bin:/usr/bin. HP-UX adds
+      /usr/contrib/bin to this list. You can override this later in the
+      config file).
+   g) Replace SEEKFILES_DIR with the path where you want the script to write
+      it's state files. (default is /tmp. You can override this later in the
+      config file).
+   h) Replace PROTOCOLS_DIR with the path where you want the script to write
+      it's protocol files. (default is /tmp. You can override this later in the
+      config file).
+
+   Simply running ./configure will be sufficient to create a check_logfiles
+   script which you can customize later with your configuration file.
+      
+
+2) "Compile" the plugin with the following command:
+
+	make
+
+    This will produce a "check_logfiles" script. You will also find
+    a "check_logfiles.pl" which you better ignore. It is the base for
+    the compilation filled with placeholders. These will be replaced during
+    the make process.
+
+
+3) Install the compiled plugin script with the following command:
+
+	make install
+
+   The installation procedure will attempt to place the plugin in a 
+   'libexec/' subdirectory in the base directory you specified with
+   the --prefix argument to the configure script.
+
+
+4) Verify that your configuration files for Nagios contains
+   the correct paths to the new plugin.
+
+
+Command line parameters
+-----------------------
+
+--logfile=<logfile>
+   This is the logfile which will be scanned.
+
+--criticalpattern=<regexp>
+   This is the regular expression which will raise a critical error if found.
+
+--warningpattern=<regexp>
+   This is the regular expression which will raise a critical error if found.
+   Usage is optional.
+
+--tag=<tag>
+   This is a unique identifier for this logfile/pattern combination.
+   You _must_ use it if you plan to call check_logfiles with more than one 
+   of these combinations.
+   Usage is optional but strongly recommended.
+
+--noprotocol
+   If you do not want all the matching lines being written to a protocol file,
+   set this option.
+   Usage is optional.
+
+--syslogserver
+   If the server this script is running on is a syslogserver with messages from
+   several hosts in the logfile, you can limit the scan to lines originationg 
+   from the local host.
+   Usage is optional.
+
+-f <configfile>
+   Instead of describing on the command line what you search and where you 
+   search, you can describe much more complex configurations in a file.
+
+-d
+   With this option you can turn on debugging. A file /tmp/check_logfiles.trace
+   will be created and check_logfile's inner working will be logged into it.
+   An alternative way to turn on debugging is to create the tracefile yourself.
+   This is the preferred method to debug on the fly if you don't want to
+   change your nagios configuration and add the "-d" to your command_line.
+
+
+Format of the configuration file
+--------------------------------
+
+check_logfiles interprets a configuration file, which sets some global 
+variables and tells the plugin which logfiles to scan for which patterns 
+and what to do if a matching line was found. The filename you provide to
+the -f option is either an absolute filename or relative to the calling
+user's home directory. The configfile is a piece of perl code, which 
+will be imported and evaluated.
+The variables you can define here are:
+
+1) $seekfilesdir
+   A directory where check_logfiles writes state files. The information in
+   the state files helps check_logfiles to remember up to which time in
+   the past the log information was already read.
+   (default is /tmp or whatever you provided to the --with-seekfiles-dir 
+   option of configure)
+
+2) $protocolsdir
+   A directory where check_logfiles writes protocol files which contain 
+   the matches found during a check_logfiles run.
+   (default is /tmp or whatever you provided to the --with-protocols-dir
+   option of configure)
+
+3) $scriptpath
+   A colon-separated list of directories where check_logfiles searches for
+   scripts.
+   (default is /bin:/usr/bin:/sbin:/usr/sbin or whatever you provided
+   to the --with-trusted-path option of configure)
+
+4) $MACROS
+   A structure where you define macros. You can use these macros in your
+   pattern definitions (enclosed in $-signs) , where they will be replaced
+   with the macro's value before pattern matching takes place.
+   It is also possible to use macros in your logfile names.
+   $MACROS = { CL_DOMAIN => 'muc', CL_VG00 => '/dev/vg00' }
+   If you don't define your own macros, you still can use the predefined
+   macros in your patterns. At the moment there are:
+       $CL_HOSTNAME$ - the hostname without domain.
+       $CL_IPADDRESS$ - the IP address of the aforementioned.
+       $CL_DATE_YYYY$ - the year (1970...)
+       $CL_DATE_MM$ - the month (01..12)
+       $CL_DATE_DD$ - the day of month (01..31)
+       $CL_DATE_HH$ - the hour (00..23)
+       $CL_DATE_MI$ - the minute (00..59)
+       $CL_DATE_SS$ - the second (00..59)
+       $CL_SERVICEDESC$ - the service description derived from the config file.
+       $CL_NSCA_SERVICEDESC$ - dto.
+       $CL_NSCA_HOST_ADDRESS$ - the local address 127.0.0.1
+       $CL_NSCA_PORT$ - 5667
+       $CL_NSCA_TO_SEC$ - 10
+       $CL_NSCA_CONFIG_FILE$ - send_nsca.cfg
+
+   The following (predefined) macros change their value during a
+   check_logfile run:
+       $CL_LOGFILE$ - the name of the current logfile.
+       $CL_TAG$ - the current tag.
+       $CL_SERVICESTATEID$ - the state of the last match. (0..3)
+       $CL_SERVICEOUTPUT$ - the text of the last match.
+
+5) @searches
+   An array of references to hashes, each describing where to search,
+   what to search for and what to do if it was found.
+   (to stay backwards compatible you can also say @logs here)
+   The hash pointed to has the following keys:
+
+   a) tag
+      An identifier you need if you have more than one entry in @logs
+      dealing with the same logfile. The seekfile is derived from the
+      logfile's name, so in this case there would be problems if two
+      different entries would rely on a single state file. The tag is 
+      made part of the seekfiles' name.
+
+   b) logfile
+      The name of the logfile you want to search for patterns. This is
+      usually syslog's main output file (/var/adm/messages, /var/log/syslog.log)
+      but can also be any application's log. (Oracle alertlog)
+      There may even be logfiles with shifting names, e.g. LOGBUCH20060801230000
+      which is derived from date/time. You can try to catch these names with
+      macro definitions. 
+      ( logfile => 'LOGBUCH$CL_DATE_YYYY$$CL_DATE_MM$$CL_DATE_DD$...' )
+
+   c) archivedir
+      The name of a directory where your system writes rotated logfiles to.
+      (default is the directory of the logfile).
+
+   d) rotation
+      A regular expression which will be applied to the files in archivedir.
+      Matches are considered rotated logfiles. Instead of a regular expression
+      you can also use one of the predefined symbols. See list below.
+      This is not a mandatory parameter, but consider the following:
+      - 12:00 check_logfiles runs, finds nothing and writes into it's 
+              state file: "at 12:01 i seeked up to line no. 2384"
+      - 12:02 something very bad happens and it's noted in the syslog.
+      - 12:03 the logfile is rotated and has now size 0.
+      - 12:04 something very harmless happens and it's noted in the syslog.
+      - 12:05 check_logfile runs, reads the state file, wants to continue
+              at line 2385, fails and begins reading at line 0.
+              As rotated logfiles do not matter here, the critical message
+              will never be reported.
+      So if you take your business serious, you cannot afford not to ignore
+      rotated logfiles.
+      Example: You have a logfile suelzomat.log and keep the logs for 7 days.
+      Every day at midnight you move the logfile to suelzomat.old.<day>
+      where day is an integer (1=monday, 2=tuesday,.....), so your archivedir
+      might look like
+      messages messages.0 messages.1.gz suelzomat.log suelzomat.old.1
+      suelzomat.old.2 suelzomat.old.3 suelzomat.old.4 suelzomat.old.5
+      suelzomat.old.6 suelzomat.old.7 uucp.log 
+      Your searches entry would then look like:
+      rotation => 'suelzomat.old.[0-9]'
+      If you call check_logfiles with -d you will find a trace file in
+      /tmp/check_logfiles.trace where you can follow the inner logic.
+      Use it if you have your own naming scheme and you will see how rotations
+      are detected and what happens then.
+
+   d) criticalpatterns
+      A single regular expression or a pointer to an array of regular
+      expressions. The lines of your logfile will be compared to these
+      and a match will be considered a critical error.
+
+      criticalpatterns => ['.*Sense Key: Media Error.*', 
+          '.*Sense Key: Not Ready.*',
+          '.*Sense Key: Hardware Error.*', ....]
+
+      Remember, you can use macros here:
+      
+      criticalpatterns => ['.*illegal login from $CL_IPADDRESS$']
+      (this example may not make sense, it's just an example)
+
+      You can prepend a pattern with "!". In this case the search for patterns
+      is reversed. Only if there is no match, an alert is raised. 
+      Imagine you have an application which writes every minute "i am alive"
+      to it's logfile. With a pattern like '!.*i am alive.*' and check_logfiles
+      running in intervals of more than a minute, you can monitor if your
+      application is running properly.
+      
+   e) criticalexceptions
+      A single regular expression or a pointer to an array of regular
+      expressions just like criticalpatterns. 
+      With exceptions you can cancel the processing and reporting of a
+      preceded criticalpatterns match.
+      
+      criticalpatterns => '.*Failed password for illegal user.*',
+      criticalexceptions => '.*Failed password for illegal user lausser',
+
+      In this example an alert will be raised if someone tries to log in with
+      an invalid password. This is what we want except for one case. 
+      User lausser is known to be scatterbrained and we don't want an alert
+      every time he forgets his password.
+
+   f) criticalthreshold
+      A number telling check_syslog how much matching patterns to ignore until
+      an event is generated. A value of 5 means, skip 4 matches and only count
+      the 5th one.
+
+   g) warningpatterns
+      A single regular expression or a pointer to an array of regular
+      expressions. The lines of your logfile will be compared to these
+      and a match will be considered a warning.
+
+      warningpatterns => ['.*vxvm:vxio: Subdisk.*Uncorrectable write error.*', ....]
+ 
+   h) warningthreshold
+      Same as criticalthreshold, only for warningpatterns.
+
+   i) warningexceptions
+      Same as criticalexceptions, only for warningpatterns.
+
+   j) options
+      A comma-separated list of options. possible values are:
+      - [no]script
+        If a pattern matches, execute a script. (see script key below).
+        (default is noscript)
+
+      - [no]protocol
+        If a pattern matches, write the matching line to a protocol file.
+        The filename of the protocol file is derived from the configuration
+        file's name. Any file extensions are cut off and a timestamp is added.
+        Example: at 12:00 "check_logfiles -f check_oracle_alerts" is called.
+        Your configuration file is named check_oracle_alerts.cfg
+        Any matching patterns will then be written to
+        $protocoldir/check_oracle_alerts.protocol-2006-03-14-12-00-02
+        The output of this plugin will point you to the file.
+        Example: CRITICAL - 5 errors in /opt/nagios/log/check_oracle_alerts....
+        (default is protocol)
+
+      - [no]count
+        If a pattern matches, a counter will be incremented, either one for
+        the warnings or one for the errors. Their final value will cause the
+        exit code of this plugin. This is the normal behaviour of a nagios
+        plugin, but you might consider a szenario, where you don't want nagios
+        to care about the results and use it just as a vehicle to periodically
+        run the plugin. You leave the processing of the results solely to
+        a script you defined here.
+        (default is count)
+
+      - [no]syslogserver
+        If your system is used as a syslog server, your logfiles may contain
+        messages belonging to other hosts in your network. To restrict the
+        search to lines which originate from the server, where check_logfiles
+        is executed, you can use the option syslogserver.
+        This will prepend every pattern with 
+        .*(your_servers_hostname|localhost).*
+        where your_servers_hostname is the hostname without domain. If you have
+        a configuration, where hosts with equal hostname but different domain
+        log to your server, you set nosyslogserver, but prepend your patterns
+        with .*($CL_HOSTNAMEFQDN$|localhost).* and define CL_HOSTNAMEFQDN in
+        $MACROS as the fully qualified hostname.
+
+   k) script
+      A script or binary which will be called if you set the script option.
+      It must reside in one of the directories of $scriptpath.
+      Warning: before version 1.3.4 the matching line prepended with WARNING
+      or CRITICAL was piped into the standard input of the script. This has
+      seriously changed:
+      By default, nothing will be written to stdin of the script. The relevant
+      information will be passed by environment variables.
+      CHECK_LOGFILES_LOGFILE - the logfile in which the pattern was found.
+      CHECK_LOGFILES_TAG - the tag of the @searches-entry.
+      CHECK_LOGFILES_SERVICESTATE - WARNING or CRITICAL
+      CHECK_LOGFILES_SERVICESTATEID - 1 or 2
+      CHECK_LOGFILES_SERVICEOUTPUT - the matching line.
+      CHECK_LOGFILES_HOSTNAME - the name of the local host.
+
+   l) scriptparams
+      An optional string with command line parameters which will be appended
+      to the script command. The string can contain macros.
+      e.g. scriptparams => '-H $CL_NSCA_HOST_ADDRESS$';
+
+   m) scriptstdin
+      If you want to write something into the stdin of your script, you can 
+      use the scriptstdin option to describe the format of the input.
+      It is a simple string like:
+      scriptstdin => '$CL_HOSTNAME$\t$CL_SERVICEDESC$\t$CL_SERVICESTATEID$\n';
+      which can contain macros and the sequences \t and \n.
+      See below for real-world examples.
+  
+   n) scriptdelay
+      The number of seconds to sleep after the script has finished until
+      check_logfiles will continue to work. This is a rarely used parameter.
+      Do not waste many thoughts on it.
+
+6) $protocolretention
+   The number of days you want to keep your protocol files. Files older than
+   this number of days will be deleted automatically.
+   (default is 7 days)
+
+8) prescript
+   A script or binary which will be called at the beginning of a
+   check_logfiles run.
+   This is similar to the script option mentioned in the @searches section.
+   This script could for example force an application to flush it's output
+   buffer into it's logfile.
+   The CHECK_LOGFILES_TAG will be set to "startup" and the servicestate
+   is always OK.
+   prescriptparams and prescriptstdin are used as described above.
+   prescriptdelay is can be used in a configuration where you force an application
+   or simply the syslog daemon to write something into a logfile to see if they
+   really work. As this may take some time, you can set a delay here until
+   check_logfile will search for the message in the logfile.
+
+9) postscript
+   A script or binary which will be called at the end of a check_logfiles run.
+   This is similar to the script option mentioned in the @searches section.
+   The CHECK_LOGFILES_TAG will be set to "summary".
+   postscriptparams and postscriptstdin are used as described above.
+   postdelay is also supported but i cannot imagine how to use it.
+   
+
+How to call check_logfiles from Nagios
+--------------------------------------
+
+1) If you defined just one service for your logfile analysis, then you can
+   hardcode the path to your configuration file in your nrpe.cfg
+   (I assume, most of you monitor multiple servers and use nrpe).
+
+   define service {
+     service_description   check_sanlogs
+     host_name             oaschgeign.muc
+     check_command         check_nrpe!check_logfiles
+     is_volatile           1
+     check_period          7x24
+     max_check_attempts    1
+     ...
+   }
+   
+   define command {
+     command_name          check_nrpe
+     command_line          $USER1$/check_nrpe -H $HOSTADDRESS$ -c $ARG1$
+   }
+
+   command[check_logfiles]=/opt/nagios/libexec/check_logfiles -f logdefs.cfg
+
+   or if you chose command line parameters instead of a config file:
+
+   define service {
+     service_description   check_sanlogs_withoutconfigfile
+     host_name             oaschgeign.muc
+     check_command         check_nrpe_cl!60!check_logfiles!san!/var/log/messages!SUSE!OFFLINE
+     ...
+
+   define command {
+     command_name         check_nrpe_cl
+     command_line         $USER1$/check_nrpe -H $HOSTADDRESS$ -t $ARG1$ -c $ARG2$ -a $ARG3$ $ARG4$ $ARG5$ $ARG6$
+   }
+
+   command[check_logfiles]=/opt/nagios/libexec/check_logfiles --tag=$ARG1$ --logfile=$ARG2$ --rotation=$ARG3$ --criticalpattern=$ARG4$ --noprotocol 
+
+   Unfortunately the command line parameter method works only for 
+   very basic patterns. Nrpe doesn't accept special characters like \ or [
+   which are necessary for most regular expressions.
+
+2) In an environment with multiple services using check_logfiles or even 
+   multiple nagios instances, you have to use parameters to establish the
+   connection between service and config file. I propose you name the 
+   config files after the service descriptions like in the following example.
+
+   a) Nagios instance Solaris
+
+     define service {
+       service_description  logfilescan
+       register             0
+       is_volatile          1
+       check_period         7x24
+       max_check_attempts   1
+       ...
+     }
+     define service {
+       service_description  solaris_check_sanlogs
+       host_name            oaschgeign.muc
+       check_command        check_nrpe_arg!20!check_logfiles!cfg.d/$SERVICEDESC$
+       contact_group        sanadmin
+       use                  logfilescan
+     }
+     define service {
+       service_description  solaris_check_apachelogs
+       host_name            oaschgeign.muc
+       check_command        check_nrpe_arg!20!check_logfiles!cfg.d/$SERVICEDESC$
+       contact_group        webadmin
+       use                  logfilescan
+     }
+     define command {
+       command_name         check_nrpe_arg
+       command_line         $USER1$/check_nrpe -p 5777 -H $HOSTADDRESS$ -t $ARG1$ -c $ARG2$ -a $ARG3$
+     }
+
+   b) Nagios instance Oracle
+
+     define service {
+       service_description  logfilescan
+       register             0
+       is_volatile          1
+       check_period         7x24
+       max_check_attempts   1
+       ...
+     }
+     define service {
+       service_description  oracle_check_alerts
+       host_name            oaschgeign.muc
+       check_command        check_nrpe_arg!20!check_logfiles!cfg.d/$SERVICEDESC$
+       contact_group        oraadmin
+       use                  logfilescan
+     }
+     define command {
+       command_name         check_nrpe_arg
+       command_line         $USER1$/check_nrpe -p 5777 -H $HOSTADDRESS$ -t $ARG1$ -c $ARG2$ -a $ARG3$
+     }
+
+   c) Nrpe on host oaschgeign.muc
+
+     [check_logfiles]=/opt/nagios/libexec/check_logfiles -f $ARG1$
+
+     A check of solaris_check_apachelogs would then result in the following
+     command:
+     /opt/nagios/libexec/check_logfiles -f cfg.d/solaris_check_apachelogs
+
+     In your nrpe user's home directory you have a subdirectory cfg.d holding
+     the single configuration files solaris_check_sanlogs.cfg, 
+     solaris_check_apachelogs.cfg and oracle_check_alerts.cfg where each team
+     writes it's individual patterns and logfile definitions.
+
+
+How to run check_logfiles as standalone program and inform nagios via nsca
+--------------------------------------
+
+First some facts we assume in this example. 
+The nagios server is called lpmon1.muc
+The nagios client is called orschgeign.muc
+Calling hostname() on orschgeign.muc returns orschgeign.local
+
+Like before, you define a service in your nagios configuration, but this time
+it is acting passive.
+
+     define service {
+       service_description  logfilescan
+       register               0
+       is_volatile            1
+       check_period           7x24
+       passive_checks_enabled 1
+       active_checks_enabled  0
+       max_check_attempts     1
+       ...
+     }
+     define service {
+       service_description  check_sanlogs
+       host_name            oaschgeign.muc
+       contact_group        sanadmin
+       use                  logfilescan
+     }
+
+Then start your nsca listener (in this example listening on port 5778),
+which will wait for asynchronous notifications concerning the 
+solaris_check_sanlogs status.
+
+On the monitored host oaschgeign, you will run check_logfiles periodically 
+as a cronjob. The configuration file check_sanlogs.cfg looks like:
+
+$scriptpath = '/usr/bin/nagios/libexec:/usr/local/nagios/contrib';
+$MACROS = { 
+    NAGIOS_HOSTNAME => "oaschgeign.muc",
+    CL_NSCA_HOST_ADDRESS => "lpmon1.muc",
+    CL_NSCA_PORT => 5778
+};
+$postscript = 'send_nsca';
+$postscriptparams = '-H $CL_NSCA_HOST_ADDRESS$ -p $CL_NSCA_PORT$ -to $CL_NSCA_TO_SEC$ -c $CL_NSCA_CONFIG_FILE$';
+$postscriptstdin = '$CL_HOSTNAME$\t$CL_SERVICEDESC$\t$CL_SERVICESTATEID$\t$CL_SERVICEOUTPUT$\n';
+
+@searches = (
+  {
+    tag => 'san',
+    logfile => '/var/adm/messages',
+    criticalpatterns => [
+        'Link Down Event received',
+        'Loop OFFLINE',
+        'fctl:.*disappeared from fabric',
+        '.*Lun.*disappeared.*'
+    ],
+  },
+);
+
+Now if check_logfiles finds matching patterns in the logfile, at the end of the
+check_logfiles run it will execute a 
+
+"send_nsca -H lpmon1.muc -p 5778" 
+
+which sends the line
+
+"oaschgeign.muc<tab>check_sanlogs<tab>2<tab>CRITICAL - critical errors ...."
+
+to the nsca daemon. The nsca daemon will write an external command to the
+nagios command pipe which causes nagios to set the status of service check_san
+to critical and send a notification to contactgroup sanadmin immediately.
+
+If you don't expect too many matching lines in your logfiles, you can send event
+to the nsca daemon for each matching pattern instead of a summary.
+Your config file would then look like this:
+
+$scriptpath = '/usr/bin/nagios/libexec:/usr/local/nagios/contrib';
+$MACROS = { 
+    NAGIOS_HOSTNAME => "oaschgeign.muc", 
+    CL_NSCA_HOST_ADDRESS => "lpmon1.muc",
+    CL_NSCA_PORT => 5778
+};
+
+@searches = (
+  {
+    tag => 'san',
+    logfile => '/var/adm/messages',
+    criticalpatterns => [   
+        'Link Down Event received',
+        'Loop OFFLINE',
+        'fctl:.*disappeared from fabric',
+        '.*Lun.*disappeared.*'
+    ],
+    script => 'send_nsca',
+    scriptparams => '-H $CL_NSCA_HOST_ADDRESS$ -p $CL_NSCA_PORT$ -to $CL_NSCA_TO_SEC$ -c $CL_NSCA_CONFIG_FILE$',
+    scriptstdin => '$CL_HOSTNAME$\t$CL_SERVICEDESC$\t$CL_SERVICESTATEID$\t$CL_SERVICEOUTPUT$\n',
+  },
+);
+
+In older releases you could find a nsca configuration option. This was dropped in favour of the (pre/post)script options which provide much more flexibility if you want to replace the nsca mechanism for example by snmp.
+
+That's it.  If you have any problems or questions, feel free to send mail
+to gerhard.lausser@consol.de
+
+
+
+Format of the seekfile
+----------------------
+$state = {
+  logoffset
+  logtime
+  devino
+  logfile
+  servicestateid
+  serviceoutput
+};
+
+Common errors
+-------------
+
+Bad arg length for Socket::inet_ntoa, length is 0, should be 4 at
+
+use Net::Domain qw(hostname hostdomain hostfqdn);
+printf "hostname() = %s\n", hostname();
+printf "hostdomain() = %s\n", hostdomain();
+printf "hostfqdn() = %s\n", hostfqdn();
+printf "hostfqdn() = %s\n", hostfqdn();
+printf "ipaddress = %s\n", inet_ntoa(scalar gethostbyname(hostname()));
+
+Usually there is a problem with the backward resolution of the hostname.
+Look into your /etc/hosts and add |<ipaddr> <full qualified hostname> <hostname>
+--
+Gerhard Lausser <gerhard.lausser@consol.de>

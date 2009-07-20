@@ -1,0 +1,19 @@
+-------------------------------------------------------------
+TIMEOUT 
+O  timeout leads to graceful shutdown instead of sudden death
+
+-------------------------------------------------------------
+VARTMP 
+O  use /var/tmp as default instead of /tmp
+   migration of old seekfiles
+-------------------------------------------------------------
+PROTOCOLMACRO
+X  update documentation for CL_PROTOCOLFILE
+-------------------------------------------------------------
+MORECOMMANDLINE
+X  move parameters from configfile to commandline
+   X --criticalexception
+   X --warningexception
+   X --okpattern
+   X --sticky
+   X update documentation

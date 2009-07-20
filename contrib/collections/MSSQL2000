@@ -1,0 +1,22 @@
+# http://msdn.microsoft.com/en-us/library/aa937483(SQL.80).aspx
+$criticalpatterns = [
+    # These messages indicate that the statement caused SQL Server to run out of resources (such as locks or disk space for the database) or to exceed some limit set by the system administrator.
+    'Error:.*, Severity: 17,', 
+    # These messages indicate that there is some type of internal software problem, but the statement finishes, and the connection to SQL Server is maintained. For example, a severity level 18 message occurs when the SQL Server query processor detects an internal error during query optimization. The system administrator should be informed every time a severity level 18 message occurs.
+    'Error:.*, Severity: 18,',
+    # These messages indicate that some nonconfigurable internal limit has been exceeded and the current batch process is terminated. Severity level 19 errors occur rarely; however, they must be corrected by the system administrator or your primary support provider. The administrator should be informed every time a severity level 19 message occurs.
+    'Error:.*, Severity: 19,',
+    # These messages indicate that the table or index specified in the message has been damaged by a software or hardware problem.
+    'Error:.*, Severity: 22,', 
+    # These messages indicate that the integrity of the entire database is in question because of a hardware or software problem.
+    'Error:.*, Severity: 23,',
+    # These messages indicate some type of media failure. The system administrator might have to reload the database. It might also be necessary to call your hardware vendor.
+    'Error:.*, Severity: 24,', #
+];
+
+$warningpatterns = [
+    # These messages indicate that a statement has encountered a problem. Because the problem has affected only the current process, it is unlikely that the database itself has been damaged.
+    'Error:.*, Severity: 20,',
+    # These messages indicate that you have encountered a problem that affects all processes in the current database; however, it is unlikely that the database itself has been damaged.
+    'Error:.*, Severity: 21,',
+];

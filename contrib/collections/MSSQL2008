@@ -1,0 +1,20 @@
+# http://msdn.microsoft.com/en-us/library/ms164086.aspx
+$criticalpatterns = [
+    # Indicates that the statement caused SQL Server to run out of resources (such as memory, locks, or disk space for the database) or to exceed some limit set by the system administrator.
+    'Error:.*, Severity: 17,', 
+    # Indicates a problem in the Database Engine software, but the statement completes execution, and the connection to the instance of the Database Engine is maintained. The system administrator should be informed every time a message with a severity level of 18 occurs.
+    'Error:.*, Severity: 18,',
+    # Indicates that a nonconfigurable Database Engine limit has been exceeded and the current batch process has been terminated. Error messages with a severity level of 19 or higher stop the execution of the current batch. Severity level 19 errors are rare and must be corrected by the system administrator or your primary support provider. Contact your system administrator when a message with a severity level 19 is raised.
+    'Error:.*, Severity: 19,',
+    # Indicates that the table or index specified in the message has been damaged by a software or hardware problem.
+    # Indicates that a statement has encountered a problem. Because the problem has affected only the current task, it is unlikely that the database itself has been damaged.
+    'Error:.*, Severity: 20,',
+    # Indicates that a problem has been encountered that affects all tasks in the current database, but it is unlikely that the database itself has been damaged.
+    'Error:.*, Severity: 21,',
+    'Error:.*, Severity: 22,', 
+    # Indicates that the integrity of the entire database is in question because of a hardware or software problem.
+    'Error:.*, Severity: 23,',
+    # Indicates a media failure. The system administrator may have to restore the database. You may also have to call your hardware vendor.
+    'Error:.*, Severity: 24,', #
+];
+

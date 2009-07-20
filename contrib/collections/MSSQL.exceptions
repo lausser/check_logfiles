@@ -1,0 +1,117 @@
+http://support.microsoft.com/kb/115519
+
+    * Microsoft SQL Server 7.0 Standard Edition
+    * Microsoft SQL Server 4.21a Standard Edition
+    * Microsoft SQL Server 6.0 Standard Edition
+    * Microsoft SQL Server 6.5 Standard Edition
+    * Microsoft SQL Server 2000 Standard Edition
+    * Microsoft SQL Server 2005 Standard Edition
+    * Microsoft SQL Server 2005 Express Edition
+    * Microsoft SQL Server 2005 Developer Edition
+    * Microsoft SQL Server 2005 Enterprise Edition
+    * Microsoft SQL Server 2005 Workgroup Edition
+
+
+
+Monitor Error Logs A DBA should frequently review SQL Server's error log. When you review the error log, you should look for messages that do not appear under normal circumstances. Unfortunately, the error log contains more than just error messages. It also contains statements about the status of events, copyright information, and so on. This means that you have to know what to look for when you scan the error log. A good starting point is to look for the following keywords:
+
+    * error :
+    * table corrupt
+    * level 16
+    * level 17
+    * level 21
+    * Severity: 16
+    * Severity: 17
+    * Severity: 21 
+
+    NOTE: You can view the error log from the Enterprise Manager or from a text editor. To view the error log from the Enterprise Manager, select Error Log from the Server menu. To view the current error log with a text editor, open the file c:\mssql\log\errorlog. You also can view the last six versions of the error log by opening the corresponding file (errorlog.1, errorlog.2, and so on). 
+
+The following listing shows a sample error log. Items in bold indicate errors a DBA may want to investigate:
+
+96/04/29 01:35:59.03 kernel Microsoft SQL Server 6.50 - 6.50.201 (Intel X86)
+Apr 3 1996 02:55:53
+Copyright (c) 1988-1996 Microsoft Corporation
+96/04/29 01:35:59.03 kernel Copyright (C) 1988-1994 Microsoft Corporation.
+96/04/29 01:35:59.04 kernel All rights reserved.
+96/04/29 01:35:59.04 kernel Logging SQL Server messages in file `C:\MSSQL\LOG\ERRORLOG'
+96/04/29 01:35:59.06 kernel initconfig: number of user connections limited to 15
+96/04/29 01:35:59.06 kernel SQL Server is starting at priority class `normal' with dataserver serialization turned on (1 CPU detected).
+96/04/29 01:35:59.15 kernel Attempting to initialize Distributed Transaction Coordinator
+96/04/29 01:35:59.60 server Failed to obtain TransactionDispenserInterface: XACT_E_TMNOTAVAILABLE
+96/04/29 01:35:59.62 kernel initializing virtual device 0, C:\MSSQL\DATA\MASTER.DAT
+96/04/29 01:35:59.62 kernel Opening Master Database ...
+96/04/29 01:35:59.85 spid1 Loading SQL Server's default sort order and character set
+96/04/29 01:35:59.97 spid1 Recovering Database `master'
+96/04/29 01:36:00.04 spid1 Recovery dbid 1 ckpt (7958,25) oldest tran=(7958,24)
+96/04/29 01:36:00.11 spid1 1 transactions rolled forward
+96/04/29 01:36:00.22 spid1 Activating disk `dev1'
+96/04/29 01:36:00.26 kernel udopen: operating system error 2(The system cannot find the file specified.) during the creation/opening of physical device C:\MSSQL\DATA\dev1.DAT
+96/04/29 01:36:00.27 kernel udactivate (primary): failed to open device C:\MSSQL\DATA\dev1.DAT for vdn 4
+96/04/29 01:36:00.27 spid1 Activating disk `MSDBData'
+96/04/29 01:36:00.28 kernel initializing virtual device 127, C:\MSSQL\DATA\MSDB.DAT
+96/04/29 01:36:00.28 spid1 Activating disk `MSDBLog'
+96/04/29 01:36:00.28 kernel initializing virtual device 126, C:\MSSQL\DATA\MSDBLOG.DAT
+96/04/29 01:36:00.29 spid1 Activating disk `salesdat'
+96/04/29 01:36:00.29 kernel udopen: operating system error 2(The system cannot find the file specified.) during the creation/opening of physical device C:\MSSQL\DATA\salesdat.DAT
+96/04/29 01:36:00.30 kernel udactivate (primary): failed to open device C:\MSSQL\DATA\salesdat.DAT for vdn 1
+96/04/29 01:36:00.33 spid1 Activating disk `salesdat2'
+96/04/29 01:36:00.33 kernel udopen: operating system error 2(The system cannot find the file specified.) during the creation/opening of physical device C:\MSSQL\DATA\salesdat2.DAT
+96/04/29 01:36:00.34 kernel udactivate (primary): failed to open device C:\MSSQL\DATA\salesdat2.DAT for vdn 3
+96/04/29 01:36:00.34 spid1 Activating disk `saleslog'
+96/04/29 01:36:00.35 kernel udopen: operating system error 2(The system cannot find the file specified.) during the creation/opening of physical device C:\MSSQL\DATA\saleslog.DAT
+96/04/29 01:36:00.36 kernel udactivate (primary): failed to open device C:\MSSQL\DATA\saleslog.DAT for vdn 2
+96/04/29 01:36:00.39 spid1 server name is `OTS'
+96/04/29 01:36:00.44 spid1 Recovering database `model'
+96/04/29 01:36:00.46 spid1 Recovery dbid 3 ckpt (338,0) oldest tran=(339,0)
+96/04/29 01:36:00.54 spid1 Clearing temp db
+96/04/29 01:36:03.24 kernel Read Ahead Manager started.
+96/04/29 01:36:03.29 kernel Using `SQLEVN60.DLL' version `6.00.000'.
+96/04/29 01:36:03.38 kernel Using `OPENDS60.DLL' version `6.00.01.02'.
+96/04/29 01:36:03.39 kernel Using `NTWDBLIB.DLL' version `6.50.201'.
+96/04/29 01:36:03.48 ods Starting SQL Mail session...
+96/04/29 01:36:05.34 kernel udread: Operating system error 6(The handle is invalid.) on device `C:\MSSQL\DATA\salesdat.DAT' (virtpage 0x01000018).
+96/04/29 01:36:05.54 ods Using `SSNMPN60.DLL' version `6.5.0.0' to listen on `\\.\pipe\sql\query'.
+96/04/29 01:36:05.60 spid12 Error : 840, Severity: 17, State: 2
+96/04/29 01:36:05.60 spid12 Device `salesdat' (with physical name `C:\MSSQL\DATA\salesdat.DAT', and virtual device number 1) is not available. Please contact System Administrator for assistance.
+96/04/29 01:36:05.60 spid12 Buffer 8a24e0 from database `sales' has page number 0 in the page header and page number 24 in the buffer header
+96/04/29 01:36:05.73 spid12 Unable to proceed with the recovery of dbid <6> because of previous errors. Continuing with the next database.
+96/04/29 01:36:05.73 kernel udread: Operating system error 6(The handle is invalid.) on device `C:\MSSQL\DATA\dev1.DAT' (virtpage 0x04000018).
+96/04/29 01:36:05.74 spid12 Error : 840, Severity: 17, State: 2
+96/04/29 01:36:05.74 spid12 Device `dev1' (with physical name `C:\MSSQL\DATA\dev1.DAT', and virtual device number 4) is not available. Please contact System Administrator for assistance.
+96/04/29 01:36:05.75 spid12 Buffer 8a24e0 from database `dev1' has page number 0 in the page header and page number 24 in the buffer header
+96/04/29 01:36:05.76 spid12 Unable to proceed with the recovery of dbid <7> because of previous errors. Continuing with the next database.
+96/04/29 01:36:05.80 spid11 Recovering database `msdb'
+96/04/29 01:36:05.83 spid10 Recovering database `pubs'
+96/04/29 01:36:05.89 spid11 Recovery dbid 5 ckpt (3587,11) oldest tran=(3587,10)
+96/04/29 01:36:05.95 spid10 Recovery dbid 4 ckpt (778,31) oldest tran=(778,30)
+96/04/29 01:36:06.02 spid11 1 transactions rolled forward in dbid 5.
+96/04/29 01:36:06.11 spid10 1 transactions rolled forward in dbid 4.
+96/04/29 01:36:06.57 spid1 Recovery complete.
+96/04/29 01:36:06.75 spid1 SQL Server's default sort order is:
+96/04/29 01:36:06.75 spid1 `nocase' (ID = 52)
+96/04/29 01:36:06.76 spid1 on top of default character set:
+96/04/29 01:36:06.76 spid1 `iso_1' (ID = 1)
+96/04/29 01:36:07.11 spid1 Launched startup procedure `sp_sqlregister'
+96/04/29 01:36:07.42 ods Error : 17903, Severity: 18, State: 1
+96/04/29 01:36:07.42 ods MAPI login failure.
+96/04/29 01:36:07.44 ods Error : 17951, Severity: 18, State: 1
+96/04/29 01:36:07.44 ods Failed to start SQL Mail session.
+
+    TIP: Use the Windows NT FINDSTR.EXE utility to search for text patterns in the error logs. (For the UNIX folks, FINDSTR.EXE is NT's equivalent of GREP.) This utility can help automate the process of scanning the log for errors. The following example shows how to scan the error log for the keyword error :
+
+    C:\mssql\log>findstr /i /n /c:"error :" errorlog
+
+    Following is some sample output:
+
+    C:\mssql\log>findstr /i /n /c:"error :" errorlog
+
+    34:95/09/16 11:24:20.42 ods Error : 17903, Severity: 18, State: 1
+
+    36:95/09/16 11:24:20.43 ods Error : 17951, Severity: 18, State: 1
+
+    53:95/09/16 11:24:35.53 ods Error : 17903, Severity: 18, State: 1
+
+    55:95/09/16 11:24:35.54 ods Error : 17951, Severity: 18, State: 1
+
+
+

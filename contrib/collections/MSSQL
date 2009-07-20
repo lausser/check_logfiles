@@ -1,0 +1,43 @@
+http://www.windowsitpro.com/Files/09/99934/99934.zip
+
+in listing3 mehr beispiele
+
+
+http://searchsystemschannel.techtarget.com/generic/0,295582,sid99_gci1247522,00.html#
+
+
+-----------wichtich-------
+ 
+http://www.simple-talk.com/sql/database-administration/sql-server-alerts-soup-to-nuts/
+
+
+
+
+
+
+
+
+
+
+
+pdate #errorlog
+   set alert = '---->'
+ where (log_entry like '%err%'
+    or log_entry like '%warn%'
+    or log_entry like '%kill%'
+    or log_entry like '%dead%'
+    or log_entry like '%cannot%'
+    or log_entry like '%could%'
+    or log_entry like '%fail%'
+    or log_entry like '%full%'
+    or log_entry like '%not%'
+    or log_entry like '%stop%'
+    or log_entry like '%terminate%'
+    or log_entry like '%bypass%'
+    or log_entry like '%roll%'
+    or log_entry like '%truncate%'
+    or log_entry like '%upgrade%'
+    or log_entry like '%victim%'
+    or log_entry like '%recover%')
+
+

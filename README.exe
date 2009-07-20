@@ -1,0 +1,60 @@
+How to create a windows native binary
+check_logfiles.exe
+
+0) Deinstall ActiveState Perl VMWare Remote CLI
+   and any other Perl packages you can find.
+   
+1) Install Strawberry Perl
+   from http://strawberryperl.com/
+
+2) Prepare your environment so that strawberry perl
+   is the preferred perl interpreter.
+   set PATH=C:\strawberry\c\bin;C:\strawberry\perl\bin;%PATH%
+   Better: Deinstall ActiveState Perl and any other Perl packages you can find.
+
+3) Install PAR::Packer 
+   perl -MCPAN -eshell
+   install PAR
+   install PAR::Packer
+   You will see error messages and the installation will fail. 
+   No problem! We can repair it.
+   cd C:\strawberry\cpan\build
+ a) 
+   cd PAR-0.980-<a lot of crap>
+   perl Makefile.PL
+   dmake
+   dmake install
+ b)
+   cd PAR-Packer-0.980-<a lot of crap>
+   edit myldr/Makefile.PL and add
+   $file =~ s/^lib// if $^O eq "MSWin32"; 
+   after line 142.
+   perl Makefile.PL
+   dmake
+   dmake install
+
+4) Build the plugin
+   cd check_logfiles-x.x.x.x
+   perl winconfig.pl
+
+5) Compile the plugin
+   cd plugins-scripts
+   pp -M PerlIO -o check_logfiles.exe check_logfiles
+   pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::Daemon -o check_logfiles.exe check_logfiles
+
+If it does not work it's not my fault. It worked for me and my PC.
+I read the documentation and played around until it worked.
+If it does not work for you, read the documentation and play around.
+At least for a week.
+If it still does not work, forget check_logfiles.
+Use check_hanswurscht instead. The source of check_hanswurscht is:
+
+printf "hello hanswurscht\n";
+
+Now try to create a windows binary with
+pp -o check_hanswurscht.exe check_hanswurscht
+
+Do not contact me if check_hanswurscht.exe doesn't work.
+Please contact Strawberry and tell them:
+"hi, i am a hanswurscht and i have a problem..."
+
