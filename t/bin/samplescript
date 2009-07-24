@@ -1,3 +1,0 @@
-#!/bin/bash
-awk '/CRITICAL/ { printf "this is critical: %s\n", $0 } /WARNING/ { printf "this is for whimps: %s\n", $0 }'
-env|grep CHECK_LOGFILES

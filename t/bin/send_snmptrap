@@ -1,5 +1,0 @@
-
-echo i am the script $CHECK_LOGFILES_SERVICESTATEID $CHECK_LOGFILES_SERVICEOUTPUT
-echo status $CHECK_LOGFILES_SERVICESTATEID
-echo output "$CHECK_LOGFILES_SERVICEOUTPUT" >> ./var/tmp/scriptcounter
-exit 3;
