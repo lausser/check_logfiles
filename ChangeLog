@@ -2,8 +2,12 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.0.2 - 2009-07-23
+- fixed a bug for --config. (Windows uses HOMEPATH instead of HOME)
+
 3.0.1 - 2009-06-25
 - fixed a bug in Eventlog+Tivoli
+- added match_them_all and match_never_ever as predefined patterns
 
 3.0 - 2009-06-19
 - added the ability to run as a windows service. (needs Win32::Daemon)

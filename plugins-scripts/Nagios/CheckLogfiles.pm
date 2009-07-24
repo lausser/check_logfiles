@@ -188,6 +188,9 @@ sub init_from_file {
       $postscript, $postscriptparams, $postscriptstdin, $postscriptdelay,
       @searches, @logs, $tracefile, $options, $report, $timeout, $pidfile);
   our $MACROS = {};
+  if ($^O =~ /MSWin/) {
+    $ENV{HOME} = $ENV{HOMEPATH};
+  }
   if (-f $self->{cfgfile}) {
     $fullcfgfile = $self->{cfgfile};
   } elsif (-f $self->{cfgfile}.'.cfg') {

@@ -296,10 +296,14 @@ if (exists $commandline{type}) {
 if (exists $commandline{criticalpattern}) {
   $commandline{criticalpattern} = '.*' if
       $commandline{criticalpattern} eq 'match_them_all';
+  delete $commandline{criticalpattern} if
+      $commandline{criticalpattern} eq 'match_never_ever';
 }
 if (exists $commandline{warningpattern}) {
   $commandline{warningpattern} = '.*' if
       $commandline{warningpattern} eq 'match_them_all';
+  delete $commandline{warningpattern} if
+      $commandline{warningpattern} eq 'match_never_ever';
 }
 if (my $cl = Nagios::CheckLogfiles->new({
       cfgfile => $commandline{config} ? $commandline{config} : undef,
