@@ -1,0 +1,953 @@
+// Format file for catching messages from Linux syslogd
+
+FORMAT Logfile_Base
+%t %s %s*
+hostname LABEL
+adapter_host LABEL
+date $1
+origin $2
+msg $3
+END
+
+FORMAT Log_Unix_MonitoringCheck FOLLOWS Logfile_Base
+%t %s EM2FM: %s*
+severity MINOR
+END
+
+
+FORMAT Xprint_Cpu FOLLOWS Logfile_Base
+%s %s %s %s %s xprint_cpu: PID %s %s consumed %s cpu in %s sec!
+-month $1
+-day $2
+-time $3
+-host $4
+-pid $6
+-cmd $7
+-percent $8
+-period $9
+severity CRITICAL
+msg PRINTF("%s %s %s %s: xprint_cpu: PID %s %s consumed %s cpu in %s sec!", month, day, time, host, pid, cmd, percent, period)
+END
+
+FORMAT UC4_ServerStillstand
+%s %s %s %s %s UC4 Logfile waechst nicht, UC4 pruefen
+hostname LABEL
+adapter_host LABEL
+-date1 $1
+-date2 $2
+-time $3
+date PRINTF("%s %s %s", date1, date2, time)
+origin $4
+sub_source UC4_Monitor
+severity FATAL
+msg PRINTF("%s: UC4 Logfile waechst nicht, UC4 pruefen !", origin)
+END
+
+FORMAT GAM_Base
+%s* Event= %s:%s%n occurred at %s* and logged at %s*
+hostname LABEL
+adapter_host LABEL
+origin DEFAULT
+-V1 $1
+silo $2
+-msgpart $3
+date $4
+msg PRINTF("%s Event= %s:%s", V1, silo, msgpart)
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_GAM FOLLOWS GAM_Base
+%s* Event= B:%s%n occurred at %s* and logged at %s*
+silo "B"
+-msgpart $2
+date $3
+END
+
+FORMAT Log_Linux_HW_GAM FOLLOWS GAM_Base
+%s* Event= C:%s%n occurred at %s* and logged at %s*
+silo "C"
+-msgpart $2
+date $3
+END
+
+FORMAT Log_Linux_HW_GAM FOLLOWS GAM_Base
+%s* Event= 24:%s%n occurred at %s* and logged at %s*
+silo "24"
+-msgpart $2
+date $3
+END
+
+FORMAT Log_Linux_HW_GAM FOLLOWS GAM_Base
+%s* Event= 3A:%s%n occurred at %s* and logged at %s*
+silo "3A"
+-msgpart $2
+date $3
+END
+
+FORMAT Log_Linux_HW_GAM FOLLOWS GAM_Base
+%s* Event= 87:%s%n occurred at %s* and logged at %s*
+silo "87"
+-msgpart $2
+date $3
+END
+
+FORMAT Log_Linux_HW_GAM FOLLOWS GAM_Base
+%s* Event= 8F:%s%n occurred at %s* and logged at %s*
+silo "8F"
+-msgpart $2
+date $3
+END
+
+FORMAT Log_Unix_Vxfs_Inconsistent FOLLOWS Logfile_Base
+%t %s vxfs: %s* vx_direrr: vx_dirrem_5 %s*
+-V3 $3
+-V4 $4
+msg PRINTF("%s vx_direrr: vx_dirrem_5 %s", V3, V4)
+severity CRITICAL
+END
+
+FORMAT Log_Unix_Vxfs_Inconsistent FOLLOWS Logfile_Base
+%t %s vxfs: %s* vx_direrr: vx_dirscan_2 %s*
+-V3 $3
+-V4 $4
+msg PRINTF("%s vx_direrr: vx_dirscan_2 %s", V3, V4)
+severity CRITICAL
+END
+
+FORMAT Log_Unix_CPU_ThresholdViolation FOLLOWS Logfile_Base
+%t %s %s* CPU-SCHWELLWERT UEBERSCHRITTEN
+msg "CPU-SCHWELLWERT UEBERSCHRITTEN"
+severity CRITICAL
+END
+
+FORMAT Logfile_Login FOLLOWS Logfile_Base
+%t %s login: %s*
+sub_source login
+END
+
+FORMAT Logfile_Kernel FOLLOWS Logfile_Base
+%t %s kernel: %s*
+sub_source unix
+severity MINOR
+END
+
+FORMAT Log_Linux_DDM_Error FOLLOWS Logfile_Kernel
+%t %s kernel: DDM: Error%s*
+-V3 $3
+msg PRINTF("DDM: Error%s", V3)
+END
+
+FORMAT Log_Linux_DDM_Error FOLLOWS Logfile_Kernel
+%t %s kernel: DDM: Error %s*
+-V3 $3
+msg PRINTF("DDM: Error %s", V3)
+END
+
+FORMAT Log_Linux_VFSFileMax FOLLOWS Logfile_Kernel
+%t %s kernel: VFS: file-max limit %s*
+-V3 $3
+msg PRINTF("VFS: file-max limit %s", V3)
+END
+
+FORMAT Log_Linux_Oops FOLLOWS Logfile_Kernel
+%t %s kernel: Oops: %s*
+-V3 $3
+msg PRINTF("Oops: %s", V3)
+END
+
+FORMAT Log_Linux_Kernel_BUG FOLLOWS Logfile_Kernel
+%t %s kernel: Kernel BUG
+-V3 "kernel: Kernel BUG"
+msg PRINTF ("%s", V3)
+END
+
+FORMAT Log_Unix_HW_Fan_Test FOLLOWS Logfile_Kernel
+%t %s %s* redundant fan test failed.
+-v3 $3
+msg PRINTF("%s redundat fan test failed.", v3)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_Correctable_Err FOLLOWS Logfile_Kernel
+%t %s %s* correctable error detected %s*
+-v3 $3
+-v4 $4
+msg PRINTF("%s correctable error detected %s", v3, v4)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_BadSuperblock FOLLOWS Logfile_Base
+%t %s %s BAD SUPER BLOCK: %s
+-V3 $3
+-V4 $4
+msg PRINTF("%s BAD SUPER BLOCK: %s", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_BadSuperblock FOLLOWS Logfile_Base
+%t %s %s BAD SUPER BLOCK: /
+-V3 $3
+msg PRINTF("%s BAD SUPER BLOCK: /", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_BadTrap FOLLOWS Logfile_Base
+%t %s %s BAD TRAP
+-V3 $3
+msg PRINTF("%s BAD TRAP", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_BadTrap FOLLOWS Logfile_Base
+%t %s %s Data fault
+-V3 $3
+msg PRINTF("%s Data fault", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_Init FOLLOWS Logfile_Base
+%t %s %s Can't invoke /etc/init, error int
+-V3 $3
+msg PRINTF("%s Can't invoke /etc/init, error int", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_CorruptLabel FOLLOWS Logfile_Base
+%t %s %s corrupt label - wrong magic number or corrupt label - label checksum failed 
+-V3 $3
+msg PRINTF("%s corrupt label - wrong magic number or corrupt label - label checksum failed ", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_DataAccess FOLLOWS Logfile_Base
+%t %s %s data access exception
+-V3 $3
+msg PRINTF("%s data access exception", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_CantCheck FOLLOWS Logfile_Base
+%t %s %s %s: CAN'T CHECK FILE SYSTEM.
+-V3 $3
+-V4 $4
+msg PRINTF("%s %s: CAN'T CHECK FILE SYSTEM.", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_CantCheck FOLLOWS Logfile_Base
+%t %s %s fsck: Can't open %s
+-V3 $3
+-V4 $4
+msg PRINTF("%s fsck: Can't open %s", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_Inconsistency FOLLOWS Logfile_Base
+%t %s %s %s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.
+-V3 $3
+-V4 $4
+msg PRINTF("%s %s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_FailedInitAdapter FOLLOWS Logfile_Base
+%t %s %s failed to initialize adapter
+-V3 $3
+msg PRINTF("%s failed to initialize adapter", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_FileTableOverflow FOLLOWS Logfile_Base
+%t %s %s File table overflow
+-V3 $3
+msg PRINTF("%s File table overflow", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_EthernetJammed FOLLOWS Logfile_Base
+%t %s %s %s: Ethernet jammed
+-V3 $3
+-V4 $4
+msg PRINTF("%s %s: Ethernet jammed", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_NoCarrier FOLLOWS Logfile_Base
+%t %s %s %s: no carrier
+-V3 $3
+-V4 $4
+msg PRINTF("%s %s: no carrier", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_NoCarrier FOLLOWS Logfile_Base
+%t %s %s No carrier-- cable disconnected or hub link test disabled?
+-V3 $3
+msg PRINTF("%s No carrier-- cable disconnected or hub link test disabled?", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_NoCarrier FOLLOWS Logfile_Base
+%t %s %s No carrier-- transceiver cable problem?
+-V3 $3
+msg PRINTF("%s No carrier-- transceiver cable problem?", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_IfBadAddress FOLLOWS Logfile_Base
+%t %s %s bad address %s
+-V3 $3
+-V4 $4
+msg PRINTF("%s bad address %s", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_UnknownTcpService FOLLOWS Logfile_Base
+%t %s %s %s/tcp: unknown service
+-V3 $3
+-V4 $4
+msg PRINTF("%s %s/tcp: unknown service", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_UnknownUdpService FOLLOWS Logfile_Base
+%t %s %s %s/udp: unknown service
+-V3 $3
+-V4 $4
+msg PRINTF("%s %s/udp: unknown service", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_TooManyFiles FOLLOWS Logfile_Base
+%t %s %s Too many open files
+-V3 $3
+msg PRINTF("%s Too many open files", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_IOError FOLLOWS Logfile_Base
+%t %s %s I/O error
+-V3 $3
+msg PRINTF("%s I/O error", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_KernelReadError FOLLOWS Logfile_Base
+%t %s %s kernel read error
+-V3 $3
+msg PRINTF("%s kernel read error", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_Killed FOLLOWS Logfile_Base
+%t %s %s Killed
+-V3 $3
+msg PRINTF("%s Killed", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_MemoryError FOLLOWS Logfile_Base
+%t %s %s Memory error!
+-V3 $3
+msg PRINTF("%s Memory error!", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_MemoryLeak FOLLOWS Logfile_Base
+%t %s %s memory leaks
+-V3 $3
+msg PRINTF("%s memory leaks", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_GivingUpMount FOLLOWS Logfile_Base
+%t %s %s giving up on: %s
+-V3 $3
+-V4 $4
+msg PRINTF("%s giving up on: %s", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_MountNotOk FOLLOWS Logfile_Base
+%t %s %s the state of %s is not okay
+-V3 $3
+-V4 $4
+msg PRINTF("%s the state of %s is not okay", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_CannotMount FOLLOWS Logfile_Base
+%t %s %s panic -boot: Could not mount filesystem
+-V3 $3
+msg PRINTF("%s panic -boot: Could not mount filesystem", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_PanicMutex FOLLOWS Logfile_Base
+%t %s %s panic: mutex_adaptive_exit
+-V3 $3
+msg PRINTF("%s panic: mutex_adaptive_exit", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_ScsiParityError FOLLOWS Logfile_Base
+%t %s %s SCSI %s DATA IN %s parity error
+-V3 $3
+-V4 $4
+-V5 $5
+msg PRINTF("%s SCSI %s DATA IN %s parity error", V3, V4, V5)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_ScsiTransportFailed FOLLOWS Logfile_Base
+%t %s %s SCSI transport failed: reason 'reset'
+-V3 $3
+msg PRINTF("%s SCSI transport failed: reason 'reset'", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_SliceTooSmall FOLLOWS Logfile_Base
+%t %s %s Slice %s is too small to contain %s replicas
+-V3 $3
+-V4 $4
+-V5 $5
+msg PRINTF("%s Slice %s is too small to contain %s replicas", V3, V4, V5)
+severity MINOR
+END
+
+FORMAT Log_Unix_UnexpectedFsInconsistency FOLLOWS Logfile_Base
+%t %s %s THE FOLLOWING FILE SYSTEM(S) HAD AN UNEXPECTED INCONSISTENCY:
+-V3 $3
+msg PRINTF("%s THE FOLLOWING FILE SYSTEM(S) HAD AN UNEXPECTED INCONSISTENCY:", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_HW_ScsiBusHung FOLLOWS Logfile_Base
+%t %s %s The SCSI %s is hung. Perhaps an external device is turned off.
+-V3 $3
+-V4 $4
+msg PRINTF("%s The SCSI %s is hung. Perhaps an external device is turned off.", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_UnableToInstallDriver FOLLOWS Logfile_Base
+%t %s %s Unable to install/attach driver '%s'
+-V3 $3
+-V4 $4
+msg PRINTF("%s Unable to install/attach driver '%s'", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_ErrorWritingName FOLLOWS Logfile_Base
+%t %s %s error writing name when booting
+-V3 $3
+msg PRINTF("%s error writing name when booting", V3)
+severity MINOR
+END
+
+FORMAT Log_Unix_UnableToRepairFs FOLLOWS Logfile_Base
+%t %s %s WARNING:Unable to repair the %s filesystem. Run fsck
+-V3 $3
+-V4 $4
+msg PRINTF("%s WARNING:Unable to repair the %s filesystem. Run fsck", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_ClusterStatus FOLLOWS Logfile_Base
+%t %s %s CLUSTERSTATUS %s*
+-V3 $3
+-V4 $4
+msg PRINTF("%s CLUSTERSTATUS %s", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Unix_ClusterStatus FOLLOWS Logfile_Base
+%t %s %s CLUSTERSTATUS %s* is in faulted or inconsistent state !
+-V3 $3
+-V4 $4
+msg PRINTF("%s CLUSTERSTATUS %s is in faulted or inconsistent state !", V3, V4)
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [%s][MAJOR] %s*
+id $3
+msg $4
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [%s][ERROR] %s*
+id $3
+msg $4
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview RAID: [%s][ERROR] %s*
+id $3
+msg $4
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview RAID: [%s][error] %s*
+id $3
+msg $4
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview RAID: [%s][MAJOR] %s*
+id $3
+msg $4
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview RAID: [%s][major] %s*
+id $3
+msg $4
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [2071][MINOR] %s*
+id 2071
+msg $3
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0638][%s] %s*
+id 0638
+msg $4
+severity CRITICAL
+END
+
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0640][%s] %s*
+id 0640
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0642][%s] %s*
+id 0642
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0644][%s] %s*
+id 0644
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0214][%s] %s*
+id 0214
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0217][%s] %s*
+id 0217
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0221][%s] %s*
+id 0221
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0638][%s] %s*
+id 0638
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0640][%s] %s*
+id 0640
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0642][%s] %s*
+id 0642
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0644][%s] %s*
+id 0644
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0214][%s] %s*
+id 0214
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0217][%s] %s*
+id 0217
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s Serverview: [0221][%s] %s*
+id 0221
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0013][%s] %s*
+id 0013
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0051][%s] %s*
+id 0051
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0052][%s] %s*
+id 0052
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0053][%s] %s*
+id 0053
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0054][%s] %s*
+id 0054
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0079][%s] %s*
+id 0079
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0154][%s] %s*
+id 0154
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0204][%s] %s*
+id 0204
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0418][%s] %s*
+id 0418
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0422][%s] %s*
+id 0422
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0426][%s] %s*
+id 0426
+msg $4
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_Serverview FOLLOWS Logfile_Base
+%t %s ServerView RAID: [0426][%s] %s*
+id 0426
+-V4 $4
+msg PRINTF("Raid kaputt: %s", V4)
+severity CRITICAL
+END
+
+FORMAT Log_Linux_HW_IM_DriveArrayDeviceFailure FOLLOWS Logfile_Base
+%t %s %s* Drive Array Device Failure %s*
+-V3 $3
+-V4 $4
+msg PRINTF("%s Drive Array Device Failure %s", V3, V4)
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Dell_Error FOLLOWS Logfile_Base
+%t %s Server Administrator: %s Service EventID: %s3 %s*
+-V3 $3
+-V4 $4
+-V5 $5
+silo PRINTF("%s3", V4)
+msg PRINTF("%s Service EventID: %s3 %s", V3, V4, V5)
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Dell_Error FOLLOWS Logfile_Base
+%t %s Server Administrator: %s Service EventID: %s4 %s*
+-V3 $3
+-V4 $4
+-V5 $5
+silo PRINTF("%s4", V4)
+msg PRINTF("%s Service EventID: %s4 %s", V3, V4, V5)
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Dell_Error FOLLOWS Logfile_Base
+%t %s Server Administrator: %s Service EventID: %s5 %s*
+-V3 $3
+-V4 $4
+-V5 $5
+silo PRINTF("%s5", V4)
+msg PRINTF("%s Service EventID: %s5 %s", V3, V4, V5)
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_Dell_Error FOLLOWS Logfile_Base
+%t %s Server Administrator: %s Service EventID: %s6 %s*
+-V3 $3
+-V4 $4
+-V5 $5
+silo PRINTF("%s6", V4)
+msg PRINTF("%s Service EventID: %s6 %s", V3, V4, V5)
+severity MINOR
+END
+
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: 1003 %s*
+END
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: 1303 %s*
+END
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: 1304 %s*
+END
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: %s0 %s*
+END
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: %s1 %s*
+END
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: %s2 %s*
+END
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: %s7 %s*
+END
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: %s8 %s*
+END
+FORMAT *DISCARD*
+%t %s Server Administrator: %s Service EventID: %s9 %s*
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error_super FOLLOWS Logfile_Base
+%t %s Server Administrator: Storage Service EventID: 2%s %s*
+-silopart $3
+silo PRINTF("2%s", silopart) 
+-msgpart $4
+msg PRINTF("Storage Service EventID: 2%s %s", silopart, msgpart)
+severity MINOR
+END
+
+FORMAT *DISCARD*
+%t %s Server Administrator: Storage Service EventID: %s*
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2129 %s*
+-silopart "129"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2113 %s*
+-silopart "113"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2112 %s*
+-silopart "112"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2107 %s*
+-silopart "107"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2103 %s*
+-silopart "103"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2102 %s*
+-silopart "102"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2083 %s*
+-silopart "083"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2082 %s*
+-silopart "082"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2081 %s*
+-silopart "081"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2080 %s*
+-silopart "080"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2079 %s*
+-silopart "079"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2076 %s*
+-silopart "076"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2056 %s*
+-silopart "056"
+-msgpart $3
+END
+
+FORMAT Log_Linux_HW_Dell_Storage_Error FOLLOWS Log_Linux_HW_Dell_Storage_Error_super
+%t %s Server Administrator: Storage Service EventID: 2048 %s*
+-silopart "048" 
+-msgpart $3
+severity CRITICAL
+END
+
+FORMAT Log_Unix_LAN_SendLimitReached FOLLOWS Logfile_Base
+%t %s CPS: LAN_HBA_MON %s: Send Limit %s*
+silo $3
+-msgpart $4
+msg PRINTF("LAN_HBA_MON %s: Send Limit %s", silo, msgpart)
+severity MINOR
+END
+
+FORMAT Log_Unix_LAN_ReceiveLimitReached FOLLOWS Logfile_Base
+%t %s CPS: LAN_HBA_MON %s: Receive Limit %s*
+silo $3
+-msgpart $4
+msg PRINTF("LAN_HBA_MON %s: Receive Limit %s", silo, msgpart)
+severity MINOR
+END
+
+FORMAT Log_Unix_LAN_TrafficLimitReached FOLLOWS Logfile_Base
+%t %s CPS: LAN_HBA_MON %s: Traffic Limit %s*
+silo $3
+-msgpart $4
+msg PRINTF("LAN_HBA_MON %s: Traffic Limit %s", silo, msgpart)
+severity MINOR
+END
+
+FORMAT Log_Unix_Maintenance_Error FOLLOWS Logfile_Base
+%t %s %s: Maintenance-ERROR: %s*
+-V3 $3
+-V4 $4
+msg PRINTF("%s: Maintenance-ERROR: %s", V3, V4)
+severity CRITICAL
+END
+
+FORMAT *DISCARD*
+%t %s sshd[%s*
+END
+
+FORMAT *DISCARD*
+%t %s sendmail[%s*
+END
+
+FORMAT *DISCARD*
+%t %s su: %s*
+END
+
+FORMAT *DISCARD*
+%t %s innd: %s*
+END
+
+FORMAT *DISCARD*
+%t %s nnrpd[%s*
+END
+
+FORMAT *DISCARD*
+%t [%s] %t: %s*
+END
+
+FORMAT *DISCARD*
+%t %s last message repeated %s times
+END
+
+FORMAT *DISCARD*
+%t %s syslogd %s: restart.
+END
+
+FORMAT *DISCARD*
+%t %s syslogd: restart
+END
+
+FORMAT *DISCARD*
+%t %s PAM-unix2[%s*
+END
+
+FORMAT *DISCARD*
+%t %s pksd[%s*
+END

@@ -1,0 +1,21 @@
+// Format file for catching messages from Linux syslogd
+
+FORMAT GAM_Base
+%s* Event= %s:%s%n occurred at %s* and logged at %s*
+hostname LABEL
+adapter_host LABEL
+origin DEFAULT
+-V1 $1
+silo $2
+-msgpart $3
+date $4
+msg PRINTF("%s Event= %s:%s", V1, silo, msgpart)
+severity MINOR
+END
+
+FORMAT Log_Linux_HW_GAM FOLLOWS GAM_Base
+%s* Event= B:%s%n occurred at %s* and logged at %s*
+silo "B"
+-msgpart $2
+date $3
+END
