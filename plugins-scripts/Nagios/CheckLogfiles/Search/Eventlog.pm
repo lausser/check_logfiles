@@ -181,7 +181,7 @@ sub TIEHANDLE {
                 $event->{Message} =~ s/\s*$//g;
               }
               $event->{Message} = sprintf "%s %s %s %s %s %s %s",
-                  join(" ", (split(/ /, scalar localtime $event->{TimeGenerated}))[1,2,3,4]), # month day time and year => %t %s
+                  join(" ", (split(/\s+/, scalar localtime $event->{TimeGenerated}))[1,2,3,4]), # month day time and year => %t %s
                   $event->{Category},
                   ($event->{EventType} == EVENTLOG_ERROR_TYPE) ? 'Error' :
                   ($event->{EventType} == EVENTLOG_WARNING_TYPE) ? 'Warning' :
