@@ -322,7 +322,7 @@ sub run {
       if ($search->{tag} eq "postscript") {
         $search->{macros}->{CL_SERVICESTATEID} = $self->{exitcode};
         $search->{macros}->{CL_SERVICEOUTPUT} = $self->{exitmessage};
-        $search->{macros}->{CL_LONGSERVICEOUTPUT} = $self->{long_exitmessage};
+        $search->{macros}->{CL_LONGSERVICEOUTPUT} = $self->{long_exitmessage} || $self->{exitmessage};
         $search->{macros}->{CL_SERVICEPERFDATA} = $self->{perfdata};
         $search->{macros}->{CL_PROTOCOLFILE} = $self->{protocolfile};
         if ($search->{options}->{supersmartscript}) {

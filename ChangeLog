@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.0.3 - 2009-08-25
+- Speedup in Eventlog scans
+
 3.0.2 - 2009-07-23
 - fixed a bug for --config. (Windows uses HOMEPATH instead of HOME)
 - fixed a bug in Eventlog+Tivoli (Thanks Werner Breitschmid)
