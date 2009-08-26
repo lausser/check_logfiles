@@ -1120,12 +1120,12 @@ sub run_as_daemon {
     }
   } else {
     chdir '/';
-    open STDIN, '/dev/null';
-    open STDOUT, '/dev/null';
+    die "cannot detach from controlling terminal" unless POSIX::setsid();
     exit if (fork());
     exit if (fork());
-    sleep 1 until getppid() == 1;
-    open STDERR, '>&STDOUT';
+    open STDIN, '+>/dev/null';
+    open STDOUT, '+>&STDIN';
+    open STDERR, '+>&STDIN';
     my $keep_going = 1;
     # $self->{pidfile};
     $self->trace(sprintf "Daemon running with pid %d", $$);

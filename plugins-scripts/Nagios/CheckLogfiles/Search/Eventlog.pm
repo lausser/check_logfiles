@@ -36,6 +36,7 @@ sub init {
     username => $params->{eventlog}->{username},
     password => $params->{eventlog}->{password},
     source => $params->{eventlog}->{source},
+    speedup => $params->{eventlog}->{speedup} || 1,
   };
   # computer: I changed "\\\\MYPDC" to $dc ($dc = Win32::AdminMisc::GetDC("MYDOMAIN");)
 
@@ -142,8 +143,12 @@ sub TIEHANDLE {
   my $winwarncrit = shift;
   my $tivoli = shift;
   my $self = {};
-  my $oldest = 0;
-  my $numevents = 0;
+  my $oldestoffset = 0;       # oldest event in the eventlog
+  my $numevents = 0;          # number of events in the eventlog
+  my $newestoffset = 0;       # latest event in the eventlog
+  my $save_newestoffset = 0; 
+  my $seekoffset = 0;         # temporary pointer
+  my $firstoffset = 0;        # first event created after the last run
   my $event = {
       'Length' => undef,
       'RecordNumber' => undef, 
@@ -159,18 +164,93 @@ sub TIEHANDLE {
       'Data' => undef
   };
   @events = ();
+  my $offsetcache = {};
   if (my $handle = 
       Win32::EventLog->new($eventlog->{eventlog}, $eventlog->{computer})) {
-    $handle->GetOldest($oldest);
+    $handle->GetOldest($oldestoffset);
     $handle->GetNumber($numevents);
-    if ($numevents) { # sonst gibts haessliche undef-fehler wegen:
-      $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
-          $oldest, $event);
-      while ($numevents) {
-        $handle->Read((EVENTLOG_SEQUENTIAL_READ|EVENTLOG_FORWARDS_READ),
-            0, $event);
+    if ($numevents) { 
+      $newestoffset = $oldestoffset + $numevents - 1;
+      if ($eventlog->{speedup}) {
+        # old method. position at oldest event and scan the entire eventlog
+        #$handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
+        #    $oldestoffset, $event);
+        $firstoffset = $oldestoffset;
+#printf "i init %d and got %d (%s)\n", $firstoffset, $event->{RecordNumber},
+#    scalar localtime $event->{Timewritten};
+      } else {
+        # new method. find the first event which lies within the range
+        # oldestoffset <= offset <= newestoffset
+        $save_newestoffset = $newestoffset;
+        $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
+            $oldestoffset, $event);
+        $offsetcache->{$oldestoffset} = $event->{Timewritten};
+        if ($event->{Timewritten} >= $eventlog->{lastsecond}) {
+          # even the oldest record was created after the last run 
+          # of check_logfiles. the log was cleared or this is the first run ever
+          $firstoffset = $oldestoffset;
+        } else {
+          $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
+              $newestoffset, $event);
+          $offsetcache->{$newestoffset} = $event->{Timewritten};
+          if ($event->{Timewritten} >= $eventlog->{lastsecond}) {
+            # the latest event was created after the last run of check_logfiles
+            $seekoffset = $newestoffset;
+            do {
+              # get the seekoffset's time
+              $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
+                  $seekoffset, $event);
+              $offsetcache->{$seekoffset} = $event->{Timewritten};
+              if ($event->{Timewritten} >= $eventlog->{lastsecond}) {
+                # inside the search interval. but is it the oldest?
+                if ((exists $offsetcache->{$seekoffset - 1}) &&
+                    ($offsetcache->{$seekoffset - 1} < 
+                    $eventlog->{lastsecond})) {
+                  $firstoffset = $seekoffset;
+                } else {
+                  $newestoffset = $seekoffset;
+                  $seekoffset = 
+                      $oldestoffset + int (($seekoffset - $oldestoffset) / 2);
+                }
+              } else {
+                # too old. but maybe the next offset?
+                if ((exists $offsetcache->{$seekoffset + 1}) &&
+                    ($offsetcache->{$seekoffset + 1} >= 
+                    $eventlog->{lastsecond})) {
+                  $firstoffset = $seekoffset + 1;
+                } else {
+                  $oldestoffset = $seekoffset;
+                  $seekoffset = 
+                      $seekoffset + int (($newestoffset - $seekoffset) / 2);
+                }
+              }
+            } while (! $firstoffset);
+            # now position at the first element in question
+            $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
+                $firstoffset, $event);
+            # adjust the number of elements to scan
+            $newestoffset = $save_newestoffset;
+          } else {
+            # there are no new events
+            # fake firstoffset to avoid entering the while loop
+            $firstoffset = $newestoffset + 1;
+          }
+        }
+      }
+printf "scan %s <= ... > %s\n", scalar localtime $eventlog->{lastsecond},
+ scalar localtime $eventlog->{thissecond};
+printf "loop %d...%d\n", $firstoffset, $newestoffset;
+      while ($firstoffset <= $newestoffset) {
+        # sequential_reads are not reliable, so better use direct access
+        $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_FORWARDS_READ),
+            $firstoffset, $event);
+#printf "i seek %d and got %d (%s)\n", $firstoffset, $event->{RecordNumber},
+#    scalar localtime $event->{Timewritten};
         if (($event->{Timewritten} >= $eventlog->{lastsecond}) &&
           ($event->{Timewritten} < $eventlog->{thissecond})) {
+printf "and i hit\n";
+printf "i seek %d and got %d (%s)\n", $firstoffset, $event->{RecordNumber},
+    scalar localtime $event->{Timewritten};
           if (! $eventlog->{source} ||
               ($eventlog->{source} &&
               (lc $eventlog->{source} eq lc $event->{Source}))) {
@@ -215,7 +295,7 @@ sub TIEHANDLE {
             push(@events, \%tmp_event);
           }
         }
-        $numevents--;
+        $firstoffset++;
       }
     } else {
       printf STDERR "0 events\n";
