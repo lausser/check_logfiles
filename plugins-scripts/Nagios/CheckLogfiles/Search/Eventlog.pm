@@ -172,12 +172,7 @@ sub TIEHANDLE {
     if ($numevents) { 
       $newestoffset = $oldestoffset + $numevents - 1;
       if ($eventlog->{speedup}) {
-        # old method. position at oldest event and scan the entire eventlog
-        #$handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
-        #    $oldestoffset, $event);
         $firstoffset = $oldestoffset;
-#printf "i init %d and got %d (%s)\n", $firstoffset, $event->{RecordNumber},
-#    scalar localtime $event->{Timewritten};
       } else {
         # new method. find the first event which lies within the range
         # oldestoffset <= offset <= newestoffset
@@ -237,20 +232,12 @@ sub TIEHANDLE {
           }
         }
       }
-printf "scan %s <= ... > %s\n", scalar localtime $eventlog->{lastsecond},
- scalar localtime $eventlog->{thissecond};
-printf "loop %d...%d\n", $firstoffset, $newestoffset;
       while ($firstoffset <= $newestoffset) {
         # sequential_reads are not reliable, so better use direct access
         $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_FORWARDS_READ),
             $firstoffset, $event);
-#printf "i seek %d and got %d (%s)\n", $firstoffset, $event->{RecordNumber},
-#    scalar localtime $event->{Timewritten};
         if (($event->{Timewritten} >= $eventlog->{lastsecond}) &&
           ($event->{Timewritten} < $eventlog->{thissecond})) {
-printf "and i hit\n";
-printf "i seek %d and got %d (%s)\n", $firstoffset, $event->{RecordNumber},
-    scalar localtime $event->{Timewritten};
           if (! $eventlog->{source} ||
               ($eventlog->{source} &&
               (lc $eventlog->{source} eq lc $event->{Source}))) {
