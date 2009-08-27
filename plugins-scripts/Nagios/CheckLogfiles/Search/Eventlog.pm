@@ -99,7 +99,8 @@ sub collectfiles {
     open(*FH, sprintf ">%s/orschlorschknorsch_%s",
         $self->system_tempdir(), $self->{tag});
     tie *FH, 'Nagios::CheckLogfiles::Search::Eventlog::Handle',
-        $self->{eventlog}, $self->{options}->{winwarncrit}, $self->{tivoli};
+        $self->{eventlog}, $self->{options}->{winwarncrit}, $self->{tivoli},
+        $self->{tracefile};
     push(@{$self->{relevantfiles}},
       { filename => "eventlog|",
         fh => *FH, seekable => 0,
@@ -131,9 +132,11 @@ require Tie::Handle;
 use Exporter;
 use Win32::EventLog;
 use Carp;
+use IO::File;
 use vars qw(@ISA);
 @ISA = qw(Tie::Handle Nagios::CheckLogfiles::Search::Eventlog);
 our $AUTOLOAD;
+our $tracefile;
 $Win32::EventLog::GetMessageText = 1;
 my @events = ();
 
@@ -142,6 +145,7 @@ sub TIEHANDLE {
   my $eventlog = shift;
   my $winwarncrit = shift;
   my $tivoli = shift;
+  $tracefile = shift;
   my $self = {};
   my $oldestoffset = 0;       # oldest event in the eventlog
   my $numevents = 0;          # number of events in the eventlog
@@ -319,6 +323,22 @@ sub READLINE {
     return undef;
   }
 }
+
+sub trace {
+  my $self = shift;
+  my $format = shift;
+  if (-f $tracefile) {
+    my $logfh = new IO::File;
+    $logfh->autoflush(1);
+    if ($logfh->open($tracefile, "a")) {
+      $logfh->printf("%s: ", scalar localtime);
+      $logfh->printf($format, @_);
+      $logfh->printf("\n");
+      $logfh->close();
+    }
+  }
+}
+
 
 sub AUTOLOAD {
  #printf "uarghh %s\n", $AUTOLOAD;

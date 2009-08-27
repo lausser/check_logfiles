@@ -50,29 +50,32 @@ $cl->run(); # cleanup
 diag("1st run");
 $cl->reset();
 diag("cleanup");
+$ssh->logger(undef, undef, 1, "Fireball hihi");
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 0, 0, 0));
+ok($cl->expect_result(0, 0, 0, 0, 0)); #1
 
 # 2 now find the two criticals
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 2);
 $cl->reset();
 sleep 30;
+$ssh->logger(undef, undef, 10, "Fireball hihi");
 $ssh->logger(undef, undef, 1, "Firewall problem1");
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 0, 0, 0));
+ok($cl->expect_result(0, 0, 0, 0, 0)); #2
 
 # 3 now find the two criticals and the two warnings
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 3);
 $cl->reset();
 sleep 120;
 $cl->run();
+$ssh->logger(undef, undef, 10, "Fireball huhuhuhhihi");
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->expect_result(0, 0, 1, 0, 2)); #3
 
 # 2 now find the two criticals
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 4);
@@ -80,12 +83,16 @@ $cl->reset();
 $ssh->logger(undef, undef, 1, "Firewall problem2");
 sleep 20;
 $ssh->logger(undef, undef, 1, "Firewall problem3");
+$ssh->logger(undef, undef, 1, "Fireball hihi");
 sleep 10;
 $ssh->logger(undef, undef, 1, "Firewall problem4");
+$ssh->logger(undef, undef, 1, "Fireball hihi");
 sleep 10;
 $ssh->logger(undef, undef, 1, "Firewall problem5");
+$ssh->logger(undef, undef, 1, "Fireball hihi");
 sleep 10;
 $ssh->logger(undef, undef, 1, "Firewall problem6");
+$ssh->logger(undef, undef, 1, "Fireball hihi");
 $ssh->logger(undef, undef, 1, "Firewall problem7");
 sleep 10;
 $cl->run();
@@ -97,7 +104,7 @@ my $problem = $1;
 $cl->{perfdata} =~ /.*ssh_criticals=(\d+).*/;
 my $found = $1;
 diag(sprintf "reported %d errors so far. %d to come", $found, 6 - $found);
-ok($cl->{exitmessage} =~ /CRITICAL/);
+ok($cl->{exitmessage} =~ /CRITICAL/); #4
 ok($problem == $found + 1);
 
 # 3 now find the two criticals and the two warnings
