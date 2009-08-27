@@ -175,7 +175,9 @@ sub TIEHANDLE {
     $handle->GetNumber($numevents);
     if ($numevents) { 
       $newestoffset = $oldestoffset + $numevents - 1;
-      if ($eventlog->{speedup}) {
+      trace(sprintf "eventlog has offsets %d..%d",
+          $oldestoffset, $newestoffset);
+      if (! $eventlog->{speedup}) {
         $firstoffset = $oldestoffset;
       } else {
         # new method. find the first event which lies within the range
@@ -188,6 +190,7 @@ sub TIEHANDLE {
           # even the oldest record was created after the last run 
           # of check_logfiles. the log was cleared or this is the first run ever
           $firstoffset = $oldestoffset;
+          trace(sprintf "i start from the beginning %d", $firstoffset);
         } else {
           $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
               $newestoffset, $event);
@@ -195,6 +198,7 @@ sub TIEHANDLE {
           if ($event->{Timewritten} >= $eventlog->{lastsecond}) {
             # the latest event was created after the last run of check_logfiles
             $seekoffset = $newestoffset;
+            trace(sprintf "start at offset %d", $seekoffset);
             do {
               # get the seekoffset's time
               $handle->Read((EVENTLOG_SEEK_READ|EVENTLOG_BACKWARDS_READ),
@@ -206,10 +210,12 @@ sub TIEHANDLE {
                     ($offsetcache->{$seekoffset - 1} < 
                     $eventlog->{lastsecond})) {
                   $firstoffset = $seekoffset;
+                  trace(sprintf "found first offset %d (=)", $firstoffset);
                 } else {
                   $newestoffset = $seekoffset;
                   $seekoffset = 
                       $oldestoffset + int (($seekoffset - $oldestoffset) / 2);
+                  trace(sprintf "try offset %d (<)", $seekoffset);
                 }
               } else {
                 # too old. but maybe the next offset?
@@ -217,10 +223,12 @@ sub TIEHANDLE {
                     ($offsetcache->{$seekoffset + 1} >= 
                     $eventlog->{lastsecond})) {
                   $firstoffset = $seekoffset + 1;
+                  trace(sprintf "found first offset %d (+)", $firstoffset);
                 } else {
                   $oldestoffset = $seekoffset;
                   $seekoffset = 
                       $seekoffset + int (($newestoffset - $seekoffset) / 2);
+                  trace(sprintf "try offset %d (>)", $seekoffset);
                 }
               }
             } while (! $firstoffset);
@@ -233,6 +241,7 @@ sub TIEHANDLE {
             # there are no new events
             # fake firstoffset to avoid entering the while loop
             $firstoffset = $newestoffset + 1;
+            trace(sprintf "no new events fake %d", $firstoffset);
           }
         }
       }
@@ -325,7 +334,6 @@ sub READLINE {
 }
 
 sub trace {
-  my $self = shift;
   my $format = shift;
   if (-f $tracefile) {
     my $logfh = new IO::File;
