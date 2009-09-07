@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.0.3.1 - 2009-09-07
+- Fixed a bug where incorrect EventIDs were read from the EventLog
+
 3.0.3 - 2009-08-26
 - Speedup in Eventlog scans
 - Under some OSs the daemon did not detach itself from the terminal

@@ -270,7 +270,7 @@ sub TIEHANDLE {
                   ($event->{EventType} ==  EVENTLOG_AUDIT_FAILURE) ? 'AuditFailure': 'Unknown',
                   'N/A',
                   join('_', split(" ", $event->{Source})),
-                  $event->{EventID},
+                  $event->{EventID} & 0xffff,
                   $event->{Message} ? $event->{Message} : "unknown message";
             } else {
               Win32::EventLog::GetMessageText($event);
@@ -326,7 +326,6 @@ sub READ {
   
 sub READLINE {
   if (my $event = shift @events) {
-    my $event_id= $event->{EventID} & 0xffff;
     return $event->{Message};
   } else {
     return undef;
