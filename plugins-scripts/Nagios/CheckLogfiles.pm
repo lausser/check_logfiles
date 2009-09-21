@@ -103,6 +103,13 @@ sub init {
       }
       #$self->{cfgbase} = (split /\./, basename($params->{cfgfile}->[0]))[0];
       $self->{cfgbase} = "check_logfiles";
+    } elsif ($params->{cfgfile} =~ /%0A/) {
+      # this must be an encoded flat file
+      $self->{cfgfile} = $params->{cfgfile};
+      $self->{cfgbase} = "flatfile";
+      if (! $self->init_from_file()) {
+        return undef;
+      }
     } else {
       $self->{cfgfile} = $params->{cfgfile};
       $self->{cfgbase} = (split /\./, basename($self->{cfgfile}))[0];
@@ -191,33 +198,43 @@ sub init_from_file {
   if ($^O =~ /MSWin/) {
     $ENV{HOME} = $ENV{HOMEPATH};
   }
-  if (-f $self->{cfgfile}) {
-    $fullcfgfile = $self->{cfgfile};
-  } elsif (-f $self->{cfgfile}.'.cfg') {
-    $fullcfgfile = $self->{cfgfile}.'.cfg';
-  } elsif (-f $ENV{HOME}.'/'.$self->{cfgfile}) {
-    $fullcfgfile = $ENV{HOME}.'/'.$self->{cfgfile};
-  } elsif (-f $ENV{HOME}.'/'.$self->{cfgfile}.'.cfg') {
-    $fullcfgfile = $ENV{HOME}.'/'.$self->{cfgfile}.'.cfg';
+  if ($self->{cfgbase} eq "flatfile") {
+    $self->{cfgfile} =~ s/\%([A-Fa-f0-9]{2})/pack('C', hex($1))/seg;
+    eval $self->{cfgfile};
+    if ($@) {
+      $ExitCode = $ERROR_UNKNOWN;
+      $ExitMsg = sprintf "UNKNOWN - syntax error %s", (split(/\n/, $@))[0];
+      return undef;
+    }
   } else {
-    $ExitCode = $ERROR_UNKNOWN;
-    $ExitMsg = sprintf "UNKNOWN - can not load configuration file %s", 
-        $self->{cfgfile};
-    return undef;
-  }
-  $fullcfgfile = File::Spec->rel2abs($fullcfgfile) 
-      unless File::Spec->file_name_is_absolute($fullcfgfile);
-  eval {
-    require $fullcfgfile;
-  };
-  if ($@) {
-    $ExitCode = $ERROR_UNKNOWN;
-    $ExitMsg = sprintf "UNKNOWN - syntax error %s", (split(/\n/, $@))[0];
-    return undef;
-  }
+    if (-f $self->{cfgfile}) {
+      $fullcfgfile = $self->{cfgfile};
+    } elsif (-f $self->{cfgfile}.'.cfg') {
+      $fullcfgfile = $self->{cfgfile}.'.cfg';
+    } elsif (-f $ENV{HOME}.'/'.$self->{cfgfile}) {
+      $fullcfgfile = $ENV{HOME}.'/'.$self->{cfgfile};
+    } elsif (-f $ENV{HOME}.'/'.$self->{cfgfile}.'.cfg') {
+      $fullcfgfile = $ENV{HOME}.'/'.$self->{cfgfile}.'.cfg';
+    } else {
+      $ExitCode = $ERROR_UNKNOWN;
+      $ExitMsg = sprintf "UNKNOWN - can not load configuration file %s", 
+          $self->{cfgfile};
+      return undef;
+    }
+    $fullcfgfile = File::Spec->rel2abs($fullcfgfile) 
+        unless File::Spec->file_name_is_absolute($fullcfgfile);
+    eval {
+      require $fullcfgfile;
+    };
+    if ($@) {
+      $ExitCode = $ERROR_UNKNOWN;
+      $ExitMsg = sprintf "UNKNOWN - syntax error %s", (split(/\n/, $@))[0];
+      return undef;
+    }
+  } 
   $self->{tracefile} = $tracefile if $tracefile;
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
-  $self->{cfgbase} = (split /\./, basename($self->{cfgfile}))[0];
+  # already done one level above $self->{cfgbase} = (split /\./, basename($self->{cfgfile}))[0];
   $self->{seekfilesdir} = $seekfilesdir if $seekfilesdir;
   $self->{protocolsdir} = $protocolsdir if $protocolsdir;
   $self->{scriptpath} = $scriptpath if $scriptpath;

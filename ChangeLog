@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.0.4
+- accept the contents of a config file as encoded string
+
 3.0.3.1 - 2009-09-07
 - Fixed a bug where incorrect EventIDs were read from the EventLog
 
