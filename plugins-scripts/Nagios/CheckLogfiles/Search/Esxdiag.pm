@@ -1,4 +1,4 @@
-package Nagios::CheckLogfiles::Search::Oraclealertlog;
+package Nagios::CheckLogfiles::Search::Esxdiag;
 
 use strict;
 use Exporter;
