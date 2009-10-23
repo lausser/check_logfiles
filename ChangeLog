@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.1 - 2009-10-23
+- new module Esxdiag
+
 3.0.4 - 2009-09-20
 - accept the contents of a config file as encoded string
 

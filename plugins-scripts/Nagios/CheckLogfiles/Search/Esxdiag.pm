@@ -23,21 +23,27 @@ sub init {
   my $self = shift;
   my $params = shift;
   $self->{esxdiag}->{connect} = {
-    server => $params->{esxdiag}->{server},
-    host => $params->{esxdiag}->{server} ?
+    server => $params->{esxdiag}->{server}, # 
+    host => $params->{esxdiag}->{server} ? # wenn server = datacenter
         $params->{esxdiag}->{host} : undef,
     username => $params->{esxdiag}->{username},
     password => $params->{esxdiag}->{password},
-    log => $params->{esxdiag}->{log}, # hostd
+    log => $params->{esxdiag}->{log} || 'hostd',
   };
-  foreach my $option (qw(server host username password log)) {
-    $Opts::options{$option}->{value} = $self->{esxdiag}->{connect}->{$option};
-  }
-  $self->{logfile} = sprintf "%s/esxdiag.%s%s%s", $self->{seekfilesdir},
-      $self->{esxdiag}->{log},
-      $self->{esxdiag}->{server},
-      $self->{esxdiag}->{host},
+  $self->{esxdiag}->{connect}->{url} = sprintf 'https://%s/sdk/webService', 
+      $self->{esxdiag}->{connect}->{server};
+  $self->{logfile} = sprintf "%s/esxdiag.%s_%s_%s",
+      $self->{seekfilesdir},
+      $self->{esxdiag}->{connect}->{log},
+      $self->{esxdiag}->{connect}->{server},
+      $self->{esxdiag}->{connect}->{host} ?
+          $self->{esxdiag}->{connect}->{host} : 'host',
       $self->{tag};
+  $self->{esxdiag}->{connect}->{token} = sprintf "%s/esxtok.%s_%s",
+      $self->{seekfilesdir},
+      $self->{esxdiag}->{connect}->{server},
+      $self->{esxdiag}->{connect}->{host} ?
+          $self->{esxdiag}->{connect}->{host} : 'host';
   # virtualcenter + host # host managed by vc
   # virtualcenter. default logs = vc logs
   # host # esx server
@@ -52,8 +58,9 @@ sub prepare {
 sub loadstate {
   my $self = shift;
   $self->SUPER::loadstate();
-  # if this is the very first run, look back 5 mintes in the past.
-  $self->{laststate}->{lineend} ||= 0;
+  # if this is the very first run, use an insane offet
+  $self->{laststate}->{lineend} = $self->{laststate}->{lineend} ?
+      ($self->{laststate}->{lineend} + 1) : 999999;
 }
 
 sub savestate {
@@ -61,8 +68,6 @@ sub savestate {
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }
-  # remember the last line number
-  $self->{newstate}->{lineend} = $self->{logdata}->lineEnd;
   $self->SUPER::savestate();
 }
 
@@ -78,105 +83,101 @@ sub collectfiles {
     my $linesread = 0;
     eval {
       use VMware::VIRuntime;
-      use VMware::VILib;
-      if ($self->{esxdiag}->{session} = Util::connect()) {
+      my %loginparams = (
+        service_url => $self->{esxdiag}->{connect}->{url},
+        user_name => $self->{esxdiag}->{connect}->{username},
+        password => $self->{esxdiag}->{connect}->{password},
+      );
+      my $vim = undef;
+      eval {
+        # das bringt's nicht. login ist genauso schnell
+        #$vim = Vim::load_session(
+        #    service_url => $self->{esxdiag}->{connect}->{url},
+        #    session_file => $self->{esxdiag}->{connect}->{token});
+        $vim = Vim::login(%loginparams) if ! $vim;
+        #Vim::save_session(
+        #    session_file => $self->{esxdiag}->{connect}->{token});
+      };
+      if ($vim) {
         my $instance_type = Vim::get_service_content()->about->apiType;
-        $self->{esxdiag}->{diagmgr} = Vim::get_service_content()->DiagnosticManager;
-        my $host_view = $Opts::options{host} ? 
-            Vim::find_entity_views(
-                view_type => 'HostSystem',
-                filter => { 'name' => "^$Opts::options{host}\$" }
-            ) :
-            Vim::find_entity_views(
-                view_type => 'HostSystem'
-            );
-        if (@$host_view) {
+        my $diagmgr = Vim::get_service_content()->diagnosticManager();
+        my $diagmgr_view = $diagmgr ? Vim::get_view(mo_ref => $diagmgr) : undef;
+        if ($diagmgr_view) {
+          my $host_view = undef;
+          my $logdata = undef;
           if ($instance_type eq 'VirtualCenter') {
-            $self->{esxdiag}->{logdata} = 
-                $self->{esxdiag}->{diagmgr}->BrowseDiagnosticLog(
-                    host => $host_view->[0],
-                    start => $self->{laststate}->{lineend} + 1,
-                );
+            my $host_views = Vim::find_entity_views(
+                view_type => 'HostSystem',
+                filter => {'name' => $self->{esxdiag}->{host}},
+                properties => ['name']);
+            $host_view = $host_views->[0] if $host_views;
           } else {
-            $self->{esxdiag}->{logdata} = 
-                $self->{esxdiag}->{diagmgr}->BrowseDiagnosticLog(
-                    start => $self->{laststate}->{lineend} + 1,
-                );
+            $host_view = Vim::find_entity_view(
+                view_type => 'HostSystem',
+                properties => ['name']); # increases the speed dramatically
+          }
+          if ($host_view) {
+            my %browseparams = (
+                key => $self->{esxdiag}->{connect}->{log},
+                start => $self->{laststate}->{lineend},
+            );
+            $browseparams{host} = $self->{esxdiag}->{connect}->{host}
+                if $self->{esxdiag}->{connect}->{host}; # VirtualCenter
+            $self->trace(sprintf 'browsing view for host %s', $host_view->name);
+            $self->trace(sprintf 'start reading at line %d',
+                $self->{laststate}->{lineend});
+            $logdata = $diagmgr_view->BrowseDiagnosticLog(%browseparams);
+            $self->trace(sprintf 'log interval is %d..%d',
+                $logdata->lineStart, $logdata->lineEnd);
+            if ($logdata->lineStart < $self->{laststate}->{lineend}) {
+              # rotation, 
+              # z.b. "start reading at line 4133"-> "log interval is 0..43"
+              $browseparams{start} = $logdata->lineStart;
+              $logdata = $diagmgr_view->BrowseDiagnosticLog(%browseparams);
+              $self->trace(sprintf 'rotation detected. new log interval %d..%d',
+                  $logdata->lineStart, $logdata->lineEnd);
+            }
+            $self->{laststate}->{lineend} = $logdata->lineEnd;
+            if ($logdata->lineText) {
+              if (my $fh = new IO::File($self->{logfile}, 'w')) {
+                foreach my $line (@{$logdata->lineText}) {
+                  $fh->printf("%s\n", $line);
+                  $linesread++;
+                }
+                $fh->close();
+              }
+            } else {
+              $self->trace('nothing to do');
+            }
+          } else {
+            $self->trace('no host view');
           }
         } else {
-          $self->addevent('UNKNOWN', sprintf "host %s not found", 
-              $Opts::options{host});
+          $self->trace('no diag manager view');
         }
-        Util::disconnect();
+        Vim::logout(); # auskommentieren, wenn sessions benutzt werden
+      } else {
+        chomp $@ if $@;
+        $self->trace(sprintf 'unable to connect %s', $@);
+        $self->addevent('UNKNOWN', sprintf 'unable to connect %s', $@);
       }
-      
     };
     if ($@) {
-      $self->trace(sprintf "database operation failed: %s", $@);
-      $self->addevent('UNKNOWN', sprintf "connect operation failed: %s", $@);
+      $self->trace(sprintf "vi api operation failed: %s", $@);
+      $self->addevent('UNKNOWN', sprintf "vi api operation failed: %s", $@);
     }
-    $self->trace(sprintf "read %d lines from database", $linesread);
+    $self->trace(sprintf "read %d lines from esx server", $linesread);
     if ($linesread) {
       if (my $fh = new IO::File($self->{logfile}, "r")) {
         $self->trace(sprintf "reopen logfile");
         push(@{$self->{relevantfiles}},
           { filename => "esxdiag",
-            fh => $fh, seekable => 0,
-            modtime => $self->{eventlog}->{nowminute},
+            fh => $fh, seekable => 1,
+            modtime => time,
             fingerprint => "0:0" });
       }
     }
   }
 }
 
-__END__
-#!/usr/bin/perl -w
-#
-# Copyright 2007 VMware, Inc. All rights reserved.
-#
-# This script creates a Perl object reference to the ServiceContent data
-# object, and then creates a reference to the diagnosticManager. The script
-# follows ('tails') the log as it changes. 
-
-use strict;
-use warnings;
-
-
-# get ServiceContent
-my $content = Vim::get_service_content();
-my $diagMgr = Vim::get_view(mo_ref => $content->diagnosticManager);
-# Obtain the last line of the logfile by setting an arbitrarily large
-# line number as the starting point
-my $log = $diagMgr->BrowseDiagnosticLog(
-    key => "hostd",
-    start => "999999999");
-my $lineEnd = $log->lineEnd;
-
-# First, get the last 5 lines of the log, and then check every 2 seconds
-# to see if the log size has increased.
-my $start = $lineEnd - 5;
-
-# Disconnect on receipt of an interrupt signal while in the infinite
-# loop below.
-$SIG{INT} = sub {
-    Util::disconnect();
-    exit;
- };
-while (1) {
-$log = $diagMgr->BrowseDiagnosticLog(
-   key => "hostd",
-   start => $start);
-#printf "linestart %d\n", $log->lineStart;
-#printf "lineend %d\n", $log->lineEnd;
-if ($log->lineStart != 0) {
-   foreach my $line (@{$log->lineText}) {
-
-# next if ($line =~ /verbose\]/);
-   print "$line\n";
-  }
-}
-$start = $log->lineEnd + 1;
-sleep 3;
-}
-
-
+1;
