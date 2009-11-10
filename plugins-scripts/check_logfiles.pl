@@ -364,6 +364,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
               $commandline{maxlength} ? "maxlength=".$commandline{maxlength} : undef,
               $commandline{lookback} ? "lookback=".$commandline{lookback} : undef,
               $commandline{context} ? "context=".$commandline{context} : undef,
+              $commandline{allyoucaneat} ? "allyoucaneat" : undef,
               $commandline{criticalthreshold} ? "criticalthreshold=".$commandline{criticalthreshold} : undef,
               $commandline{warningthreshold} ? "warningthreshold=".$commandline{warningthreshold} : undef,
               $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,

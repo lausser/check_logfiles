@@ -1395,7 +1395,7 @@ sub init {
       protocol => 1, count => 1, syslogserver => 0, logfilenocry => 1,
       perfdata => 1, case => 1, sticky => 0, syslogclient => 0,
       savethresholdcount => 1, encoding => 0, maxlength => 0, 
-      lookback => 0, context => 0,
+      lookback => 0, context => 0, allyoucaneat => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0 } );
   $self->refresh_options($params->{options});
   #
@@ -1696,8 +1696,10 @@ sub loadstate {
     if (-e $self->{logfile}) {
     	$self->trace(sprintf "but logfile %s found", $self->{logfile});
       #  Fake a "the logfile was not touched" situation.
+      $self->trace('eat all you can') if $self->{options}->{allyoucaneat};
       $self->{laststate} = {
-          logoffset => $self->getfilesize($self->{logfile}),
+          logoffset => ($self->{options}->{allyoucaneat} ?
+              0 : $self->getfilesize($self->{logfile})),
           logtime => (stat $self->{logfile})[10],
           devino => $self->getfilefingerprint($self->{logfile}),
           logfile => $self->{logfile},
@@ -2347,7 +2349,13 @@ sub analyze_situation {
       # if the logfile grew because we initialized the plugin with an offset of 0, position
       # at the end of the file and skip this search. otherwise lots of outdated messages could
       # match and raise alerts.
-      $self->{laststate}->{logoffset} = $self->getfilesize($self->{logfile});
+      if ($self->{options}->{allyoucaneat}) {
+        $self->trace("allyoucaneat the virgin");
+        $self->{laststate}->{logoffset} = 0;
+        $self->{logmodified} = 1; # normally, virgins are not scanned. force it.
+      } else {
+        $self->{laststate}->{logoffset} = $self->getfilesize($self->{logfile});
+      }
     } else {
       $self->{logmodified} = 1;
       # this is only relevant if
