@@ -2,9 +2,12 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
-3.1 - 2009-10-23
+3.1 - 2009-11-22
+- report is now an option (global, e.g. options="report=long")
+- new option "allyoucaneat" (the initial run starts from line 0)
+- new option "eventlogformat" (e.g. options='eventlogformat="id:%i %m",..')
+- Eventlog can now be filtered with includefilter and excludefilter
 - new module Esxdiag
-- new option "allyoucaneat" 
 
 3.0.4 - 2009-09-20
 - accept the contents of a config file as encoded string
