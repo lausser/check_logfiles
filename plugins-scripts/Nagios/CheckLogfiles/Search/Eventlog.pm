@@ -38,15 +38,8 @@ sub init {
     password => $params->{eventlog}->{password},
     source => $params->{eventlog}->{source},
     speedup => $params->{eventlog}->{speedup} || 1,
-    include => $params->{eventlog}->{include} || {
-        EventType => 'Error,Warning,Info,Success,Failure',
-    },
-    exclude => $params->{eventlog}->{exclude} || {
-        EventType => 'idonotexist',
-        EventID => 'idonotexist',
-        Category => 'idonotexist',
-        Source => 'idonotexist',
-    },
+    include => $params->{eventlog}->{include} || {},
+    exclude => $params->{eventlog}->{exclude} || {},
   };
   # computer: I changed "\\\\MYPDC" to $dc ($dc = Win32::AdminMisc::GetDC("MYDOMAIN");)
   # keys fuer include/exclude: source,category,type,eventid

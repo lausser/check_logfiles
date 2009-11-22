@@ -58,14 +58,13 @@ sub init {
   $self->{searches} = [];
   $self->{selectedsearches} = $params->{selectedsearches} || [];
   $self->{dynamictag} = $params->{dynamictag} || "";
-  $self->{report} = $params->{report};
+  $self->{report} = $params->{report} || 'short';
   $self->{cmdlinemacros} = $params->{cmdlinemacros} || {};
   $self->{reset} = $params->{reset} || 0;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short' });
-  $self->set_option('report', $params->{report});
-  if ($self->get_option('report') !~ /^(long|short|html)$/) {
+  if ($self->{report} !~ /^(long|short|html)$/) {
     $ExitCode = $ERROR_UNKNOWN;
     $ExitMsg = sprintf "UNKNOWN - output must be short, long or html";
     return undef;
@@ -147,7 +146,6 @@ sub init {
       $_->{tracefile} = $self->{tracefile};
       $_->{cfgbase} = $self->{cfgbase};
       if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
-        $search->set_option('report', $self->get_option('report'));
         push(@{$self->{searches}}, $search);
       } else {
         $ExitCode = $ERROR_UNKNOWN;
@@ -249,11 +247,11 @@ sub init_from_file {
   $self->{postscriptstdin} = $postscriptstdin if $postscriptstdin;
   $self->{postscriptdelay} = $postscriptdelay if $postscriptdelay;
   $self->{macros} = $MACROS if $MACROS;
+  $self->{report} = $report if $report;
   $self->{timeout} = $timeout if $timeout;
   $self->{pidfile} = $pidfile if $pidfile;
   $self->{privatestate} = {};
   $self->init_macros;
-  $self->set_option('report', $report) if $report;
   $self->refresh_options($options);
   if (@logs) {
     #
@@ -262,7 +260,7 @@ sub init_from_file {
     #
     @searches = @logs;
   }
-  if ($self->get_option('prescript')) {
+  if ($self->{options}->{prescript}) {
     $_->{scriptpath} = $self->{scriptpath};
     %{$_->{macros}} = %{$self->{macros}};
     $_->{tracefile} = $self->{tracefile};
@@ -271,19 +269,11 @@ sub init_from_file {
     $_->{scriptparams} = $self->{prescriptparams};
     $_->{scriptstdin} = $self->{prescriptstdin};
     $_->{scriptdelay} = $self->{prescriptdelay};   
-    #$_->{options} = sprintf "%s%sscript",
-    #    $self->{options}->{supersmartprescript} ? "super" : "",
-    #    $self->{options}->{smartprescript} ? "smart" : "";
+    $_->{options} = sprintf "%s%sscript",
+        $self->{options}->{supersmartprescript} ? "super" : "",
+        $self->{options}->{smartprescript} ? "smart" : "";
     $_->{privatestate} = $self->{privatestate};
     my $search = Nagios::CheckLogfiles::Search::Prescript->new($_);
-printf STDERR "init_from_file pre i have %s\n", $options;
-printf STDERR "init_from_file pre i set %s\n", sprintf "%s%sscript",
-        $self->get_option('supersmartprescript') ? "super" : "",
-        $self->get_option('smartprescript') ? "smart" : "";
-    $search->set_option(sprintf("%s%sscript",
-        $self->get_option('supersmartprescript') ? "super" : "",
-        $self->get_option('smartprescript') ? "smart" : ""), 1);
-printf STDERR "init_from_file pre gets %s\n", Data::Dumper::Dumper($search->{options});
     push(@{$self->{searches}}, $search); 
   }
   foreach (@searches) {
@@ -298,7 +288,6 @@ printf STDERR "init_from_file pre gets %s\n", Data::Dumper::Dumper($search->{opt
     }
     $_->{dynamictag} = $self->{dynamictag};
     if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
-      $search->set_option('report', $self->get_option('report'));
       push(@{$self->{searches}}, $search);
       $_->{privatestate}->{$search->{tag}} = $search->{privatestate};
     } else {
@@ -308,7 +297,7 @@ printf STDERR "init_from_file pre gets %s\n", Data::Dumper::Dumper($search->{opt
       return undef;
     }
   }
-  if ($self->get_option('postscript')) {
+  if ($self->{options}->{postscript}) {
     $_->{scriptpath} = $self->{scriptpath};
     %{$_->{macros}} = %{$self->{macros}};
     $_->{tracefile} = $self->{tracefile};
@@ -317,16 +306,11 @@ printf STDERR "init_from_file pre gets %s\n", Data::Dumper::Dumper($search->{opt
     $_->{scriptparams} = $self->{postscriptparams};
     $_->{scriptstdin} = $self->{postscriptstdin};
     $_->{scriptdelay} = $self->{postscriptdelay};   
-    #$_->{options} = sprintf "%s%sscript",
-    #    $self->{options}->{supersmartpostscript} ? "super" : "",
-    #    $self->{options}->{smartpostscript} ? "smart" : "";
+    $_->{options} = sprintf "%s%sscript",
+        $self->{options}->{supersmartpostscript} ? "super" : "",
+        $self->{options}->{smartpostscript} ? "smart" : "";
     $_->{privatestate} = $self->{privatestate};
-printf STDERR "init_from_file post i have %s\n", $options;
     my $search = Nagios::CheckLogfiles::Search::Postscript->new($_);
-    $search->set_option(sprintf "%s%sscript",
-        $self->get_option('supersmartpostscript') ? "super" : "",
-        $self->get_option('smartpostscript') ? "smart" : "");
-printf STDERR "init_from_file post gets %s\n", Data::Dumper::Dumper($search->{options});
     push(@{$self->{searches}}, $search); 
   }
   return $self;
@@ -350,7 +334,7 @@ sub run {
         $search->{macros}->{CL_LONGSERVICEOUTPUT} = $self->{long_exitmessage} || $self->{exitmessage};
         $search->{macros}->{CL_SERVICEPERFDATA} = $self->{perfdata};
         $search->{macros}->{CL_PROTOCOLFILE} = $self->{protocolfile};
-        if ($search->get_option('supersmartscript')) {
+        if ($search->{options}->{supersmartscript}) {
           # 
           #  Throw away everything found so far. Supersmart postscripts
           #  have the last word.
@@ -360,7 +344,7 @@ sub run {
       }      
       $search->run();
       if (($search->{tag} eq "prescript") && 
-          ($search->get_option('supersmartscript')) &&
+          ($search->{options}->{supersmartscript}) &&
           ($search->{exitcode} > 0)) {
         #
         #  Prepare for a premature end. A failed supersmart prescript
@@ -370,7 +354,7 @@ sub run {
         $self->trace("failed supersmart prescript. aborting...");
       }
       $_->{privatestate}->{$search->{tag}} = $search->{privatestate};
-      if ($search->get_option('protocol')) {
+      if ($search->{options}->{protocol}) {
         if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
             scalar(@{$search->{matchlines}->{WARNING}}) ||
             scalar(@{$search->{matchlines}->{UNKNOWN}})) {
@@ -389,7 +373,7 @@ sub run {
           }
         }
       }
-      if ($search->get_option('count')) {
+      if ($search->{options}->{count}) {
         foreach (qw(OK WARNING CRITICAL UNKNOWN)) {
           $self->{allerrors}->{$_} += scalar(@{$search->{matchlines}->{$_}});
           if ($search->{lastmsg}->{$_}) {
@@ -399,14 +383,14 @@ sub run {
       }
       $self->formulate_result();
       if (($search->{tag} eq "prescript") && 
-          ($search->get_option('supersmartscript')) &&
+          ($search->{options}->{supersmartscript}) &&
           ($search->{exitcode} > 0)) {
         #
         #  Failed supersmart prescript. I'm out...
         #
         last;
       } elsif (($search->{tag} eq "postscript") && 
-          ($search->get_option('supersmartscript'))) {
+          ($search->{options}->{supersmartscript})) {
         my $codestr = {reverse %ERRORS}->{$search->{exitcode}};
         ($self->{exitmessage}, $self->{perfdata}) = 
             split(/\|/, $search->{lastmsg}->{$codestr}, 2);
@@ -449,7 +433,7 @@ sub formulate_result {
   $self->{perfdata} = join (" ", 
       map { $_->formulate_perfdata(); if ($_->{perfdata}) {$_->{perfdata}} else {()} }
       @{$self->{searches}});
-  if ($self->get_option('report') ne "short") {
+  if ($self->{report} ne "short") {
     $self->formulate_long_result();
   }
 }
@@ -458,9 +442,9 @@ sub formulate_long_result {
   my $self = shift;
   my $maxlength = 4 * 1024;
   $self->{long_exitmessage} = "";
-  my $prefix = ($self->get_option('report') eq "html") ?
+  my $prefix = ($self->{report} eq "html") ?
       "<table style=\"border-collapse: collapse;\">" : "";
-  my $suffix = ($self->get_option('report') eq "html") ?
+  my $suffix = ($self->{report} eq "html") ?
       "</table>" : "";
   my $messagelen = length($prefix) + length($suffix) +
       length($self->{exitmessage});
@@ -470,7 +454,7 @@ sub formulate_long_result {
     if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
         scalar(@{$search->{matchlines}->{WARNING}}) ||
         scalar(@{$search->{matchlines}->{UNKNOWN}})) {
-      if ($self->get_option('report') eq "html") {
+      if ($self->{report} eq "html") {
         $line =
             sprintf "<tr valign=\"top\"><td class=\"service%s\">tag %s</td></tr>",
                 ((scalar(@{$search->{matchlines}->{CRITICAL}}) && "CRITICAL") ||
@@ -493,7 +477,7 @@ sub formulate_long_result {
       }
       foreach my $level qw(CRITICAL WARNING UNKNOWN OK) {
         foreach my $message (@{$search->{matchlines}->{$level}}) {
-          if ($self->get_option('report') eq "html") {
+          if ($self->{report} eq "html") {
             $message =~ s/</&lt;/g;
             $message =~ s/>/&gt;/g;
             $line =
@@ -713,43 +697,43 @@ sub refresh_options {
         if ($option eq $defoption) {
           if ($optarg) {
           	# example: sticky=3600,syslogclient="winhost1.dom"
-          	$self->set_option($defoption, $optarg);
+          	$self->{options}->{$defoption} = $optarg;
           } else {
-            $self->set_option($defoption, 1);
+            $self->{options}->{$defoption} = 1;
           }
         } elsif ($option eq 'no'.$defoption) {
-          $self->set_option($defoption, 0);
+          $self->{options}->{$defoption} = 0;
         }
       }
     } 
   } 
   # reset [smart][pre|post]script options if no script should be called 
   foreach my $option (qw(script prescript postscript)) {
-    if ($self->get_option('supersmart'.$option)) {
-      $self->set_option('smart'.$option)
-          if $self->get_option('supersmart'.$option);
+    if (exists $self->{options}->{'supersmart'.$option}) {
+      $self->{options}->{'smart'.$option} = 1
+          if $self->{options}->{'supersmart'.$option};
     }
-    if ($self->get_option('smart'.$option)) {
-      $self->set_option($option)
-          if $self->get_option('smart'.$option);
+    if (exists $self->{options}->{'smart'.$option}) {
+      $self->{options}->{$option} = 1
+          if $self->{options}->{'smart'.$option};
     }
-    if ($self->get_option($option)) {
-      if ($self->get_option($option) && ! exists $self->{$option}) {
-        $self->set_option($option, 0);
-        $self->set_option('smart'.$option, 0);
-        $self->set_option('supersmart'.$option, 0);
+    if (exists $self->{options}->{$option}) {
+      if (($self->{options}->{$option}) && ! exists $self->{$option}) {
+        $self->{options}->{$option} = 0;
+        $self->{options}->{'smart'.$option} = 0;
+        $self->{options}->{'supersmart'.$option} = 0;
       }
     }
   }
-  if ($self->get_option('sticky')) {
-    if ($self->get_option('sticky') > 1) {
-      $self->{maxstickytime} = $self->get_option('sticky');
-      $self->set_option('sticky', 1);
+  if ($self->{options}->{sticky}) {
+    if ($self->{options}->{sticky} > 1) {
+      $self->{maxstickytime} = $self->{options}->{sticky};
+      $self->{options}->{sticky} = 1;
     } else {
       $self->{maxstickytime} = 3600 * 24 * 365 * 10;
     }
   }
-  if ($self->get_option('syslogclient')) {
+  if ($self->{options}->{syslogclient}) {
 #    $self->{prefilter} = $self->{options}->{syslogclient};
   }
 }
@@ -992,7 +976,7 @@ sub getfilefingerprint {
         $magic = $fh->getline() || "this_was_an_empty_file";
         $fh->close();
       }
-      if ($self->get_option('encoding')) {
+      if ($self->{options}->{encoding}) {
         $magic =~ tr/\x80-\xFF//d;
         $magic =~ tr/\x00-\x1F//d;
       }
@@ -1310,7 +1294,7 @@ sub new {
   $self->{tracefile} = $params->{tracefile};
   $self->{prefilter} = $params->{prefilter};
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
-  #$self->set_options({ report => $params->{report} });
+  $self->{report} = $params->{report};
   if (exists $params->{tivolipatterns}) {
     my $tivoliparams = { };
     my $tivolipatterns = [];
@@ -1450,19 +1434,19 @@ sub init {
   if ($self->{prefilter}) {
     my $pattern = $self->{prefilter};
     $self->resolve_macros_in_pattern(\$pattern);
-    $pattern = '(?i)'.$pattern unless $self->get_option('case');
+    $pattern = '(?i)'.$pattern unless $self->{options}->{case};
     $self->addfilter(1, $pattern);
   }
-  if ($self->get_option('syslogclient')) {
-    my $pattern = $self->get_option('syslogclient');
+  if ($self->{options}->{syslogclient}) {
+    my $pattern = $self->{options}->{syslogclient};
     $self->resolve_macros_in_pattern(\$pattern);
-    $pattern = '(?i)'.$pattern unless $self->get_option('case');
+    $pattern = '(?i)'.$pattern unless $self->{options}->{case};
     $self->addfilter(1, $pattern);
   }
-  if ($self->get_option('syslogserver')) {
+  if ($self->{options}->{syslogserver}) {
     my $pattern = '($CL_HOSTNAME$|localhost)';
     $self->resolve_macros_in_pattern(\$pattern);
-    $pattern = '(?i)'.$pattern unless $self->get_option('case');
+    $pattern = '(?i)'.$pattern unless $self->{options}->{case};
     $self->addfilter(1, $pattern);
   }
   #
@@ -1470,7 +1454,7 @@ sub init {
   # this means for me, encoding works perfect. if it does not work for you
   # then it's not my problem.
   #
-  if ($self->get_option('encoding')) {
+  if ($self->{options}->{encoding}) {
     #require Encode qw(encode decode);
     require Encode;
   }
@@ -1523,7 +1507,7 @@ sub init {
       #
       #  prepend the patterns with (?i) if the case insensitivity option is set 
       #
-      if (! $self->get_option('case')) {
+      if (! $self->{options}->{case}) {
       	foreach my $pattern (@{$self->{patterns}->{$level}}) {
       	  $pattern = '(?i)'.$pattern;
       	}
@@ -1537,14 +1521,13 @@ sub init {
       #
       #  ignore the match unless a minimum of threshold occurrances were found
       #
-      if (! $self->get_option(lc $level.'threshold') &&
-          $params->{lc $level.'threshold'}) {
-        $self->set_option(lc $level.'threshold',
-            $params->{lc $level.'threshold'});
+      if ((! $self->{options}->{(lc $level).'threshold'}) &&
+          ($params->{(lc $level).'threshold'})) {
+        $self->{options}->{(lc $level).'threshold'} =
+            $params->{(lc $level).'threshold'};
       }
-      if ($self->get_option(lc $level.'threshold')) {
-        $self->{threshold}->{$level} = 
-            $self->get_option(lc $level.'threshold') - 1;
+      if ($self->{options}->{(lc $level).'threshold'}) {
+        $self->{threshold}->{$level} = $self->{options}->{(lc $level).'threshold'} - 1;
       } else {
         $self->{threshold}->{$level} = 0;
       }
@@ -1739,9 +1722,9 @@ sub loadstate {
     if (-e $self->{logfile}) {
     	$self->trace(sprintf "but logfile %s found", $self->{logfile});
       #  Fake a "the logfile was not touched" situation.
-      $self->trace('eat all you can') if $self->get_option('allyoucaneat');
+      $self->trace('eat all you can') if $self->{options}->{allyoucaneat};
       $self->{laststate} = {
-          logoffset => ($self->get_option('allyoucaneat') ?
+          logoffset => ($self->{options}->{allyoucaneat} ?
               0 : $self->getfilesize($self->{logfile})),
           logtime => (stat $self->{logfile})[10],
           devino => $self->getfilefingerprint($self->{logfile}),
@@ -1799,8 +1782,8 @@ sub savestate {
   my $seekfh = new IO::File;
   my $now = time;
   $self->searchresult(); # calculate servicestateid and serviceoutput
-  if ($self->get_option('sticky')) {
-    if ($self->get_option('report') ne 'short') {
+  if ($self->{options}->{sticky}) {
+    if ($self->{report} ne 'short') {
       $self->{newstate}->{matchlines} = $self->{matchlines};
     }
     if ($self->{laststate}->{servicestateid}) {
@@ -1812,7 +1795,7 @@ sub savestate {
         $self->{newstate}->{laststicked} = $now;
         $self->trace("refresh laststicked");
         # dont forget to count the sticky error
-        if ($self->get_option('report') ne 'short') {
+        if ($self->{report} ne 'short') {
           foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
             my $servicestateid =
                 {'OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3}->{$level};
@@ -1836,13 +1819,13 @@ sub savestate {
               $self->{laststate}->{serviceoutput};
         }
       } else {
-        if ($self->get_option('sticky') > 1) {
+        if ($self->{options}->{sticky} > 1) {
           # we had a stick error, then an ok pattern and no new error
           $self->trace("sticky error was resetted");
           $self->{newstate}->{laststicked} = 0;
           $self->{newstate}->{servicestateid} = 0;
           $self->{newstate}->{serviceoutput} = "";
-          if ($self->get_option('report') ne 'short') {
+          if ($self->{report} ne 'short') {
             delete $self->{newstate}->{matchlines};
           }
         } else {
@@ -1854,7 +1837,7 @@ sub savestate {
             $self->{newstate}->{laststicked} = 0;
             $self->{newstate}->{servicestateid} = 0;
             $self->{newstate}->{serviceoutput} = "";
-            if ($self->get_option('report') ne 'short') {
+            if ($self->{report} ne 'short') {
               delete $self->{newstate}->{matchlines};
             }
           } else {
@@ -1867,7 +1850,7 @@ sub savestate {
             $self->trace("stay sticky until %s", 
                 scalar localtime ($self->{newstate}->{laststicked}
                 + $self->{maxstickytime})); 
-            if ($self->get_option('report') ne 'short') {
+            if ($self->{report} ne 'short') {
               foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
                 my $servicestateid =
                   {'OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3}->{$level};
@@ -1894,7 +1877,7 @@ sub savestate {
     }
   }  
   # save threshold counts if a threshold exists for a level
-  if ($self->get_option('savethresholdcount')) {
+  if ($self->{options}->{savethresholdcount}) {
     foreach my $level qw(CRITICAL WARNING UNKNOWN) {
       if ($self->{threshold}->{$level}) {
         $self->{newstate}->{thresholdcnt}->{$level} =
@@ -1919,7 +1902,7 @@ sub savestate {
         scalar localtime($self->{newstate}->{logtime}), 
         $self->{newstate}->{devino});
   } else {
-    $self->set_option('count', 1);
+    $self->{options}->{count} = 1;
     $self->addevent(WARNING, sprintf "cannot write status file %s",
     $self->{seekfile});
   }
@@ -1928,7 +1911,7 @@ sub savestate {
 
 sub formulate_perfdata {
   my $self = shift;
-  if ($self->get_option('perfdata')) { 
+  if ($self->{options}->{perfdata}) {
     if (exists $self->{template} && $self->{dynamictag}) {
       $self->{perftag} = $self->{template};
     } else {
@@ -1947,8 +1930,8 @@ sub addevent {
   my $self = shift;
   my $level = shift;
   my $errormessage = shift;
-  if ($self->get_option('maxlength')) {
-    $errormessage = substr $errormessage, 0, $self->get_option('maxlength');
+  if ($self->{options}->{maxlength}) {
+    $errormessage = substr $errormessage, 0, $self->{options}->{maxlength};
   }
   if ($level =~ /^\d/) {
     $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
@@ -2036,10 +2019,10 @@ sub scan {
       my $filteredout = 0;
       $self->{linesread}++;
       if (! $logfile->{seekable}) { $logfile->{offset} += length($line) }
-      if ($self->get_option('encoding')) {
+      if ($self->{options}->{encoding}) {
       	# i am sure this is completely unreliable
       	$line = Encode::encode("ascii", 
-            Encode::decode($self->get_option('encoding'), $line));
+            Encode::decode($self->{options}->{encoding}, $line));
         # the input stream is somewhat binary, so chomp doesn't know
         # it neads to remove \r\n on windows.
         $line =~ s/$1/\n/g if $line =~ /(\r\n?|\n\r?)/;
@@ -2111,7 +2094,7 @@ sub scan {
               next if $self->{tivoli}->{match}->{format_name} eq 'NO MATCHING RULE';
               $line = $self->{tivoli}->{match}->{subject};
             }
-            if ($self->get_option('script')) {
+            if ($self->{options}->{script}) {
               $self->{macros}->{CL_SERVICESTATE} = $level;
               $self->{macros}->{CL_SERVICESTATEID} = $ERRORS{$level};
               $self->{macros}->{CL_SERVICEOUTPUT} = $line;
@@ -2119,21 +2102,21 @@ sub scan {
               my ($actionsuccess, $actionrc, $actionoutput) =
                   $self->action($self->{script}, $self->{scriptparams},
                   $self->{scriptstdin}, $self->{scriptdelay},
-                  $self->get_option('smartscript'), $self->{privatestate});
+                  $self->{options}->{smartscript}, $self->{privatestate});
               if (! $actionsuccess) {
-              	# note the script failure. multiple failures will generate
-              	# one single event in the end.
+                # note the script failure. multiple failures will generate
+                # one single event in the end.
                 $actionfailed = 1;
                 $self->addevent($level, $line);
-              } elsif ($self->get_option('supersmartscript')) {
-              	# completely replace the matched line with the script output
-                $self->addevent($actionrc, $actionoutput);                 
-              } elsif ($self->get_option('smartscript')) {
-              	# both matched line and script output are events
+              } elsif ($self->{options}->{supersmartscript}) {
+                # completely replace the matched line with the script output
+                $self->addevent($actionrc, $actionoutput);
+              } elsif ($self->{options}->{smartscript}) {
+                # both matched line and script output are events
                 $self->addevent($level, $line);
                 $self->addevent($actionrc, $actionoutput);
               } else {
-              	# dumb scripts generate no events. only the matched line.
+                # dumb scripts generate no events. only the matched line.
                 $self->addevent($level, $line);
               }
             } else {
@@ -2159,8 +2142,7 @@ sub scan {
         if ($line =~ /$pattern/) {
           $self->trace("remedy pattern %s wipes out previous errors",
               $pattern);
-          $self->set_option('sticks', $self->get_option('sticky') + 1)
-              if $self->get_option('sticky');
+          $self->{options}->{sticky}++ if $self->{options}->{sticky};
           # such a remedypattern neutralizes previous error
           $self->{matchlines}->{WARNING} = [];
           $self->{matchlines}->{CRITICAL} = [];
@@ -2191,20 +2173,20 @@ sub scan {
       foreach my $pattern (@{$self->{negpatterns}->{$level}}) {
         $patcnt++;
         if ($self->{negpatterncnt}->{$level}->[$patcnt] == 0) {
-          if ($self->get_option('script')) {
+          if ($self->{options}->{script}) {
             $self->{macros}->{CL_SERVICESTATEID} = $ERRORS{$level};
             $self->{macros}->{CL_SERVICEOUTPUT} = sprintf("MISSING: %s", $pattern);
             $self->{macros}->{CL_PATTERN_NUMBER} = $patcnt;
             my ($actionsuccess, $actionrc, $actionoutput) =
                 $self->action($self->{script}, $self->{scriptparams},
                 $self->{scriptstdin}, $self->{scriptdelay},
-                $self->get_option('smartscript'), $self->{privatestate});
+                $self->{options}->{smartscript}, $self->{privatestate});
             if (! $actionsuccess) {
               $actionfailed = 1;
-      	      $self->addevent($level, sprintf("MISSING: %s", $pattern));
-            } elsif ($self->get_option('supersmartscript')) {
+              $self->addevent($level, sprintf("MISSING: %s", $pattern));
+            } elsif ($self->{options}->{supersmartscript}) {
               $self->addevent($actionrc, $actionoutput);
-            } elsif ($self->get_option('smartscript')) {
+            } elsif ($self->{options}->{smartscript}) {
               $self->addevent($level, sprintf("MISSING: %s", $pattern));
               $self->addevent($actionrc, $actionoutput);
             } else {
@@ -2246,7 +2228,7 @@ sub scan {
     $self->{newstate}->{logtime} = time;
   }
   if ($actionfailed) {
-    $self->set_option('count', 1);
+    $self->{options}->{count} = 1;
     push(@{$self->{matchlines}->{WARNING}},
         sprintf "could not execute %s", $self->{script});
   }
@@ -2281,7 +2263,7 @@ sub searchresult {
   	$self->{newstate}->{servicestateid} = 0;
   	$self->{newstate}->{serviceoutput} = "";
   }
-  if ($self->get_option('sticky') && $self->get_option('report') ne 'short') {
+  if ($self->{option}->{sticky} && $self->{report} ne 'short') {
     # damit long/html output erhalten bleibt und nicht nur der letzte treffer
     $self->{newstate}->{matchlines} = $self->{matchlines};
   }
@@ -2320,8 +2302,8 @@ sub reset {
   $self->{logmodified} = 0;
   $self->{linesread} = 0;
   $self->{relevantfiles} = [];
-  if ($self->get_option('sticky')) {
-    $self->set_option('sticky', 1) if ($self->get_option('sticky') > 1);
+  if (exists $self->{options}->{sticky}) {
+    $self->{options}->{sticky} = 1 if ($self->{options}->{sticky} > 1);
   }
   return $self;
 }
@@ -2387,7 +2369,7 @@ sub analyze_situation {
       # if the logfile grew because we initialized the plugin with an offset of 0, position
       # at the end of the file and skip this search. otherwise lots of outdated messages could
       # match and raise alerts.
-      if ($self->get_option('allyoucaneat')) {
+      if ($self->{options}->{allyoucaneat}) {
         $self->trace("allyoucaneat the virgin");
         $self->{laststate}->{logoffset} = 0;
         $self->{logmodified} = 1; # normally, virgins are not scanned. force it.
@@ -2455,7 +2437,7 @@ sub collectfiles {
         $self->addevent('CRITICAL', sprintf "could not open logfile %s",
             $self->{logfile});
       } else {
-      	if ($self->get_option('logfilenocry')) {
+      	if ($self->{options}->{logfilenocry}) {
       	  # logfiles which are not rotated but deleted and re-created may be missing
           #  maybe a rotation situation, a typo in the configfile,...
           $self->trace("could not find logfile %s", $self->{logfile});
@@ -2734,7 +2716,7 @@ sub collectfiles {
         $self->addevent('CRITICAL', sprintf "could not open logfile %s",
             $self->{logfile});
       } else {
-      	if ($self->get_option('logfilenocry')) {
+      	if ($self->{options}->{logfilenocry}) {
       	  # logfiles which are not rotated but deleted and re-created may be missing
           #  maybe a rotation situation, a typo in the configfile,...
           $self->trace("could not find logfile %s", $self->{logfile});
@@ -2950,7 +2932,7 @@ sub collectfiles {
       $self->addevent('CRITICAL', sprintf "could not open logfile %s",
           $self->{logfile});
     } else {
-      if ($self->get_option('logfilenocry')) {
+      if ($self->{options}->{logfilenocry}) {
         $self->trace("could not find logfile %s", $self->{logfile});
         $self->addevent('UNKNOWN', sprintf "could not find logfile %s",
             $self->{logfile});
@@ -3010,22 +2992,22 @@ sub init {
 sub run {
   my $self = shift;
   $self->trace("call (%s) prescript %s",
-      $self->get_option('smartscript') ? "smart" : "dumb", $self->{script});
+      $self->{options}->{smartscript} ? "smart" : "dumb", $self->{script});
   my ($actionsuccess, $actionrc, $actionoutput) =
       $self->action($self->{script}, $self->{scriptparams},
       $self->{scriptstdin}, $self->{scriptdelay},
-      $self->get_option('smartscript'), $self->{privatestate});
+      $self->{options}->{smartscript}, $self->{privatestate});
   if (! $actionsuccess) {
-    $self->set_option('count');
-    $self->set_option('protocol');
+    $self->{options}->{count} = 1;
+    $self->{options}->{protocol} = 1;
     $self->addevent('WARNING',
         sprintf "cannot execute %s", $self->{script});
-  } elsif ($self->get_option('smartscript')) {
+  } elsif ($self->{options}->{smartscript}) {
     if ($actionrc) {
       $actionoutput = "prescript" if ! $actionoutput;
       $self->addevent($actionrc, $actionoutput);
     }
-  }	
+  }
   $self->{exitcode} = $actionrc;
 }
 
@@ -3079,18 +3061,18 @@ sub run {
   my ($actionsuccess, $actionrc, $actionoutput) =
       $self->action($self->{script}, $self->{scriptparams},
       $self->{scriptstdin}, $self->{scriptdelay},
-      $self->get_option('smartscript'), $self->{privatestate});
+      $self->{options}->{smartscript}, $self->{privatestate});
   if (! $actionsuccess) {
-    $self->set_option('count');
-    $self->set_option('protocol');
+    $self->{options}->{count} = 1;
+    $self->{options}->{protocol} = 1;
     $self->addevent('WARNING',
         sprintf "cannot execute %s", $self->{script});
     $actionrc = 2;
-  } elsif ($self->get_option('smartscript')) {
-    if ($actionrc || $self->get_option('supersmartscript')) {
+  } elsif ($self->{options}->{smartscript}) {
+    if ($actionrc || $self->{options}->{supersmartscript}) {
       # strings containing 0 must be treated like a true value
       #$actionoutput = "postscript" if ! $actionoutput;
-      $actionoutput = "postscript" 
+      $actionoutput = "postscript"
           unless $actionoutput || $actionoutput =~ /0[0\.]*/;
       $self->addevent($actionrc, $actionoutput);
     }
