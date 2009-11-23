@@ -58,17 +58,12 @@ sub init {
   $self->{searches} = [];
   $self->{selectedsearches} = $params->{selectedsearches} || [];
   $self->{dynamictag} = $params->{dynamictag} || "";
-  $self->{report} = $params->{report} || 'short';
+  #$self->{report} = $params->{report} || 'short';
   $self->{cmdlinemacros} = $params->{cmdlinemacros} || {};
   $self->{reset} = $params->{reset} || 0;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short' });
-  if ($self->{report} !~ /^(long|short|html)$/) {
-    $ExitCode = $ERROR_UNKNOWN;
-    $ExitMsg = sprintf "UNKNOWN - output must be short, long or html";
-    return undef;
-  }
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
       # multiple cfgfiles found in a config dir
@@ -138,6 +133,8 @@ sub init {
     }
   } else {
     $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
+    $self->refresh_options();
+    $self->set_option('report', $params->{report});
     $self->init_macros;
     foreach (@{$params->{searches}}) {
       $_->{seekfilesdir} = $self->{seekfilesdir};
@@ -145,6 +142,7 @@ sub init {
       %{$_->{macros}} = %{$self->{macros}};
       $_->{tracefile} = $self->{tracefile};
       $_->{cfgbase} = $self->{cfgbase};
+      $_->{report} = $self->{report};
       if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
         push(@{$self->{searches}}, $search);
       } else {
@@ -161,6 +159,11 @@ sub init {
     if (my $tmpshortpath = &Win32::GetShortPathName($self->{protocolsdir})) {
       $self->{protocolsdir} = $tmpshortpath;
     }
+  }
+  if ($self->get_option('report') !~ /^(long|short|html)$/) {
+    $ExitCode = $ERROR_UNKNOWN;
+    $ExitMsg = sprintf "UNKNOWN - output must be short, long or html";
+    return undef;
   }
   $self->{protocolfile} = 
       sprintf "%s/%s.protocol-%04d-%02d-%02d-%02d-%02d-%02d",
@@ -273,6 +276,7 @@ sub init_from_file {
         $self->{options}->{supersmartprescript} ? "super" : "",
         $self->{options}->{smartprescript} ? "smart" : "";
     $_->{privatestate} = $self->{privatestate};
+    $_->{report} = $self->{report};   
     my $search = Nagios::CheckLogfiles::Search::Prescript->new($_);
     push(@{$self->{searches}}, $search); 
   }
@@ -287,6 +291,7 @@ sub init_from_file {
       next;
     }
     $_->{dynamictag} = $self->{dynamictag};
+    $_->{report} = $self->{report};   
     if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
       push(@{$self->{searches}}, $search);
       $_->{privatestate}->{$search->{tag}} = $search->{privatestate};
@@ -310,6 +315,7 @@ sub init_from_file {
         $self->{options}->{supersmartpostscript} ? "super" : "",
         $self->{options}->{smartpostscript} ? "smart" : "";
     $_->{privatestate} = $self->{privatestate};
+    $_->{report} = $self->{report};   
     my $search = Nagios::CheckLogfiles::Search::Postscript->new($_);
     push(@{$self->{searches}}, $search); 
   }
@@ -433,7 +439,7 @@ sub formulate_result {
   $self->{perfdata} = join (" ", 
       map { $_->formulate_perfdata(); if ($_->{perfdata}) {$_->{perfdata}} else {()} }
       @{$self->{searches}});
-  if ($self->{report} ne "short") {
+  if ($self->get_option('report') ne "short") {
     $self->formulate_long_result();
   }
 }
@@ -442,9 +448,9 @@ sub formulate_long_result {
   my $self = shift;
   my $maxlength = 4 * 1024;
   $self->{long_exitmessage} = "";
-  my $prefix = ($self->{report} eq "html") ?
+  my $prefix = ($self->get_option('report') eq "html") ?
       "<table style=\"border-collapse: collapse;\">" : "";
-  my $suffix = ($self->{report} eq "html") ?
+  my $suffix = ($self->get_option('report') eq "html") ?
       "</table>" : "";
   my $messagelen = length($prefix) + length($suffix) +
       length($self->{exitmessage});
@@ -454,7 +460,7 @@ sub formulate_long_result {
     if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
         scalar(@{$search->{matchlines}->{WARNING}}) ||
         scalar(@{$search->{matchlines}->{UNKNOWN}})) {
-      if ($self->{report} eq "html") {
+      if ($self->get_option('report') eq "html") {
         $line =
             sprintf "<tr valign=\"top\"><td class=\"service%s\">tag %s</td></tr>",
                 ((scalar(@{$search->{matchlines}->{CRITICAL}}) && "CRITICAL") ||
@@ -477,7 +483,7 @@ sub formulate_long_result {
       }
       foreach my $level qw(CRITICAL WARNING UNKNOWN OK) {
         foreach my $message (@{$search->{matchlines}->{$level}}) {
-          if ($self->{report} eq "html") {
+          if ($self->get_option('report') eq "html") {
             $message =~ s/</&lt;/g;
             $message =~ s/>/&gt;/g;
             $line =
