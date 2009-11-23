@@ -423,18 +423,21 @@ sub logger {
   my $count = shift || 1;
   my $message = shift;
   my $raw = shift || 0;
+  my $details = shift || {};
   $| = 1;
+die;
   if (($self->{type} eq "psloglist") || ($self->{type} eq "eventlog")) {
     my $cmd;
-    my $type = ($hostname ||= "INFORMATION"); # ERROR, WARNING, INFORMATION
-    my $source = ($process ||= "check_logfiles"); # Anwendung
+    my $type = exists $details->{EventType} ? $details->{EventType} : "INFORMATION";
+    my $source = exists $details->{Source} ? $details->{Source} : "check_logfiles";
+    my $id = exists $details->{EventID} ? $details->{EventID} : 1;
     while ($count--) {
       if ($^O =~ /cygwin/) {
-        $cmd = sprintf '/cygdrive/c/WINDOWS/system32/eventcreate /L Application /SO %s /T %s /ID 001 /D "%s" >/dev/null 2>&1',
-            $source, $type, $message;
+        $cmd = sprintf '/cygdrive/c/WINDOWS/system32/eventcreate /L Application /SO %s /T %s /ID %s /D "%s" >/dev/null 2>&1',
+            $source, $type, $id, $message;
       } else { # MSWin or other native windows perls
-        $cmd = sprintf 'C:\WINDOWS\system32\eventcreate /L Application /SO %s /T %s /ID 001 /D "%s" 1>NUL 2>&1',
-            $source, $type, $message;
+        $cmd = sprintf 'C:\WINDOWS\system32\eventcreate /L Application /SO %s /T %s /ID %s /D "%s" 1>NUL 2>&1',
+            $source, $type, $id, $message;
       }
       system($cmd);
     }
