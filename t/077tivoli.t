@@ -36,14 +36,6 @@ my $configfile =<<EOCFG;
               #tivolipatterns => ["./etc/syslog_enh_logfile_linux.fmt2"],
               options => "supersmartscript",
               script => sub {
-open CCC, ">>/tmp/hihi";
-printf CCC "privatestate %s\\n", Data::Dumper::Dumper(\$CHECK_LOGFILES_PRIVATESTATE->{tivolimatch});
-foreach (keys %ENV) {
-  if (/CHECK_LOGFILES/) {
-     printf CCC "%s = %s\\n", \$_, \$ENV{\$_};
-  }
-}
-close CCC;
                 \$tivoli = \$CHECK_LOGFILES_PRIVATESTATE->{tivolimatch};
                 if (\$tivoli->{format_name} ne "NO MATCHING RULE") {
                   printf "%s", \$CHECK_LOGFILES_PRIVATESTATE->{tivolimatch}->{subject};

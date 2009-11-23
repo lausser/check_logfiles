@@ -12,7 +12,7 @@ use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
-plan tests => 2;
+plan tests => 10;
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({

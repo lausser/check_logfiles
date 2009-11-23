@@ -425,10 +425,9 @@ sub logger {
   my $raw = shift || 0;
   my $details = shift || {};
   $| = 1;
-die;
   if (($self->{type} eq "psloglist") || ($self->{type} eq "eventlog")) {
     my $cmd;
-    my $type = exists $details->{EventType} ? $details->{EventType} : "INFORMATION";
+    my $type = exists $details->{EventType} ? uc $details->{EventType} : "INFORMATION";
     my $source = exists $details->{Source} ? $details->{Source} : "check_logfiles";
     my $id = exists $details->{EventID} ? $details->{EventID} : 1;
     while ($count--) {

@@ -60,7 +60,11 @@ ok($cl->expect_result(0, 0, 0, 0, 0));
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 2);
 $cl->reset();
 sleep 30;
-$ssh->logger("ERROR", "checkpoint", 1, "Firewall problem1");
+$ssh->logger(undef, undef, 1, "Firewall problem1", undef, {
+  EventType => 'Error',
+  EventID => '12',
+  Source => 'checkpoint',
+});
 sleep 2;
 $cl->run();
 diag($cl->has_result());
@@ -71,9 +75,21 @@ ok($cl->expect_result(0, 0, 1, 0, 2));
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 3);
 $cl->reset();
 sleep 30;
-$ssh->logger("ERROR", "checkpoint", 10, "Firewall problem1");
-$ssh->logger("WARNING", "checkpoint", 3, "Firewall problem1");
-$ssh->logger("INFORMATION", "checkpoint", 3, "Firewall problem1");
+$ssh->logger(undef, undef, 10, "Firewall problem1", undef, {
+  EventType => 'Error',
+  EventID => '12',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 3, "Firewall problem1", undef, {
+  EventType => 'Warning',
+  EventID => '11',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 3, "Firewall problem1", undef, {
+  EventType => 'Information',
+  EventID => '10',
+  Source => 'checkpoint',
+});
 sleep 2;
 $cl->run();
 diag($cl->has_result());
@@ -85,9 +101,21 @@ ok($cl->{perfdata} =~ /ssh_lines=16/);
 # 4 now find the them with the command line
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 4);
 sleep 30;
-$ssh->logger("ERROR", "checkpoint", 10, "Firewall problem1");
-$ssh->logger("WARNING", "checkpoint", 3, "Firewall problem1");
-$ssh->logger("INFORMATION", "checkpoint", 3, "Firewall problem1");
+$ssh->logger(undef, undef, 10, "Firewall problem1", undef, {
+  EventType => 'Error',
+  EventID => '12',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 3, "Firewall problem1", undef, {
+  EventType => 'Warning',
+  EventID => '11',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 3, "Firewall problem1", undef, {
+  EventType => 'Information',
+  EventID => '10',
+  Source => 'checkpoint',
+});
 sleep 2;
 my $perlpath = "";
 chomp $perlpath;
@@ -114,14 +142,46 @@ ok($output =~ /10 errors, 3 warnings.*ssh_lines=16/);
 # 5 now find the them with the command line
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 5);
 sleep 30;
-$ssh->logger("ERROR", "checkpoint", 10, "Firewall problem1");
-$ssh->logger("WARNING", "checkpoint", 1, "Firewall problem10");
-$ssh->logger("WARNING", "checkpoint", 1, "Firewall problem11");
-$ssh->logger("WARNING", "checkpoint", 1, "Firewall problem12");
-$ssh->logger("WARNING", "checkpoint", 1, "Feuerwall problem1");
-$ssh->logger("WARNING", "checkpoint", 1, "Feuerwall problem2");
-$ssh->logger("WARNING", "checkpoint", 1, "Feuerwall problem3");
-$ssh->logger("INFORMATION", "checkpoint", 3, "Firewall problem0");
+$ssh->logger(undef, undef, 10, "Firewall problem1", undef, {
+  EventType => 'Error',
+  EventID => '12',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 1, "Firewall problem10", undef, {
+  EventType => 'Warning',
+  EventID => '11',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 1, "Firewall problem11", undef, {
+  EventType => 'Warning',
+  EventID => '11',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 1, "Firewall problem12", undef, {
+  EventType => 'Warning',
+  EventID => '11',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 1, "Feuerwall problem1", undef, {
+  EventType => 'Warning',
+  EventID => '11',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 1, "Feuerwall problem2", undef, {
+  EventType => 'Warning',
+  EventID => '11',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 1, "Feuerwall problem3", undef, {
+  EventType => 'Warning',
+  EventID => '11',
+  Source => 'checkpoint',
+});
+$ssh->logger(undef, undef, 3, "Feuerwall problem0", undef, {
+  EventType => 'Information',
+  EventID => '10',
+  Source => 'checkpoint',
+});
 sleep 2;
 $command = sprintf $perlpath.'../plugins-scripts/check_logfiles --seekfilesdir "%s" --tag %s --type eventlog:eventlog=application --winwarncrit --criticalpattern "Hilfaeaeaeae" --warningpattern "Feurio|problem0" --report long',
     TESTDIR."/var/tmp",

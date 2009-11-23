@@ -165,6 +165,9 @@ sub init {
     $ExitMsg = sprintf "UNKNOWN - output must be short, long or html";
     return undef;
   }
+  foreach (@{$self->{searches}}) {
+    $_->set_option('report', $self->get_option('report'));
+  }
   $self->{protocolfile} = 
       sprintf "%s/%s.protocol-%04d-%02d-%02d-%02d-%02d-%02d",
       $self->{protocolsdir}, $self->{cfgbase}, 
@@ -1789,7 +1792,7 @@ sub savestate {
   my $now = time;
   $self->searchresult(); # calculate servicestateid and serviceoutput
   if ($self->{options}->{sticky}) {
-    if ($self->{report} ne 'short') {
+    if ($self->get_option('report') ne 'short') {
       $self->{newstate}->{matchlines} = $self->{matchlines};
     }
     if ($self->{laststate}->{servicestateid}) {
@@ -1801,7 +1804,7 @@ sub savestate {
         $self->{newstate}->{laststicked} = $now;
         $self->trace("refresh laststicked");
         # dont forget to count the sticky error
-        if ($self->{report} ne 'short') {
+        if ($self->get_option('report') ne 'short') {
           foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
             my $servicestateid =
                 {'OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3}->{$level};
@@ -1831,7 +1834,7 @@ sub savestate {
           $self->{newstate}->{laststicked} = 0;
           $self->{newstate}->{servicestateid} = 0;
           $self->{newstate}->{serviceoutput} = "";
-          if ($self->{report} ne 'short') {
+          if ($self->get_option('report') ne 'short') {
             delete $self->{newstate}->{matchlines};
           }
         } else {
@@ -1843,7 +1846,7 @@ sub savestate {
             $self->{newstate}->{laststicked} = 0;
             $self->{newstate}->{servicestateid} = 0;
             $self->{newstate}->{serviceoutput} = "";
-            if ($self->{report} ne 'short') {
+            if ($self->get_option('report') ne 'short') {
               delete $self->{newstate}->{matchlines};
             }
           } else {
@@ -1856,7 +1859,7 @@ sub savestate {
             $self->trace("stay sticky until %s", 
                 scalar localtime ($self->{newstate}->{laststicked}
                 + $self->{maxstickytime})); 
-            if ($self->{report} ne 'short') {
+            if ($self->get_option('report') ne 'short') {
               foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
                 my $servicestateid =
                   {'OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3}->{$level};
@@ -2269,7 +2272,7 @@ sub searchresult {
   	$self->{newstate}->{servicestateid} = 0;
   	$self->{newstate}->{serviceoutput} = "";
   }
-  if ($self->{option}->{sticky} && $self->{report} ne 'short') {
+  if ($self->{option}->{sticky} && $self->get_option('report') ne 'short') {
     # damit long/html output erhalten bleibt und nicht nur der letzte treffer
     $self->{newstate}->{matchlines} = $self->{matchlines};
   }
