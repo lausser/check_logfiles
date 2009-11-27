@@ -310,14 +310,24 @@ if (my $cl = Nagios::CheckLogfiles->new({
       searches => [ 
           map {
             if (exists $commandline{type}) {
-              # "eventlog" or "eventlog:eventlog=application,source=cdrom"
+              # "eventlog" or "eventlog:eventlog=application,include,source=cdrom,source=dvd,eventid=23,eventid=29,operation=or,exclude,eventid=4711,operation=and"
               my ($type, $details) = split(":", $commandline{type});
               $_->{type} = $type;
               if ($details) {
                 $_->{$type} = {};
+                my $toplevel = $_->{$type};
                 foreach my $detail (split(",", $details)) {
                   my ($key, $value) = split("=", $detail);
-                  $_->{$type}->{$key} = $value;
+                  if ($value) {
+               	    if (exists $toplevel->{$key}) {
+                      $toplevel->{$key} .= ','.$value;
+                    } else {
+                      $toplevel->{$key} = $value;	
+                    }
+                  } else {
+                    $_->{$type}->{$key} = {};
+                    $toplevel = $_->{$type}->{$key};
+                  }
                 }
               }
             }

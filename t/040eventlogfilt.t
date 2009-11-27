@@ -92,3 +92,47 @@ diag($cl->has_result());
 diag($cl->{exitmessage}.'|'.$cl->{perfdata});
 ok($cl->expect_result(0, 0, 2, 0, 2)); #2
 
+
+sleep 2;
+$cl->reset();
+diag("now commandline");
+$ssh->trace(sprintf "+----------------------- test %d ------------------", 7);
+$ssh->logger(undef, undef, 1, "Firewall problem1", undef, {
+  EventType => 'Error',
+  EventID => '0010',
+});
+$ssh->logger(undef, undef, 1, "Firewall problem2", undef, {
+  EventType => 'Error',
+  EventID => '0011',
+});
+$ssh->logger(undef, undef, 1, "DVD problem1", undef, {
+  EventType => 'Error',
+  EventID => '0012',
+  Source => 'DVD',   # block
+});
+$ssh->logger(undef, undef, 1, "Firewall problem3", undef, {
+  EventType => 'Error',
+  EventID => '23',   # block
+});
+# run commandline
+my $cmd = sprintf "perl ../plugins-scripts/check_logfiles --tag %s --seekfilesdir %s --criticalpattern \".*\" --type \"eventlog:eventlog=application,include,EventType=Error,Source=check_logfiles,exclude,eventid=13,eventid=23\"",
+  "ssh", TESTDIR."/var/tmp";
+diag($cmd);
+my $result = `$cmd`;
+diag($result);
+ok($result =~ /OK - no errors or warnings/);
+ok(($? >> 8) == 0);
+
+# 2 now find the two criticals 1xFWproblem1 1xFWproblem2
+$ssh->trace(sprintf "+----------------------- test %d ------------------", 2);
+$cl->reset();
+sleep 30;
+$ssh->logger(undef, undef, 1, "Fireball 2hihi");
+$ssh->logger(undef, undef, 1, "Fireball 3hihi");
+$ssh->logger(undef, undef, 1, "Firewall problem1");
+# run commandline
+$result = `$cmd`;
+diag($result);
+ok($result =~ /CRITICAL - \(2 errors in/);
+ok(($? >> 8) == 2);
+

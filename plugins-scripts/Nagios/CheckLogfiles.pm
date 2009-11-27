@@ -750,6 +750,8 @@ sub refresh_options {
 sub trace {
   my $self = shift;
   my $format = shift;
+  $self->{tracebuffer} = [] unless exists $self->{tracebuffer};
+  push(@{$self->{tracebuffer}}, @_);
   if ($self->{verbose}) {
     printf("%s: ", scalar localtime);
     printf($format, @_);

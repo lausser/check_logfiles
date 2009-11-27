@@ -171,6 +171,7 @@ sub reset {
   delete $self->{newlogtime};
   delete $self->{newdevino};
   delete $self->{newlogfile};
+  delete $self->{tracebuffer};
   $self->{relevantfiles} = [];
   $self->{logrotated} = 0;
   $self->{logmodified} = 0;
@@ -180,6 +181,13 @@ sub reset {
     $self->{options}->{sticky} = 1 if ($self->{options}->{sticky} > 1);
   }
   return $self;
+}
+
+sub dump_trace {
+  my $self = shift;
+  foreach (@{$self->{tracebuffer}}) {
+    printf STDERR "%s\n", $_;
+  }
 }
 
 sub delete_logfile {

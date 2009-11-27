@@ -938,6 +938,7 @@ if ($^O =~ /MSWin/) {
   $perlpath = 'C:\Perl\bin\perl';
  }
 $configfile = <<EOCFG;
+\$tracefile = "./var/tmp/tratra";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$MACROS = {
@@ -967,6 +968,7 @@ exit 0
 ");
 } else {
 $configfile = <<EOCFG;
+\$tracefile = "./var/tmp/tratra";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$MACROS = {
@@ -1001,6 +1003,9 @@ open CCC, ">./etc/2check_action.cfg";
 print CCC $configfile;
 close CCC;
 
+unlink("./var/tmp/tratra");
+open CCC, ">./var/tmp/tratra";
+close CCC;
 my $xcl = Nagios::CheckLogfiles::Test->new({ cfgfile => "./etc/2check_action.cfg" });
 $xcl->delete_file("./var/tmp/scriptcounter");
 $action = $xcl->get_search_by_tag("action");
@@ -1015,6 +1020,13 @@ $action->loggercrap(undef, undef, 10);
 $output = `$perlpath ../plugins-scripts/check_logfiles -f ./etc/2check_action.cfg`;
 diag ("real run: ".$output);
 ok($output =~ /OK/);
+if ($output !~ /OK/) {
+open CCC, "./var/tmp/tratra";
+while(<CCC>) {
+  printf STDERR "%s\n", $_;
+}
+close CCC;
+}
 
 $configfile = <<EOCFG;
 \$seekfilesdir = "./var/tmp";
