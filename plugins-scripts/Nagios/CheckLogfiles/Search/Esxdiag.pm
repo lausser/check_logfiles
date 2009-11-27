@@ -82,7 +82,7 @@ sub collectfiles {
   if ($self->{logmodified}) {
     my $linesread = 0;
     eval {
-      use VMware::VIRuntime;
+      require VMware::VIRuntime;
       my %loginparams = (
         service_url => $self->{esxdiag}->{connect}->{url},
         user_name => $self->{esxdiag}->{connect}->{username},
