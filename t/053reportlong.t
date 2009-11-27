@@ -85,7 +85,7 @@ ok($cl->{long_exitmessage} =~ /tag ssh CRITICAL\n.*user3\n.*user4\n.*sepp/m);
 
 
 my $configfile =<<EOCFG;
-        \$options = 'report="long"';
+        \$options = 'report=long';
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
