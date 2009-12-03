@@ -12,7 +12,7 @@ use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
-plan tests => 10;
+plan tests => 15;
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
@@ -155,3 +155,72 @@ ok($cl->expect_result(0, 4, 2, 0, 2));
 ok($cl->{exitmessage} =~ /CRITICAL - \(2 errors, 4 warnings\) - .* Failed password .*user8 /);
 diag($cl->{long_exitmessage});
 ok($cl->{long_exitmessage} =~ /tag ssh CRITICAL\n.*user8.*\n.*user8.*\n.*Unknown.*\n.*Unknown.*\ntag null WARNING\n.*crap.*\n.*crap/);
+
+$ssh->trace("==== very long output ====");
+diag("==== very long output ====");
+sleep 1;
+$cl->reset();
+# 2 criticals for ssh
+$ssh->loggercrap(undef, undef, 2);
+foreach (1..300) {
+  $ssh->logger(undef, undef, 1, "Failed password for invalid user88");
+}
+$cl->run();
+#diag($cl->{long_exitmessage});
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 300, 0, 2));
+diag($cl->{exitmessage});
+diag(length $cl->{long_exitmessage});
+ok((length $cl->{long_exitmessage} <= 4096) && (length $cl->{long_exitmessage} > 3000));
+
+$configfile =<<EOCFG;
+        \$options = 'report=long,maxlength=8192';
+        \$seekfilesdir = "./var/tmp";
+        \@searches = (
+            {
+              tag => "ssh",
+              logfile => "./var/adm/messages",
+              criticalpatterns => "Failed password for invalid user8",
+              warningpatterns => "Unknown user",
+              options => "perfdata,nologfilenocry"
+            },
+            {
+              tag => "test",
+              logfile => "./var/adm/messages",
+              logfile => "./var/adm/messages",
+              criticalpatterns => "Failed password for invalid user9",
+              warningpatterns => "Unknown user",
+              options => "noperfdata,nologfilenocry"
+            },
+            {
+              tag => "null",
+              logfile => "./var/adm/messages",
+              logfile => "./var/adm/messages",
+              criticalpatterns => ".*nonsense.*",
+              warningpatterns => "crap",
+              options => "perfdata,nologfilenocry"
+            },
+  );
+EOCFG
+printf STDERR "======================================================\n";
+open CCC, ">./etc/searcheslong.cfg";
+print CCC $configfile;
+close CCC;
+
+$cl = Nagios::CheckLogfiles::Test->new({ cfgfile => "./etc/searcheslong.cfg", selectedsearches => ['ssh'] });
+ok(scalar @{$cl->{searches}} == 1);
+$ssh = $cl->get_search_by_tag("ssh");
+$cl->run(); # init
+$cl->reset();
+#$ssh->loggercrap(undef, undef, 2);
+foreach (1..700) {
+  $ssh->logger(undef, undef, 1, "Failed password for invalid user8");
+}
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 700, 0, 2));
+diag(length $cl->{long_exitmessage});
+ok((length $cl->{long_exitmessage} <= 8192) && (length $cl->{long_exitmessage} > 8000));
+

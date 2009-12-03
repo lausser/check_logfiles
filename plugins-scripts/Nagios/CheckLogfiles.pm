@@ -63,7 +63,7 @@ sub init {
   $self->{reset} = $params->{reset} || 0;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
-      supersmartpostscript => 0, report => 'short' });
+      supersmartpostscript => 0, report => 'short', maxlength => 4096 });
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
       # multiple cfgfiles found in a config dir
@@ -340,7 +340,8 @@ sub run {
       if ($search->{tag} eq "postscript") {
         $search->{macros}->{CL_SERVICESTATEID} = $self->{exitcode};
         $search->{macros}->{CL_SERVICEOUTPUT} = $self->{exitmessage};
-        $search->{macros}->{CL_LONGSERVICEOUTPUT} = $self->{long_exitmessage} || $self->{exitmessage};
+        $search->{macros}->{CL_LONGSERVICEOUTPUT} = 
+            $self->{long_exitmessage} || $self->{exitmessage};
         $search->{macros}->{CL_SERVICEPERFDATA} = $self->{perfdata};
         $search->{macros}->{CL_PROTOCOLFILE} = $self->{protocolfile};
         if ($search->{options}->{supersmartscript}) {
@@ -449,7 +450,7 @@ sub formulate_result {
 
 sub formulate_long_result {
   my $self = shift;
-  my $maxlength = 4 * 1024;
+  my $maxlength = $self->get_option('maxlength');
   $self->{long_exitmessage} = "";
   my $prefix = ($self->get_option('report') eq "html") ?
       "<table style=\"border-collapse: collapse;\">" : "";

@@ -2,8 +2,11 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.1.1 - 2009-12-02
+- max plugin output length is now configurable with $options="maxlength=8192"
+
 3.1 - 2009-11-22
-- report can now be set in a cfgfile (global, e.g. options="report=long")
+- report can now be set in a cfgfile (global, e.g. $options="report=long")
 - new option "allyoucaneat" (the initial run starts from line 0)
 - new option "eventlogformat" (e.g. options='eventlogformat="id:%i %m",..')
 - Eventlog can now be filtered with include and exclude
