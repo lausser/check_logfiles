@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.1.2 - 2009-12-08
+- fixed a bug in scriptparams+macros+batsccipt
+
 3.1.1 - 2009-12-02
 - max plugin output length is now configurable with $options="maxlength=8192"
 

@@ -629,7 +629,7 @@ sub init_macros {
 sub resolve_macros {
   my $self = shift;
   my $pstring = shift;
-  while ($$pstring =~ /.*\$(\w+)\$.*/g) {
+  while ($$pstring =~ /\$(.+?)\$/g) {
     my $maybemacro = $1;
     if (exists $self->{macros}->{$maybemacro}) {
       my $macro = $self->{macros}->{$maybemacro};
@@ -638,10 +638,13 @@ sub resolve_macros {
   }
 }
 
+
 sub resolve_macros_in_pattern {
   my $self = shift;
   my $pstring = shift;
-  while ($$pstring =~ /.*\$(\w+)\$.*/g) {
+  while ($$pstring =~ /\$(.+?)\$/g) {
+  # das alte bleibt hier stehen als denkmal der schande
+  #while ($$pstring =~ /.*\$(\w+)\$.*/g) { 
     my $maybemacro = $1;
     if (exists $self->{macros}->{$maybemacro}) {
       my $macro = $self->{macros}->{$maybemacro};

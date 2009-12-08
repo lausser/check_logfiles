@@ -6,7 +6,7 @@
 #
 
 use strict;
-use Test::More tests => 2;
+use Test::More tests => 3;
 use Cwd;
 use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
@@ -43,7 +43,8 @@ my $cl = Nagios::CheckLogfiles::Test->new({
               script => 'nagmsg',
               scriptparams => '-n chaos -m $CL_TAG$ -s critical -t "$CL_SERVICEOUTPUT$"',
             },
-	]    });
+	]
+});
 my $maestro = $cl->get_search_by_tag("Maestro");
 my $backup = $cl->get_search_by_tag("BACKUP");
 $maestro->delete_logfile();
@@ -53,3 +54,8 @@ $backup->delete_seekfile();
 
 ok($maestro->{tag} eq $maestro->{macros}->{CL_TAG});
 ok($backup->{tag} eq $backup->{macros}->{CL_TAG});
+
+my $scriptparams = $backup->{scriptparams};
+$backup->resolve_macros(\$scriptparams);
+diag($scriptparams);
+ok($scriptparams eq '-n chaos -m BACKUP -s critical -t ""');
