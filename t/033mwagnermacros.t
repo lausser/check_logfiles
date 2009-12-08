@@ -58,4 +58,4 @@ ok($backup->{tag} eq $backup->{macros}->{CL_TAG});
 my $scriptparams = $backup->{scriptparams};
 $backup->resolve_macros(\$scriptparams);
 diag($scriptparams);
-ok($scriptparams eq '-n chaos -m BACKUP -s critical -t ""');
+ok($scriptparams eq '-n chaos -m BACKUP -s critical -t "$CL_SERVICEOUTPUT$"');
