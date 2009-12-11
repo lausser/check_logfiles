@@ -45,8 +45,10 @@ sub init {
   $self->SUPER::init($params);
   $self->{clo} = {
       path => $params->{ipmitool}->{path} ?
-      $params->{ipmitool}->{path} : "/usr/bin/ipmitool",
-      cache => exists $params->{ipmitool}->{elist} ? 1 : 0,
+          $params->{ipmitool}->{path} : "/usr/bin/ipmitool",
+      ## cache => exists $params->{ipmitool}->{cache} ? 1 : 0,
+      ## using a local cache makes no sense here
+      ## maybe checking remote sdr will be a feature in the future
       listcmd => exists $params->{ipmitool}->{elist} ? "elist" : "list"
   };
 }
@@ -60,8 +62,8 @@ sub prepare {
       $self->system_tempdir();
   if ($self->{clo}->{cache} && (! -f $self->{sdrcache} || 
       ((time - ($self->{sdrcache})[9]) > 86400))) {
-    $self->trace("creating/refreshing sdr cache %s", $self->{sdrcache});
-    system($self->{clo}->{path}.' sdr dump '.$self->{sdrcache}.' >/dev/null 2>&1');
+    ## $self->trace("creating/refreshing sdr cache %s", $self->{sdrcache});
+    ## system($self->{clo}->{path}.' sdr dump '.$self->{sdrcache}.' >/dev/null 2>&1');
   }
   unlink $self->{logfile};
   my $ipmitool_sel_list = sprintf "%s %s sel %s 2>&1 |",
@@ -121,5 +123,17 @@ sub analyze_situation {
     }
     $spool_fh->close();
   }
+}
+
+sub rewind {
+  my $self = shift;
+  $self->loadstate();
+  foreach (keys %{$self->{laststate}}) {
+    $self->{newstate}->{$_} = $self->{laststate}->{$_};
+  }
+  $self->addevent(0, "reset");
+  $self->{newstate}->{eventids} = [];
+  $self->savestate();
+  return $self;
 }
 
