@@ -1,5 +1,19 @@
 package Nagios::CheckLogfiles::Search::Ipmitool;
 
+# http://download.intel.com/design/servers/ipmi/IPMIv2_0rev1_0.pdf
+#
+# SEL Entries have a unique `Record ID' field. This field is used for
+# retrieving log entries from the SEL. SEL reading can be done in 
+# a `random access' manner. That is, SEL Entries can be read in any 
+# order assuming that the Record ID is known.
+# SEL Record IDs 0000h and FFFFh are reserved for functional use
+# and are not legal ID values. Record IDs are handles. They are not
+# required to be sequential or consecutive. Applications should not
+# assume that SEL Record IDs will follow any particular numeric ordering.
+#
+# Man beachte die letzten beiden Saetze. Sollte der dafuer Verantwortliche
+# diese Zeilen lesen: Ich finde dich, du Schwein!
+
 use strict;
 use Exporter;
 use File::Basename;
@@ -16,7 +30,9 @@ use constant UNKNOWN => 3;
 @ISA = qw(Nagios::CheckLogfiles::Search::Simple);
 
 sub new {
-  my $self = bless {}, shift;
+  my $self = bless {
+    eventids => [],
+  }, shift;
   return $self->init(shift);
 }
 
@@ -54,19 +70,43 @@ sub prepare {
   my $ipmitool_fh = new IO::File;
   my $spool_fh = new IO::File;
   $self->trace("executing %s", $ipmitool_sel_list);
+  # 8 | 08/10/2007 | 15:09:00 | Power Unit #0x01 | Power off/down
+  # 9 | Pre-Init Time-stamp   | Chassis #0xa9 | State Asserted
   if ($ipmitool_fh->open($ipmitool_sel_list)) {
     if ($spool_fh->open('>'.$self->{logfile})) {
       while (my $event = $ipmitool_fh->getline()) {
         chomp $event;
         next if $event =~ /SEL has no entries/;
-        $event =~ s/\|/;/g;
-        $spool_fh->printf("%s\n", $event);
+        if (/^\s*(\w+)\s*\|/) {
+          push(@{$self->{eventlog}->{eventids}}, $1);
+          $self->trace("found new eventid %s", $1);
+          if (! grep $1, @{$self->{eventlog}->{last_eventids}}) { # new id
+            $event =~ s/\|/;/g;
+            $spool_fh->printf("%s\n", $event);
+          }
+        }
       }
       $spool_fh->close();
     }
     $ipmitool_fh->close();
   }
   $self->trace("wrote spoolfile %s", $self->{logfile});
+}
+
+sub loadstate {
+  my $self = shift;
+  $self->SUPER::loadstate();
+  $self->{eventlog}->{last_eventids} = $self->{laststate}->{eventids} || [];
+  $self->{laststate}->{logoffset} = 0;
+}
+
+sub savestate {
+  my $self = shift;
+  foreach (keys %{$self->{laststate}}) {
+    $self->{newstate}->{$_} = $self->{laststate}->{$_};
+  }
+  $self->{newstate}->{eventids} = $self->{eventlog}->{eventids};
+  $self->SUPER::savestate();
 }
 
 sub getfilefingerprint {
