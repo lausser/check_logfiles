@@ -32,6 +32,7 @@ use constant UNKNOWN => 3;
 sub new {
   my $self = bless {
     eventids => [],
+    eventbuffer => [],
   }, shift;
   return $self->init(shift);
 }
@@ -72,21 +73,11 @@ sub prepare {
   $self->trace("executing %s", $ipmitool_sel_list);
   # 8 | 08/10/2007 | 15:09:00 | Power Unit #0x01 | Power off/down
   # 9 | Pre-Init Time-stamp   | Chassis #0xa9 | State Asserted
-  if ($ipmitool_fh->open($ipmitool_sel_list)) {
-    if ($spool_fh->open('>'.$self->{logfile})) {
-      while (my $event = $ipmitool_fh->getline()) {
-        chomp $event;
-        next if $event =~ /SEL has no entries/;
-        if (/^\s*(\w+)\s*\|/) {
-          push(@{$self->{eventlog}->{eventids}}, $1);
-          $self->trace("found new eventid %s", $1);
-          if (! grep $1, @{$self->{eventlog}->{last_eventids}}) { # new id
-            $event =~ s/\|/;/g;
-            $spool_fh->printf("%s\n", $event);
-          }
-        }
-      }
-      $spool_fh->close();
+  if ($ipmitool_fh->open($ipmitool_sel_list)) { 
+    while (my $event = $ipmitool_fh->getline()) {
+      chomp $event;
+      next if $event =~ /SEL has no entries/;
+      push(@{$self->{eventlog}->{eventbuffer}}, $event);
     }
     $ipmitool_fh->close();
   }
@@ -109,25 +100,26 @@ sub savestate {
   $self->SUPER::savestate();
 }
 
-sub getfilefingerprint {
+sub analyze_situation {
   my $self = shift;
-  my $file = shift;
-  if (-f $file) {
-    my $magic;
-    if (ref $file) {
-      my $pos = $file->tell();
-      $file->seek(0, 0);
-      $magic = $file->getline() || "this_was_an_empty_file";
-      $file->seek(0, $pos);
-    } else {
-      my $fh = new IO::File;
-      $fh->open($file, "r");
-      $magic = $fh->getline() || "this_was_an_empty_file";
-      $fh->close();
+  my $spool_fh = new IO::File;
+  if ($spool_fh->open('>'.$self->{logfile})) {
+    foreach my $event (@{$self->{eventlog}->{eventbuffer}}) {
+      if ($event =~ /^\s*(\w+)\s*\|/) {
+        my $eventid = $1;
+        push(@{$self->{eventlog}->{eventids}}, $eventid);
+        if (! grep { $eventid eq $_ } @{$self->{eventlog}->{last_eventids}}) {
+          $self->trace("found new eventid %s", $eventid);
+          $event =~ s/\|/;/g;
+          $spool_fh->printf("%s\n", $event);
+          $self->{logmodified} = 1;
+          $self->{logrotated} = 1;
+        }
+      } else {
+        $self->trace("no match eventid %s", $event);
+      }
     }
-    $self->trace("magic: %s", $magic);
-    return(Digest::MD5::md5_base64($magic));
-  } else {
-    return "0:0";
+    $spool_fh->close();
   }
 }
+
