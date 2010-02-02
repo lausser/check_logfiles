@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.1.4 - 2010-02-02
+- added option randominode (Thanks Sergio Guzman)
+
 3.1.3 - 2009-12-12
 - fixed a bug in module Ipmitool
 
