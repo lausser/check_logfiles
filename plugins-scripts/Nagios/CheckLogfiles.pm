@@ -201,7 +201,7 @@ sub init_from_file {
       @searches, @logs, $tracefile, $options, $report, $timeout, $pidfile);
   our $MACROS = {};
   if ($^O =~ /MSWin/) {
-    $ENV{HOME} = $ENV{HOMEPATH};
+    $ENV{HOME} = $ENV{USERPROFILE};
   }
   if ($self->{cfgbase} eq "flatfile") {
     $self->{cfgfile} =~ s/\%([A-Fa-f0-9]{2})/pack('C', hex($1))/seg;
@@ -978,9 +978,7 @@ sub getfilefingerprint {
   my $self = shift;
   my $file = shift;
   if (-f $file) {
-    if ($self->get_option('randominode')) {
-      return "00:00";
-    } elsif ($^O eq "MSWin32") {
+    if ($^O eq "MSWin32") {
       my $magic;
       if (ref $file) {
         my $pos = $file->tell();
@@ -1426,7 +1424,7 @@ sub init {
       protocol => 1, count => 1, syslogserver => 0, logfilenocry => 1,
       perfdata => 1, case => 1, sticky => 0, syslogclient => 0,
       savethresholdcount => 1, encoding => 0, maxlength => 0, 
-      lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
+      lookback => 0, context => 0, allyoucaneat => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0 } );
   $self->refresh_options($params->{options});
   #
@@ -1781,6 +1779,7 @@ sub loadstate {
   }
   $self->{privatestate}->{lastruntime} = $self->{laststate}->{runtime};
   $self->{privatestate}->{runcount} = $self->{laststate}->{runcount};
+  $self->{privatestate}->{logfile} = $self->{macros}->{CL_LOGFILE};
   $self->{macros}->{CL_LAST_RUNTIME} = $self->{privatestate}->{lastruntime};
   $self->{macros}->{CL_RUN_COUNT} = $self->{privatestate}->{runcount};
   return $self;
@@ -2766,14 +2765,7 @@ sub collectfiles {
       $_;
     }
   } reverse @rotatedfiles;
-  if ((scalar(@rotatedfiles) == 1) &&
-      ($rotatedfiles[0]->{filename} eq $self->{logfile}) &&
-      ! $self->get_option('randominode')) {
-    # somehow rotated (devino has changed) but there are no rotated files
-    # maybe logfile was rotated=deleted and recreated
-    # a very special case which i found when i wrote 087randominode.t
-    $self->{laststate}->{logoffset} = 0;
-  } elsif (@rotatedfiles && (exists $rotatedfiles[0]->{size}) && 
+  if (@rotatedfiles && (exists $rotatedfiles[0]->{size}) && 
       ($rotatedfiles[0]->{size} < $self->{laststate}->{logoffset})) {
     $self->trace(sprintf "file %s is too short (%d < %d). this should not happen. reset",
         $rotatedfiles[0]->{filename},
@@ -2877,6 +2869,7 @@ sub prepare {
   if (@matchingfiles) {
     $self->{logfile} = $matchingfiles[-1]->{filename};
     $self->{macros}->{CL_LOGFILE} = $self->{logfile};
+    $self->{privatestate}->{logfile} = $self->{logfile};
     $self->trace("the newest uniform logfile i found is %s", $self->{logfile});
   } else {
     $self->{logfile} = $self->{archivedir}.'/logfilenotfound';

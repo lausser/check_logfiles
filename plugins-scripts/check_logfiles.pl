@@ -5,6 +5,27 @@ use utf8;
 use File::Basename;
 use File::Find;
 use Getopt::Long;
+#import Devel::TraceMethods qw( 
+#Nagios::CheckLogfiles
+#Nagios::CheckLogfiles::Search
+#Nagios::CheckLogfiles::Search::Simple
+#Nagios::CheckLogfiles::Search::Rotating
+#Nagios::CheckLogfiles::Search::Rotating::Uniform
+#Nagios::CheckLogfiles::Search::Virtual
+#Nagios::CheckLogfiles::Search::Prescript
+#Nagios::CheckLogfiles::Search::Postscript
+#);
+#Devel::TraceMethods::callback ( 
+#    'Nagios::CheckLogfiles' => \&logger, 
+#    'Nagios::CheckLogfiles::Search' => \&logger,
+#    'Nagios::CheckLogfiles::Search::Simple' => \&logger,
+#    'Nagios::CheckLogfiles::Search::Rotating' => \&logger,
+#    'Nagios::CheckLogfiles::Search::Rotating::Uniform' => \&logger,
+#    'Nagios::CheckLogfiles::Search::Virtual' => \&logger,
+#    'Nagios::CheckLogfiles::Search::Prescript' => \&logger,
+#    'Nagios::CheckLogfiles::Search::Postscript' => \&logger,
+#
+#);
 
 use constant OK => 0;
 use constant WARNING => 1;
@@ -16,6 +37,13 @@ use vars qw (%commandline);
 my @cfgfiles = ();
 my $needs_restart = 0;
 my $enough_info = 0;
+
+sub logger {
+  my $method = shift;
+  my @args = @_;
+  printf STDERR "%s\n", $method;
+  printf STDERR " %s\n", Data::Dumper::Dumper(\@args);
+}
 
 my $plugin_revision = '$Revision: 1.0 $ ';
 my $progname = basename($0);
