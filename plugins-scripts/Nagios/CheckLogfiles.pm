@@ -978,7 +978,9 @@ sub getfilefingerprint {
   my $self = shift;
   my $file = shift;
   if (-f $file) {
-    if ($^O eq "MSWin32") {
+    if ($self->get_option('randominode')) {
+      return "00:00";
+    } elsif ($^O eq "MSWin32") {
       my $magic;
       if (ref $file) {
         my $pos = $file->tell();
@@ -1424,7 +1426,7 @@ sub init {
       protocol => 1, count => 1, syslogserver => 0, logfilenocry => 1,
       perfdata => 1, case => 1, sticky => 0, syslogclient => 0,
       savethresholdcount => 1, encoding => 0, maxlength => 0, 
-      lookback => 0, context => 0, allyoucaneat => 0,
+      lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0 } );
   $self->refresh_options($params->{options});
   #
@@ -2765,7 +2767,14 @@ sub collectfiles {
       $_;
     }
   } reverse @rotatedfiles;
-  if (@rotatedfiles && (exists $rotatedfiles[0]->{size}) && 
+  if (0 && (scalar(@rotatedfiles) == 1) &&
+      ($rotatedfiles[0]->{filename} eq $self->{logfile}) &&
+      ! $self->get_option('randominode')) {
+    # somehow rotated (devino has changed) but there are no rotated files
+    # maybe logfile was rotated=deleted and recreated
+    # a very special case which i found when i wrote 087randominode.t
+    $self->{laststate}->{logoffset} = 0;
+  } elsif (@rotatedfiles && (exists $rotatedfiles[0]->{size}) && 
       ($rotatedfiles[0]->{size} < $self->{laststate}->{logoffset})) {
     $self->trace(sprintf "file %s is too short (%d < %d). this should not happen. reset",
         $rotatedfiles[0]->{filename},
