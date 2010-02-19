@@ -81,8 +81,12 @@ sub loadstate {
   # always scan the whole output. thst's what starttime is for.
   $self->{laststate}->{logoffset} = 0;
   # if this is the very first run, look back 5 mintes in the past.
+  # with allyoucaneat set, look back 10 years
   $self->{laststate}->{logtime} = $self->{laststate}->{logtime} ?
-      $self->{laststate}->{logtime} : $self->{eventlog}->{thissecond} - 600;
+      $self->{laststate}->{logtime} : 
+      $self->{options}->{allyoucaneat} ? 
+          $self->{eventlog}->{thissecond} - 315360000 :
+          $self->{eventlog}->{thissecond} - 600;
 } 
   
 sub savestate {
