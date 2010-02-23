@@ -918,11 +918,13 @@ sub action {
           # be accepted here.
         }
       } else {
-        $output = (`$cmd`)[0] || "";
+        my @output = `$cmd`;
+        # find the first non-empty line
+        @output = map { chomp; $_; } grep !/^$/, @output;
+        $output = $output[0] || "";
         $exitvalue  = $? >> 8;
         $signalnum  = $? & 127;
         $dumpedcore = $? & 128;
-        chomp $output;
       }
       $self->trace("script said: %s", $output);
       if ($wait != $pid) {
