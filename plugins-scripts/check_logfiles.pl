@@ -189,6 +189,7 @@ my @params = (
     "criticalthreshold=i",
     "warningthreshold=i",
     "encoding=s",
+    "preferredlevel=s",
 );
 if (! GetOptions(\%commandline, @params)) {
   print_help();
@@ -406,7 +407,9 @@ if (my $cl = Nagios::CheckLogfiles->new({
               $commandline{criticalthreshold} ? "criticalthreshold=".$commandline{criticalthreshold} : undef,
               $commandline{warningthreshold} ? "warningthreshold=".$commandline{warningthreshold} : undef,
               $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,
-              defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef ),
+              defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef,
+              $commandline{preferredlevel} ? "preferredlevel=".$commandline{preferredlevel} : undef,
+          ),
           archivedir =>
               $commandline{archivedir} ?
                   $commandline{archivedir} : undef,

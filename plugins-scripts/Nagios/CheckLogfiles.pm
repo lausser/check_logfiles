@@ -1429,6 +1429,7 @@ sub init {
       perfdata => 1, case => 1, sticky => 0, syslogclient => 0,
       savethresholdcount => 1, encoding => 0, maxlength => 0, 
       lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
+      preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0 } );
   $self->refresh_options($params->{options});
   #
@@ -2078,9 +2079,11 @@ sub scan {
       next if $filteredout;
       $self->{linenumber}++;
       $self->update_context(0, $line); # store this line as before
+      my $matches = {};
       foreach my $nagioslevel qw(CRITICAL WARNING UNKNOWN) {
         my $level = $nagioslevel; # because it needs to be modified
         my $outplayed = 0;
+        $matches->{$level} = [];
         foreach my $exception (@{$self->{exceptions}->{$level}}) {
           if ($line =~ /$exception/) {
             $self->trace("exception %s found. aborting.", $exception);
@@ -2093,6 +2096,28 @@ sub scan {
         foreach my $pattern (@{$self->{patterns}->{$level}}) {          
           $patcnt++;
           if ($line =~ /$pattern/) {
+            push(@{$matches->{$level}}, $patcnt);
+          }
+        }
+      }
+      # now we have a structure with all the matches for this line
+      # new option preferredlevel=critical
+      if ($self->{options}->{preferredlevel}) {
+        my $preferredlevel = uc $self->{options}->{preferredlevel};
+        if (scalar(@{$matches->{$preferredlevel}}) > 0) {
+          # es gibt z.b. einen criticaltreffer und critical ist preferred
+          # d.h. alle anderen level fliegen raus
+          foreach my $level qw(CRITICAL WARNING UNKNOWN) {
+            $matches->{$level} = [] unless $level eq $preferredlevel;
+          }
+        }
+        
+      }
+      foreach my $nagioslevel qw(CRITICAL WARNING UNKNOWN) {
+        my $level = $nagioslevel; # because it needs to be modified
+        foreach my $patcnt (@{$matches->{$level}}) {
+          my $pattern = @{$self->{patterns}->{$level}}[$patcnt];
+
             $self->trace("MATCH %s %s with %s", $level, $pattern, $line);
             if ($self->{threshold}->{$level}) {
               if ($self->{thresholdcnt}->{$level} < 
@@ -2145,10 +2170,10 @@ sub scan {
             if ($self->{tivoli}->{object}) {
               delete $self->{privatestate}->{tivolimatch};
             }
-          }
+          #}
         }
         #  count patterns which raise an alert only if they were not found.
-        $patcnt = -1;
+        my $patcnt = -1;
         foreach my $pattern (@{$self->{negpatterns}->{$level}}) {
           $patcnt++;
           if ($line =~ /$pattern/) {
