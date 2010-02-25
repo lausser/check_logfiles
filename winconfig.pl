@@ -26,7 +26,7 @@ if (! GetOptions(
 $opt_with_seekfiles_dir = 'C:\TEMP' if ! $opt_with_seekfiles_dir;
 $opt_with_protocols_dir = 'C:\TEMP' if ! $opt_with_protocols_dir;
 $opt_with_trusted_path = '' if ! $opt_with_trusted_path;
-$opt_with_perl = 'C:\Perl\bin\perl' if ! $opt_with_perl;
+$opt_with_perl = 'C:\strawberry\perl\bin\perl' if ! $opt_with_perl;
 $opt_with_gzip = '' if ! $opt_with_gzip;
 if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
   printf CHECKLOGFILES "#! %s -w\n", $opt_with_perl;
