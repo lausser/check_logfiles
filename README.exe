@@ -42,6 +42,9 @@ check_logfiles.exe
    pp -M PerlIO -o check_logfiles.exe check_logfiles
    pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::Daemon -o check_logfiles.exe check_logfiles
 
+6) Package the plugin
+   C:\Programme\WinZip\WINZIP32.EXE -a check_logfiles.zip plugins-scripts\check_logfiles.pl
+
 If it does not work it's not my fault. It worked for me and my PC.
 I read the documentation and played around until it worked.
 If it does not work for you, read the documentation and play around.

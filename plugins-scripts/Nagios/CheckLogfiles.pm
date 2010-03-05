@@ -386,7 +386,7 @@ sub run {
       if ($search->{options}->{count}) {
         foreach (qw(OK WARNING CRITICAL UNKNOWN)) {
           $self->{allerrors}->{$_} += scalar(@{$search->{matchlines}->{$_}});
-          if (defined $search->{lastmsg}->{$_}) {
+          if ($search->{lastmsg}->{$_}) {
             $self->{lastmsg}->{$_} = $search->{lastmsg}->{$_};
           }
         }
@@ -1953,7 +1953,7 @@ sub formulate_perfdata {
 sub addevent {
   my $self = shift;
   my $level = shift;
-  my $errormessage = shift;
+  my $errormessage = shift || '_(null)_';
   if ($self->{options}->{maxlength}) {
     $errormessage = substr $errormessage, 0, $self->{options}->{maxlength};
   }
