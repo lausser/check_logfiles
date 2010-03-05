@@ -12,7 +12,7 @@ use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
-plan tests => 15;
+plan tests => 28;
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
@@ -31,8 +31,6 @@ my $ssh = $cl->get_search_by_tag("ssh");
 $ssh->delete_logfile();
 $ssh->delete_seekfile();
 $ssh->trace("deleted logfile and seekfile");
-diag(Data::Dumper::Dumper($cl->{options}));
-diag(Data::Dumper::Dumper($ssh->{options}));
 
 # 1 logfile will be created. there is no seekfile. position at the end of file
 # and remember this as starting point for the next run.
@@ -223,4 +221,140 @@ diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 700, 0, 2));
 diag(length $cl->{long_exitmessage});
 ok((length $cl->{long_exitmessage} <= 8192) && (length $cl->{long_exitmessage} > 8000));
+
+
+# zeilen mit returncode 0 sollen nur im longoutput auftauchen, wenn sie
+# Treffer von okpattern waren.
+# Return 0 aus einem Supersmartscript zaehlt nicht.
+
+$cl = Nagios::CheckLogfiles::Test->new({
+        report => 'long',
+        seekfilesdir => TESTDIR."/var/tmp",
+        searches => [
+            {
+              tag => "door",
+              logfile => TESTDIR."/var/adm/messages",
+              criticalpatterns => ["door open", "window open"],
+              warningpatterns => ["door unlocked", "window unlocked"],
+              okpatterns => ["door closed", "window closed"],
+              options => "sticky",
+            }
+        ]    });
+my $door = $cl->get_search_by_tag("door");
+$door->delete_logfile();
+$door->delete_seekfile();
+$door->trace("deleted logfile and seekfile");
+
+# 1 logfile will be created. there is no seekfile. position at the end of file
+# and remember this as starting point for the next run.
+$door->trace(sprintf "+----------------------- test %d ------------------", 1);
+$door->loggercrap(undef, undef, 100);
+sleep 1;
+$door->trace("initial run");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
+
+# 2 now find the two criticals
+$door->trace(sprintf "+----------------------- test %d ------------------", 2);
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the door open1");
+$door->logger(undef, undef, 1, "the door open2");
+$door->logger(undef, undef, 1, "the door open3");
+$door->logger(undef, undef, 1, "the door open4");
+$door->loggercrap(undef, undef, 10);
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+diag($cl->{long_exitmessage});
+ok($cl->expect_result(0, 0, 4, 0, 2));
+
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 4, 0, 2));
+
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the door open5");
+$door->logger(undef, undef, 2, "the door closed");
+$door->loggercrap(undef, undef, 10);
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+diag("longexit".$cl->{long_exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
+my $sum = 0;
+map { $sum += $_ } map { scalar(@{$door->{matchlines}->{$_}}) } keys %{$door->{matchlines}};
+ok($sum == 0);
+diag("final".$cl->{long_exitmessage});
+ok($cl->{long_exitmessage} eq "");
+
+
+$cl = Nagios::CheckLogfiles::Test->new({
+        report => 'long',
+        seekfilesdir => TESTDIR."/var/tmp",
+        searches => [
+            {
+              tag => "door",
+              logfile => TESTDIR."/var/adm/messages",
+              criticalpatterns => ["door open", "window open"],
+              warningpatterns => ["door unlocked", "window unlocked"],
+              okpatterns => ["door closed", "window closed"],
+              options => "supersmartscript",
+              script => sub {
+                my $line = $ENV{CHECK_LOGFILES_SERVICEOUTPUT};
+                $line =~ /open(\d+)/;
+                print "kaas".$1;
+                return 0 if $1 eq "4";
+                return 2;
+              },
+            }
+        ]    });
+$door = $cl->get_search_by_tag("door");
+$door->delete_logfile();
+$door->delete_seekfile();
+$door->trace("deleted logfile and seekfile");
+
+# 1 logfile will be created. there is no seekfile. position at the end of file
+# and remember this as starting point for the next run.
+$door->trace(sprintf "+----------------------- test %d ------------------", 1);
+$door->loggercrap(undef, undef, 100);
+sleep 1;
+$door->trace("initial run");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
+
+# 2 now find the two criticals
+$door->trace(sprintf "+----------------------- test %d ------------------", 2);
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the door open1");
+$door->logger(undef, undef, 1, "the door open2");
+$door->logger(undef, undef, 1, "the door open3");
+$door->logger(undef, undef, 1, "the door open4");
+$door->loggercrap(undef, undef, 10);
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+$sum = 0;
+map { $sum += $_ } map { scalar(@{$door->{matchlines}->{$_}}) } keys %{$door->{matchlines}};
+ok($sum == 4);
+ok(scalar(@{$door->{matchlines}->{CRITICAL}}) == 3);
+ok(scalar(@{$door->{matchlines}->{OK}}) == 1);
+diag("final".$cl->{long_exitmessage});
+my @x = split(/\n/, $cl->{long_exitmessage});
+ok(scalar(@x) == 4);
+ok($cl->{long_exitmessage} !~ /kaas4/);
+ok($cl->expect_result(1, 0, 3, 0, 2));
 

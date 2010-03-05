@@ -26,7 +26,24 @@ sub init {
   $self->default_options({ winwarncrit => 0, 
       eventlogformat => '%g %i %m' });
   $self->SUPER::init($params);
-  if ($self->{options}->{winwarncrit}) {
+  if ($self->get_option('lookback')) {
+    if ($self->get_option('lookback') =~ /^(\d+)(s|m|h|d)$/) {
+      if ($2 eq 's') {
+        $self->set_option('lookback', $1);
+      } elsif ($2 eq 'm') {
+        $self->set_option('lookback', $1 * 60);
+      } elsif ($2 eq 'h') {
+        $self->set_option('lookback', $1 * 60 * 60);
+      } elsif ($2 eq 'd') {
+        $self->set_option('lookback', $1 * 60 * 60 * 24);
+      }
+    } else {
+      printf STDERR "illegal time interval (must be <number>[s|m|h|d]\n";
+      $self = undef;
+      return undef;
+    }
+  }
+  if ($self->get_option('winwarncrit')) {
     push(@{$self->{patterns}->{WARNING}}, "EE_WW_TT");
     push(@{$self->{patterns}->{CRITICAL}}, "EE_EE_TT");
   }

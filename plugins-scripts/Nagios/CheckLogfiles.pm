@@ -386,7 +386,7 @@ sub run {
       if ($search->{options}->{count}) {
         foreach (qw(OK WARNING CRITICAL UNKNOWN)) {
           $self->{allerrors}->{$_} += scalar(@{$search->{matchlines}->{$_}});
-          if ($search->{lastmsg}->{$_}) {
+          if (defined $search->{lastmsg}->{$_}) {
             $self->{lastmsg}->{$_} = $search->{lastmsg}->{$_};
           }
         }
@@ -485,7 +485,7 @@ sub formulate_long_result {
       } else {
         last;
       }
-      foreach my $level qw(CRITICAL WARNING UNKNOWN OK) {
+      foreach my $level qw(CRITICAL WARNING UNKNOWN) {
         foreach my $message (@{$search->{matchlines}->{$level}}) {
           if ($self->get_option('report') eq "html") {
             $message =~ s/</&lt;/g;
@@ -1383,11 +1383,14 @@ sub new {
   	}
   }
   if ($self->can("init")) {
-    $self->init($params);
+    if ($self->init($params)) {
+      return $self;
+    } else {
+      return undef;
+    }
   } else {
-    $self = undef;
+    return undef;
   }
-  return $self;
 }
 
 #

@@ -2,6 +2,10 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.1.5 - 2010-03-05
+- loopback option is now allowed in the config file
+- fixed a bug which caused a perl-warning (only if criticalpattern=.* and last line is empty). (Thanks Sven Nierlein)
+
 3.1.4 - 2010-02-24
 - just beautify the release string
 

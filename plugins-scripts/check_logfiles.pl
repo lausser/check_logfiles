@@ -218,23 +218,6 @@ if (exists $commandline{config}) {
   $commandline{type} = 'dummy';
   $enough_info = 1;
 }
-if (exists $commandline{lookback}) {
-  if ($commandline{lookback} =~ /^(\d+)(s|m|h|d)$/) {
-    if ($2 eq 's') {
-      $commandline{lookback} = $1;
-    } elsif ($2 eq 'm') {
-      $commandline{lookback} = $1 * 60;
-    } elsif ($2 eq 'h') {
-      $commandline{lookback} = $1 * 60 * 60;
-    } elsif ($2 eq 'd') {
-      $commandline{lookback} = $1 * 60 * 60 *24;
-    }
-  } else {
-    printf STDERR "illegal time interval (must be <number>[s|m|h|d]\n";
-    print_usage();
-    exit UNKNOWN;
-  }
-}
 
 if (! $enough_info) {
   print_usage();
