@@ -1953,7 +1953,10 @@ sub formulate_perfdata {
 sub addevent {
   my $self = shift;
   my $level = shift;
-  my $errormessage = shift || '_(null)_';
+  my $errormessage = shift;
+  if (! defined $errormessage || $errormessage eq '') {
+    $errormessage = '_(null)_';
+  }
   if ($self->{options}->{maxlength}) {
     $errormessage = substr $errormessage, 0, $self->{options}->{maxlength};
   }
