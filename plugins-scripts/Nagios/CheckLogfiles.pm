@@ -907,7 +907,12 @@ sub action {
         chomp $output;
         $chld_out->flush();
         $chld_out->close();
-        $wait = waitpid $pid, 0;
+        if ($^O =~ /MSWin/) {
+          # unfortunately waitpid in rare cases returns -1 on windows
+          $wait = wait;
+        } else {
+          $wait = waitpid $pid, 0;
+        }
         $exitvalue  = $? >> 8;
         $signalnum  = $? & 127;
         $dumpedcore = $? & 128;
