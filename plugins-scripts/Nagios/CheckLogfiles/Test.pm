@@ -530,6 +530,7 @@ sub loggercrap {
   }
   $self->trace(sprintf "%s logs %d random messages to %s", 
       $self->{tag}, $maxmsg, $self->{logfile});
+  return $maxmsg;
 }
 
 sub revert_seekfile {

@@ -11,3 +11,6 @@ dist-hook:
 	find $(distdir) -depth -name .svn -exec rm -rf {} \;
 	find $(distdir) -type f -exec fromdos -v {} \;
 	make
+
+exe:
+	 pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::Daemon -o check_logfiles.exe check_logfiles

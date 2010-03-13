@@ -231,6 +231,7 @@ $tivtest->logger(undef, undef, 1, "  occurred at Fri Jun  5 12:28:47 2009 and lo
 sleep 1;
 $cl->run();
 diag("now run");
+printf STDERR "%s\n", Data::Dumper::Dumper($tivtest->{matchlines});
 ok(${$tivtest->{matchlines}->{WARNING}}[0] =~
     /.+ Event= 87:MLXEV_SYSDEV_CRITICAL$/);
 ok(${$tivtest->{matchlines}->{WARNING}}[1] eq
@@ -518,17 +519,11 @@ $tivtest->logger('fjssrv', 'hacluster', 1, "CLUSTERSTATUS cluster forsc is in fa
 $tivtest->logger("fjssrv", "ServerView RAID:", 1,"[0013][IO_ERR] io timeout"); 
 # io timeout
 
-#$tivtest->loggercrap(undef, undef, 100);
+$tivtest->loggercrap(undef, undef, 100);
 sleep 1;
-$tivtest->trace("initial run");
 $ycl->run();
-
 diag($ycl->has_result());
 diag($ycl->{exitmessage});
 ok($ycl->expect_result(0, 0, 4, 0, 2));
-
-
-
-
 
 

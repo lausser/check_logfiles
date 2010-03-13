@@ -213,14 +213,15 @@ sub match {
   }
 #printf STDERR "try: %s\n", $line;
   foreach my $format (reverse @{$self->{'formats'}}) {
-    if (($format->{name} ne '*DISCARD*') &&
-        (! $format->has_slots() || ! $format->get_slot('severity'))) {
-      next; # ungueltiges format
-    }
+    next if ! $format->{can_match};
+    #if (($format->{name} ne '*DISCARD*') &&
+    #    (! $format->has_slots() || ! $format->get_slot('severity'))) {
+    #  next; # ungueltiges format
+    #}
     my @matches = ();
 #printf STDERR "format %s\n", $format->{name};
 #printf STDERR "match /%s/\n", $format->{pattern};
-    if (my @matches = $self->match_pattern($line, $format->{pattern})) {
+    if (my @matches = $self->match_pattern($line, $format)) {
       my $hit = Nagios::Tivoli::Config::Logfile::Hit->new({
           format => $format,
           logline => $line,
@@ -259,7 +260,8 @@ sub match {
 sub match_pattern {
   my $self = shift;
   my $line = shift;
-  my $pattern = shift;
+  my $format = shift;
+  my $pattern = $format->{pattern};
   if (ref($pattern) eq 'ARRAY') {
     my @all_matches = ();
     # 
@@ -287,7 +289,8 @@ sub match_pattern {
       }
     }
   } else {
-    my @matches = $line =~ /$pattern/;
+    #my @matches = $line =~ /$pattern/;
+    my @matches = $format->{matchfunc}($line);
     return @matches;
   }
 }
@@ -339,6 +342,13 @@ sub set_format_mappings {
 sub add_format {
   my $self = shift;
   my $format = shift;
+  if (($format->{name} ne '*DISCARD*') &&
+      (! $format->has_slots() || ! $format->get_slot('severity'))) {
+      #printf STDERR "FORMAT %s skipped\n", $format->{name};
+    $format->{can_match} = 0;
+  } else {
+    $format->{can_match} = 1;
+  }
   push(@{$self->{formats}}, $format);
 }
 
@@ -401,6 +411,7 @@ sub new {
   if (!defined $self->{name}) {
     die "please either specify formatfile or formatstring";
   }
+  $self->add_match_closure();
   return $self;
 }
 
@@ -438,6 +449,12 @@ sub get_variable {
 sub has_variables {
   my $self = shift;
   return scalar (keys %{$self->{variables}});
+}
+
+sub add_match_closure {
+  my $self = shift;
+  # creates a function which keeps the compiled version of self->pattern
+  $self->{matchfunc} = eval "sub { local \$_ = shift; return m/\$self->{pattern}/o; }";
 }
 
 

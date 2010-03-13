@@ -6,14 +6,17 @@ use File::Basename;
 use File::Find;
 use Getopt::Long;
 #import Devel::TraceMethods qw( 
-#Nagios::CheckLogfiles
-#Nagios::CheckLogfiles::Search
-#Nagios::CheckLogfiles::Search::Simple
-#Nagios::CheckLogfiles::Search::Rotating
-#Nagios::CheckLogfiles::Search::Rotating::Uniform
-#Nagios::CheckLogfiles::Search::Virtual
-#Nagios::CheckLogfiles::Search::Prescript
-#Nagios::CheckLogfiles::Search::Postscript
+#    Nagios::CheckLogfiles
+#    Nagios::CheckLogfiles::Search
+#    Nagios::CheckLogfiles::Search::Simple
+#    Nagios::CheckLogfiles::Search::Rotating
+#    Nagios::CheckLogfiles::Search::Rotating::Uniform
+#    Nagios::CheckLogfiles::Search::Virtual
+#    Nagios::CheckLogfiles::Search::Prescript
+#    Nagios::CheckLogfiles::Search::Postscript
+#    Nagios::Tivoli::Config::Logfile
+#    Nagios::Tivoli::Config::Logfile::Format
+#    Nagios::Tivoli::Config::Logfile::Hit
 #);
 #Devel::TraceMethods::callback ( 
 #    'Nagios::CheckLogfiles' => \&logger, 
@@ -24,7 +27,9 @@ use Getopt::Long;
 #    'Nagios::CheckLogfiles::Search::Virtual' => \&logger,
 #    'Nagios::CheckLogfiles::Search::Prescript' => \&logger,
 #    'Nagios::CheckLogfiles::Search::Postscript' => \&logger,
-#
+#    'Nagios::Tivoli::Config::Logfile' => \&logger,
+#    'Nagios::Tivoli::Config::Logfile::Format' => \&logger,
+#    'Nagios::Tivoli::Config::Logfile::Hit' => \&logger,
 #);
 
 use constant OK => 0;
