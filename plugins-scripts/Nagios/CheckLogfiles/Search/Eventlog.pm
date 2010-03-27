@@ -47,6 +47,7 @@ sub init {
     push(@{$self->{patterns}->{WARNING}}, "EE_WW_TT");
     push(@{$self->{patterns}->{CRITICAL}}, "EE_EE_TT");
   }
+  push(@{$self->{patterns}->{UNKNOWN}}, "EE_UU_TT");
   $self->{eventlog} = { 
     # system, security, application
     eventlog => $params->{eventlog}->{eventlog} || "system",
@@ -58,6 +59,7 @@ sub init {
     include => $params->{eventlog}->{include} || {},
     exclude => $params->{eventlog}->{exclude} || {},
   };
+  $self->resolve_macros(\$self->{eventlog}->{computer});
   # computer: I changed "\\\\MYPDC" to $dc ($dc = Win32::AdminMisc::GetDC("MYDOMAIN");)
   # keys fuer include/exclude: source,category,type,eventid
   foreach my $item (qw(Source Category EventType EventID)) {
@@ -88,8 +90,10 @@ sub init {
   
 sub prepare {
   my $self = shift;
-  $self->{options}->{nologfilenocry} = 1;
+  #$self->{options}->{nologfilenocry} = 1;
   $self->{eventlog}->{thissecond} = time;
+  push(@{$self->{exceptions}->{CRITICAL}}, 'CHECK_LOGFILES INTERNAL ERROR');
+  push(@{$self->{exceptions}->{WARNING}}, 'CHECK_LOGFILES INTERNAL ERROR');
 }
 
 sub loadstate {
@@ -146,8 +150,11 @@ sub collectfiles {
     open(*FH, sprintf ">%s/orschlorschknorsch_%s",
         $self->system_tempdir(), $self->{tag});
     tie *FH, 'Nagios::CheckLogfiles::Search::Eventlog::Handle',
-        $self->{eventlog}, $self->get_option('winwarncrit'),
-        $self->get_option('eventlogformat'),  $self->{tivoli},
+        $self->{eventlog}, 
+        $self->get_option('winwarncrit'),
+        $self->get_option('eventlogformat'),
+        $self->get_option('logfilenocry'),
+        $self->{tivoli},
         $self->{tracefile};
     push(@{$self->{relevantfiles}},
       { filename => "eventlog|",
@@ -168,11 +175,13 @@ sub finish {
       foreach my $match (@{$self->{matchlines}->{$level}}) {
         $match =~ s/EE_WW_TT//;
         $match =~ s/EE_EE_TT//;
+        $match =~ s/EE_UU_TT//;
       }
     }
     if (exists $self->{lastmsg} && exists $self->{lastmsg}->{$level}) {
       $self->{lastmsg}->{$level} =~ s/EE_WW_TT//;
       $self->{lastmsg}->{$level} =~ s/EE_EE_TT//;
+      $self->{lastmsg}->{$level} =~ s/EE_UU_TT//;
     }
   }
 }
@@ -197,6 +206,8 @@ require Tie::Handle;
 use Exporter;
 use POSIX qw(strftime);
 use Win32::EventLog;
+use Win32::TieRegistry;
+use Win32::WinError;
 use Carp;
 use IO::File;
 use vars qw(@ISA);
@@ -206,16 +217,18 @@ our $tracefile;
 $Win32::EventLog::GetMessageText = 1;
 my @events = ();
 
+
 sub TIEHANDLE {
   my $class = shift;
   my $eventlog = shift;
   my $winwarncrit = shift;
   my $eventlogformat = shift;
+  my $logfilenocry = shift;
   my $tivoli = shift;
   $tracefile = shift;
   my $self = {};
-  my $oldestoffset = 0;       # oldest event in the eventlog
-  my $numevents = 0;          # number of events in the eventlog
+  my $oldestoffset = undef;       # oldest event in the eventlog
+  my $numevents = undef;          # number of events in the eventlog
   my $newestoffset = 0;       # latest event in the eventlog
   my $save_newestoffset = 0; 
   my $seekoffset = 0;         # temporary pointer
@@ -236,8 +249,60 @@ sub TIEHANDLE {
   };
   @events = ();
   my $offsetcache = {};
-  if (my $handle = 
-      Win32::EventLog->new($eventlog->{eventlog}, $eventlog->{computer})) {
+  my @knowneventlogs = ("application", "system", "security");
+  my @harmlesscodes = (997);
+  my $mustabort = 0;
+  my $internal_error = "";
+
+  my $handle = 
+      Win32::EventLog->new($eventlog->{eventlog}, $eventlog->{computer});
+  my $lasterror = Win32::GetLastError();
+  #  997 ueberlappender E/A-Vorgang wird verarbeitet.
+  #    5 Zugriff verweigert
+  # 1722 Der RPC-Server ist nicht verfuegbar.
+
+  # 1722 eventlog gueltig, ip gueltig, aber kein windows-rechner
+  # 1722 eventlog gueltig, ip nicht pingbar
+  #    5 kein secure channel zum remoterechner vorhanden
+
+  if (! $handle || scalar(grep { $lasterror == $_ } @harmlesscodes) == 0) {
+    # sinnlos, weiterzumachen
+    $mustabort = 1;
+    $internal_error = Win32::FormatMessage(Win32::GetLastError());
+  }
+  if (! $mustabort) {
+    if (scalar(grep {lc $eventlog->{eventlog} eq lc $_} @knowneventlogs) == 0) {
+      eval {
+        my $hkey_local_machine = undef;
+        if ($eventlog->{computer}) {
+          $hkey_local_machine = Win32::TieRegistry->new(
+              "LMachine");
+          $hkey_local_machine = $hkey_local_machine->Connect(
+              $eventlog->{computer},
+              "LMachine",
+              { Delimiter => "/" } );
+        } else {
+          $hkey_local_machine = Win32::TieRegistry->new(
+              "LMachine",
+              { Delimiter => "/" } );
+        }
+        my $data = $hkey_local_machine->Open("SYSTEM/CurrentControlSet/Services/EventLog");
+        push(@knowneventlogs, map { lc $_ } $data->SubKeyNames);
+        undef $data;
+        undef $hkey_local_machine;
+      };
+      if ($@) {
+        $mustabort = 1;
+        $internal_error = "Cannot read registry";
+      }
+    }
+    if (scalar(grep { lc $eventlog->{eventlog} eq $_ } @knowneventlogs) == 0) {
+      $mustabort = 1;
+      $internal_error = sprintf "Eventlog %s does not exist",
+          $eventlog->{eventlog} if $logfilenocry;
+    }
+  }
+  if (! $mustabort) {
     $handle->GetOldest($oldestoffset);
     $handle->GetNumber($numevents);
     if ($numevents) { 
@@ -350,7 +415,6 @@ sub TIEHANDLE {
                   $tmp_event->{Message} ? 
                       $tmp_event->{Message} : "unknown message";
             } else {
-              #Win32::EventLog::GetMessageText($event);
               Win32::EventLog::GetMessageText($tmp_event);
               if (! $tmp_event->{Message}) {
                 $tmp_event->{Message} = $tmp_event->{Strings};
@@ -360,47 +424,7 @@ sub TIEHANDLE {
               $tmp_event->{Message} = 'unknown message' 
                   if ! $tmp_event->{Message};
               $tmp_event->{Message} =~ tr/\r\n/ /d;
-              # formatstring:
-              # %t EventType
-              # %c Category
-              # %s Source
-              # %i EventID
-              # %m Message
-              # %w Timewritten
-              # %g Timegenerated
-              # %d Date/Time
-              my $line = $eventlogformat;
-              my $tz = '';
-              my $format = {};
-              $format->{'%t'} =
-                  ($tmp_event->{EventType} == EVENTLOG_WARNING_TYPE) ?
-                      'Warning' :
-                  ($tmp_event->{EventType} == EVENTLOG_ERROR_TYPE) ?
-                      'Error' :
-                  ($tmp_event->{EventType} == EVENTLOG_INFORMATION_TYPE) ?
-                      'Information' :
-                  ($tmp_event->{EventType} == EVENTLOG_AUDIT_SUCCESS) ?
-                      'AuditSuccess' :
-                  ($tmp_event->{EventType} == EVENTLOG_AUDIT_FAILURE) ?
-                      'AuditFailure' : 'UnknType';
-              $format->{'%c'} = ! $tmp_event->{Category} ? 'None' :
-                  join('_', split(" ", $tmp_event->{Category}));
-              $format->{'%s'} = join('_', split(" ", $tmp_event->{Source}));
-              $format->{'%i'} = sprintf '%04d', $tmp_event->{EventID} & 0xffff;
-              $format->{'%m'} = $tmp_event->{Message};
-              #$tz = strftime("%z", localtime($tmp_event->{Timewritten}));
-              #$tz =~ s/(\d{2})(\d{2})/$1:$2/;
-              $format->{'%w'} = strftime("%Y-%m-%dT%H:%M:%S",
-                  localtime($tmp_event->{Timewritten})).$tz;
-              #$tz = strftime("%z", localtime($tmp_event->{TimeGenerated}));
-              #$tz =~ s/(\d{2})(\d{2})/$1:$2/;
-              $format->{'%g'} = strftime("%Y-%m-%dT%H:%M:%S",
-                  localtime($tmp_event->{TimeGenerated})).$tz;
-              my $tmp_message = $eventlogformat;
-              foreach (keys %{$format}) {
-                $tmp_message =~ s/$_/$format->{$_}/g;
-              }
-              $tmp_event->{Message} = $tmp_message;
+              format_message($eventlogformat, $tmp_event);
             }
             if ($winwarncrit) {
               if ($tmp_event->{EventType} == EVENTLOG_WARNING_TYPE) {
@@ -420,6 +444,20 @@ sub TIEHANDLE {
       printf STDERR "0 events\n";
     }
     $handle->Close();
+  } else {
+    my $now = time;
+    my $tmp_event = {};
+    $tmp_event->{Message} = 
+        "EE_UU_TTCHECK_LOGFILES INTERNAL ERROR ".$internal_error;
+    $tmp_event->{Message} =~ s/\0/ /g;
+    $tmp_event->{Message} =~ s/\s*$//g;
+    $tmp_event->{TimeGenerated} = $now;
+    $tmp_event->{Timewritten} = $now;
+    $tmp_event->{Source} = 'check_logfiles'; # internal usage
+    $tmp_event->{EventType} = EVENTLOG_ERROR_TYPE; # internal usage
+    $tmp_event->{EventID} = 0;
+    format_message($eventlogformat, $tmp_event);
+    push(@events, $tmp_event) if $internal_error;
   }
   bless $self, $class;
   return $self;
@@ -450,6 +488,49 @@ sub READLINE {
   } else {
     return undef;
   }
+}
+
+sub format_message {
+  my $eventlogformat = shift;
+  my $event = shift;
+  # formatstring:
+  # %t EventType
+  # %c Category
+  # %s Source
+  # %i EventID
+  # %m Message
+  # %w Timewritten
+  # %g Timegenerated
+  # %d Date/Time
+  my $tz = '';
+  my $format = {};
+  $format->{'%t'} =
+      ($event->{EventType} == -1) ?
+          'Internal' :
+      ($event->{EventType} == EVENTLOG_WARNING_TYPE) ?
+          'Warning' :
+      ($event->{EventType} == EVENTLOG_ERROR_TYPE) ?
+          'Error' :
+      ($event->{EventType} == EVENTLOG_INFORMATION_TYPE) ?
+          'Information' :
+      ($event->{EventType} == EVENTLOG_AUDIT_SUCCESS) ?
+          'AuditSuccess' :
+      ($event->{EventType} == EVENTLOG_AUDIT_FAILURE) ?
+          'AuditFailure' : 'UnknType';
+  $format->{'%c'} = ! $event->{Category} ? 'None' :
+      join('_', split(" ", $event->{Category}));
+  $format->{'%s'} = join('_', split(" ", $event->{Source}));
+  $format->{'%i'} = sprintf '%04d', $event->{EventID} & 0xffff;
+  $format->{'%m'} = $event->{Message};
+  $format->{'%w'} = strftime("%Y-%m-%dT%H:%M:%S",
+      localtime($event->{Timewritten})).$tz;
+  $format->{'%g'} = strftime("%Y-%m-%dT%H:%M:%S",
+      localtime($event->{TimeGenerated})).$tz;
+  my $message = $eventlogformat;
+  foreach (keys %{$format}) {
+    $message =~ s/$_/$format->{$_}/g;
+  }
+  $event->{Message} = $message;
 }
 
 sub included {
