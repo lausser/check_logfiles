@@ -252,52 +252,89 @@ sub TIEHANDLE {
   };
   @events = ();
   my $offsetcache = {};
-  my @knowneventlogs = ("application", "system", "security");
-  my @harmlesscodes = (997);
   my $mustabort = 0;
   my $internal_error = "";
+  my $lasterror = 0;
+  my $handle = undef;
 
-  my $handle = 
-      Win32::EventLog->new($eventlog->{eventlog}, $eventlog->{computer});
-  my $lasterror = Win32::GetLastError();
-  #  997 ueberlappender E/A-Vorgang wird verarbeitet.
-  #    5 Zugriff verweigert
-  # 1722 Der RPC-Server ist nicht verfuegbar.
-
-  # 1722 eventlog gueltig, ip gueltig, aber kein windows-rechner
-  # 1722 eventlog gueltig, ip nicht pingbar
-  #    5 kein secure channel zum remoterechner vorhanden
-
-  if (! $handle || scalar(grep { $lasterror == $_ } @harmlesscodes) == 0) {
-    # sinnlos, weiterzumachen
-    $mustabort = 1;
-    $internal_error = Win32::FormatMessage(Win32::GetLastError());
+  if ($eventlog->{computer} && $eventlog->{username}) {
+    # net use \\remote\IPC$ /USER:Administrator adminpw
+    eval {
+      require Win32::NetResource;
+    };
+    if ($@) {
+      $mustabort = 1;
+      $internal_error = 'Win32::NetResource not installed';
+    } else {
+      if (Win32::NetResource::AddConnection({
+          'Scope' => 0,
+          'Type' => 0,
+          'DisplayType' => 0, # RESOURCEDISPLAYTYPE_GENERIC
+          'Usage' => 0,
+          'RemoteName' => "\\\\".$eventlog->{computer}."\\IPC\$",
+          'LocalName' => '',
+          'Comment' => "check_logfiles",
+          #'Provider' => "Microsoft Windows Network"
+      }, $eventlog->{password}, $eventlog->{username}, 0)) {
+        trace("created ipc channel");
+      } else {
+        Win32::NetResource::GetError($lasterror);
+        $mustabort = 1;
+        $internal_error = 'IPC$ '.Win32::FormatMessage($lasterror);
+        trace("ipc channel could not be established");
+      }
+    }
   }
   if (! $mustabort) {
-    if (scalar(grep {lc $eventlog->{eventlog} eq lc $_} @knowneventlogs) == 0) {
-      eval {
-        my $hkey_local_machine = undef;
-        if ($eventlog->{computer}) {
-          $hkey_local_machine = Win32::TieRegistry->new(
-              "LMachine");
-          $hkey_local_machine = $hkey_local_machine->Connect(
-              $eventlog->{computer},
-              "LMachine",
-              { Delimiter => "/" } );
-        } else {
-          $hkey_local_machine = Win32::TieRegistry->new(
-              "LMachine",
-              { Delimiter => "/" } );
-        }
-        my $data = $hkey_local_machine->Open("SYSTEM/CurrentControlSet/Services/EventLog");
-        push(@knowneventlogs, map { lc $_ } $data->SubKeyNames);
-        undef $data;
-        undef $hkey_local_machine;
-      };
-      if ($@) {
-        $mustabort = 1;
-        $internal_error = "Cannot read registry";
+    my @harmlesscodes = (0, 997);
+    trace("opening handle to eventlog");
+    $handle =
+        Win32::EventLog->new($eventlog->{eventlog}, $eventlog->{computer});
+    $lasterror = Win32::GetLastError();
+    #    0 Der Vorgang wurde erfolgreich beendet
+    #  997 überlappender E/A-Vorgang wird verarbeitet.
+    #    5 Zugriff verweigert
+    # 1722 Der RPC-Server ist nicht verfügbar.
+
+    # 1722 eventlog gueltig, ip gueltig, aber kein windows-rechner
+    # 1722 eventlog gueltig, ip nicht pingbar
+    #    5 kein secure channel zum remoterechner vorhanden
+
+    if (! $handle || scalar(grep { $lasterror == $_ } @harmlesscodes) == 0) {
+      # sinnlos, weiterzumachen
+      $mustabort = 1;
+      $internal_error = Win32::FormatMessage($lasterror);
+      trace("opening handle to eventlog failed");
+      $handle->Close() if $handle;
+    }
+  }
+  if (! $mustabort) {
+    my @knowneventlogs = ("application", "system", "security");
+    trace("looking into registry");
+    eval {
+      my $hkey_local_machine = undef;
+      if ($eventlog->{computer}) {
+        $hkey_local_machine = Win32::TieRegistry->new(
+            "LMachine");
+        $hkey_local_machine = $hkey_local_machine->Connect(
+            $eventlog->{computer},
+            "LMachine",
+            { Delimiter => "/" } );
+      } else {
+        $hkey_local_machine = Win32::TieRegistry->new(
+            "LMachine",
+            { Delimiter => "/" } );
       }
+      my $data = $hkey_local_machine->Open("SYSTEM/CurrentControlSet/Services/EventLog");
+      push(@knowneventlogs, map { lc $_ } $data->SubKeyNames);
+      undef $data;
+      undef $hkey_local_machine;
+    };
+    if ($@) {
+      $mustabort = 1;
+     printf STDERR "abort registry\n";
+      $internal_error = "Cannot read registry";
+      trace("looking into registry failed");
     }
     if (scalar(grep { lc $eventlog->{eventlog} eq $_ } @knowneventlogs) == 0) {
       $mustabort = 1;
@@ -308,6 +345,15 @@ sub TIEHANDLE {
   if (! $mustabort) {
     $handle->GetOldest($oldestoffset);
     $handle->GetNumber($numevents);
+    if (! defined $numevents) {
+      # cygwin perl sagt zu allem errorcode=0, auch wenn keine berechtigung
+      # zum zugriff vorliegt. aber ein undef ist zumindest ein indiz, dass
+      # etwas faul ist.
+      $mustabort = 1;
+      $internal_error = "Eventlog permission denied";
+    }
+  }
+  if (! $mustabort) {
     if ($numevents) { 
       $newestoffset = $oldestoffset + $numevents - 1;
       trace(sprintf "eventlog has offsets %d..%d",
