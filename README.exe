@@ -39,8 +39,8 @@ check_logfiles.exe
 
 5) Compile the plugin
    cd plugins-scripts
-   pp -M PerlIO -o check_logfiles.exe check_logfiles
-   pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::Daemon -o check_logfiles.exe check_logfiles
+   pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::NetResource -M Win32::Daemon -o check_logfiles.exe check_logfiles
+   (maybe you need to install Win32::NetResource and Win32::Daemon)
 
 6) Package the plugin
    C:\Programme\WinZip\WINZIP32.EXE -a check_logfiles.zip plugins-scripts\check_logfiles.pl

@@ -332,7 +332,6 @@ sub TIEHANDLE {
     };
     if ($@) {
       $mustabort = 1;
-     printf STDERR "abort registry\n";
       $internal_error = "Cannot read registry";
       trace("looking into registry failed");
     }
