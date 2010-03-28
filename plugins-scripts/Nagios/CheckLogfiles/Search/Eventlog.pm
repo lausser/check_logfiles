@@ -59,7 +59,10 @@ sub init {
     include => $params->{eventlog}->{include} || {},
     exclude => $params->{eventlog}->{exclude} || {},
   };
+  $self->resolve_macros(\$self->{eventlog}->{eventlog});
   $self->resolve_macros(\$self->{eventlog}->{computer});
+  $self->resolve_macros(\$self->{eventlog}->{username}) if $self->{eventlog}->{username};
+  $self->resolve_macros(\$self->{eventlog}->{password}) if $self->{eventlog}->{password};
   # computer: I changed "\\\\MYPDC" to $dc ($dc = Win32::AdminMisc::GetDC("MYDOMAIN");)
   # keys fuer include/exclude: source,category,type,eventid
   foreach my $item (qw(Source Category EventType EventID)) {
