@@ -492,6 +492,20 @@ sub TIEHANDLE {
       printf STDERR "0 events\n";
     }
     $handle->Close();
+    if ($eventlog->{computer}) {
+      if (Win32::NetResource::CancelConnection(
+          "\\\\".$eventlog->{computer}."\\IPC\$", 0, 0)) {
+        trace("closed the ipc connection");
+      } else {
+        trace("could not close the ipc connection");
+        if (Win32::NetResource::CancelConnection(
+            "\\\\".$eventlog->{computer}."\\IPC\$", 0, 1)) {
+          trace("closed the ipc connection by force");
+        } else {
+          trace("could not close the ipc connection even by force");
+        }
+      }
+    }
   } else {
     my $now = time;
     my $tmp_event = {};
