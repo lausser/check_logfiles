@@ -5,6 +5,7 @@
 3.2
 - better errorhandling for type=eventlog. non-existing eventlogs and dead remote servers result in unknown
 - type=eventlog now opens a secure channel to ipc$ if necessary
+- type=eventlog now checks if the desired eventlog exists (reads registry)
 - speedup in tivoli mode
 - add 099benchmark.t
 

@@ -50,10 +50,10 @@ sub init {
   push(@{$self->{patterns}->{UNKNOWN}}, "EE_UU_TT");
   $self->{eventlog} = { 
     # system, security, application
-    eventlog => $params->{eventlog}->{eventlog} || "system",
-    computer => $params->{eventlog}->{computer} || Win32::NodeName,
-    username => $params->{eventlog}->{username},
-    password => $params->{eventlog}->{password},
+    eventlog => $params->{eventlog}->{eventlog} || 'system',
+    computer => $params->{eventlog}->{computer} || Win32::NodeName(),
+    username => $params->{eventlog}->{username} || Win32::LoginName(),
+    password => $params->{eventlog}->{password} || '',
     source => $params->{eventlog}->{source},
     speedup => $params->{eventlog}->{speedup} || 1,
     include => $params->{eventlog}->{include} || {},
@@ -205,9 +205,9 @@ sub rewind {
 package Nagios::CheckLogfiles::Search::Eventlog::Handle;
 
 use strict;
-require Tie::Handle;
 use Exporter;
 use POSIX qw(strftime);
+require Tie::Handle;
 use Win32::EventLog;
 use Win32::TieRegistry;
 use Win32::WinError;
@@ -256,8 +256,19 @@ sub TIEHANDLE {
   my $internal_error = "";
   my $lasterror = 0;
   my $handle = undef;
+  my $must_close_ipc = 0;
 
-  if ($eventlog->{computer} && $eventlog->{username}) {
+  # 
+  # Schritt 1
+  #
+  # Falls es sich um einen Remote-Rechner handelt, muss erst eine
+  # Verbindung zu dessen IPC$-Resource hergestellt werden
+  # Bei einem Server 2008 kann dies ein lokaler Benutzer sein,
+  # der zur Gruppe Ereignisprotokolleser gehoert
+  #
+  if ($eventlog->{computer} ne Win32::NodeName) {
+    my @harmlesscodes = (1219);
+    # 1219 Mehrfache Verbindungen zu einem Server oder ....
     # net use \\remote\IPC$ /USER:Administrator adminpw
     eval {
       require Win32::NetResource;
@@ -266,6 +277,7 @@ sub TIEHANDLE {
       $mustabort = 1;
       $internal_error = 'Win32::NetResource not installed';
     } else {
+      trace(sprintf "connect as %s with password ***", $eventlog->{username});
       if (Win32::NetResource::AddConnection({
           'Scope' => 0,
           'Type' => 0,
@@ -277,14 +289,64 @@ sub TIEHANDLE {
           #'Provider' => "Microsoft Windows Network"
       }, $eventlog->{password}, $eventlog->{username}, 0)) {
         trace("created ipc channel");
+        $must_close_ipc = 1;
       } else {
         Win32::NetResource::GetError($lasterror);
-        $mustabort = 1;
-        $internal_error = 'IPC$ '.Win32::FormatMessage($lasterror);
-        trace("ipc channel could not be established");
+        if (scalar(grep { $lasterror == $_ } @harmlesscodes) == 0) {
+          $mustabort = 1;
+          $internal_error = 'IPC$ '.Win32::FormatMessage($lasterror);
+          trace("ipc channel could not be established");
+        } else {
+          trace("ipc channel already established");
+        }
       }
     }
   }
+  #
+  # Schritt 2
+  #
+  # Oeffnen der Registry und kontrollieren, ob es das gewuenschte
+  # Eventlog ueberhaupt gibt
+  #
+  if (! $mustabort) {
+    my @haseventlogs = ("application", "system", "security");
+    trace("looking into registry");
+    eval {
+      my $data = undef;
+      if ($eventlog->{computer} ne Win32::NodeName()) {
+        trace("looking into remote registry");
+        $data = $Registry->Connect( $eventlog->{computer},
+            'HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services/EventLog/',
+            { Access=>Win32::TieRegistry::KEY_READ(), Delimiter => "/" } );
+      } else {
+        trace("looking into registry");
+        $data = $Registry->Open(
+            'HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services/EventLog/',
+            { Access=>Win32::TieRegistry::KEY_READ(), Delimiter => "/" } );
+      }
+      if ($data) {
+        push(@haseventlogs, map { lc $_ } $data->SubKeyNames);
+        trace(sprintf "known eventlogs: %s", join(',', @haseventlogs));
+        undef $data;
+      } else {
+        die "no data from HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services/EventLog/";
+      }
+    };
+    if ($@) {
+      $mustabort = 1;
+      $internal_error = "Cannot read registry";
+      trace(sprintf "looking into registry failed: %s", $@);
+    } elsif (! scalar(grep { lc $eventlog->{eventlog} eq $_ } @haseventlogs)) {
+      $mustabort = 1;
+      $internal_error = sprintf "Eventlog %s does not exist",
+          $eventlog->{eventlog} if $logfilenocry;
+    }
+  }
+  #
+  # Schritt 3
+  #
+  # Oeffnen des Eventlogs
+  #
   if (! $mustabort) {
     my @harmlesscodes = (0, 997);
     trace("opening handle to eventlog");
@@ -303,44 +365,18 @@ sub TIEHANDLE {
     if (! $handle || scalar(grep { $lasterror == $_ } @harmlesscodes) == 0) {
       # sinnlos, weiterzumachen
       $mustabort = 1;
-      $internal_error = Win32::FormatMessage($lasterror);
+      $internal_error = 'open Eventlog '.Win32::FormatMessage($lasterror);
       trace("opening handle to eventlog failed");
-      $handle->Close() if $handle;
     }
   }
-  if (! $mustabort) {
-    my @knowneventlogs = ("application", "system", "security");
-    trace("looking into registry");
-    eval {
-      my $hkey_local_machine = undef;
-      if ($eventlog->{computer}) {
-        $hkey_local_machine = Win32::TieRegistry->new(
-            "LMachine");
-        $hkey_local_machine = $hkey_local_machine->Connect(
-            $eventlog->{computer},
-            "LMachine",
-            { Delimiter => "/" } );
-      } else {
-        $hkey_local_machine = Win32::TieRegistry->new(
-            "LMachine",
-            { Delimiter => "/" } );
-      }
-      my $data = $hkey_local_machine->Open("SYSTEM/CurrentControlSet/Services/EventLog");
-      push(@knowneventlogs, map { lc $_ } $data->SubKeyNames);
-      undef $data;
-      undef $hkey_local_machine;
-    };
-    if ($@) {
-      $mustabort = 1;
-      $internal_error = "Cannot read registry";
-      trace("looking into registry failed");
-    }
-    if (scalar(grep { lc $eventlog->{eventlog} eq $_ } @knowneventlogs) == 0) {
-      $mustabort = 1;
-      $internal_error = sprintf "Eventlog %s does not exist",
-          $eventlog->{eventlog} if $logfilenocry;
-    }
-  }
+  #
+  # Schritt 4
+  #
+  # Anzahl der Eintraege auslesen.
+  # Dieser Schritt dient ausserdem dazu, die Berechtigung zum Lesen
+  # zu ueberpruefen, da unter Cygwin der letzte Schritt erfolgreich
+  # ausfaellt, auch wenn keine Leseberechtigung besteht.
+  #
   if (! $mustabort) {
     $handle->GetOldest($oldestoffset);
     $handle->GetNumber($numevents);
@@ -352,6 +388,11 @@ sub TIEHANDLE {
       $internal_error = "Eventlog permission denied";
     }
   }
+  #
+  # Schritt 5
+  #
+  # Jetzt beginnt das eigentliche Auslesen des Eventlogs
+  #
   if (! $mustabort) {
     if ($numevents) { 
       $newestoffset = $oldestoffset + $numevents - 1;
@@ -491,21 +532,6 @@ sub TIEHANDLE {
     } else {
       printf STDERR "0 events\n";
     }
-    $handle->Close();
-    if ($eventlog->{computer}) {
-      if (Win32::NetResource::CancelConnection(
-          "\\\\".$eventlog->{computer}."\\IPC\$", 0, 0)) {
-        trace("closed the ipc connection");
-      } else {
-        trace("could not close the ipc connection");
-        if (Win32::NetResource::CancelConnection(
-            "\\\\".$eventlog->{computer}."\\IPC\$", 0, 1)) {
-          trace("closed the ipc connection by force");
-        } else {
-          trace("could not close the ipc connection even by force");
-        }
-      }
-    }
   } else {
     my $now = time;
     my $tmp_event = {};
@@ -520,6 +546,24 @@ sub TIEHANDLE {
     $tmp_event->{EventID} = 0;
     format_message($eventlogformat, $tmp_event);
     push(@events, $tmp_event) if $internal_error;
+  }
+  #
+  # Aufraeumen
+  #
+  $handle->Close() if $handle;
+  if ($must_close_ipc) {
+    if (Win32::NetResource::CancelConnection(
+        "\\\\".$eventlog->{computer}."\\IPC\$", 0, 0)) {
+      trace("closed the ipc connection");
+    } else {
+      trace("could not close the ipc connection");
+      if (Win32::NetResource::CancelConnection(
+          "\\\\".$eventlog->{computer}."\\IPC\$", 0, 1)) {
+        trace("closed the ipc connection by force");
+      } else {
+        trace("could not close the ipc connection even by force");
+      }
+    }
   }
   bless $self, $class;
   return $self;
