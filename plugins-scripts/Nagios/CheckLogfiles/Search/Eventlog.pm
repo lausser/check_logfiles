@@ -209,7 +209,7 @@ use Exporter;
 use POSIX qw(strftime);
 require Tie::Handle;
 use Win32::EventLog;
-use Win32::TieRegistry;
+use Win32::TieRegistry (Delimiter => "/");
 use Win32::WinError;
 use Carp;
 use IO::File;
