@@ -310,7 +310,6 @@ sub TIEHANDLE {
   #
   if (! $mustabort) {
     my @haseventlogs = ("application", "system", "security");
-    trace("looking into registry");
     eval {
       my $data = undef;
       if ($eventlog->{computer} ne Win32::NodeName()) {
@@ -349,7 +348,7 @@ sub TIEHANDLE {
   #
   if (! $mustabort) {
     my @harmlesscodes = (0, 997);
-    trace("opening handle to eventlog");
+    trace(sprintf "opening handle to eventlog %s", $eventlog->{eventlog});
     $handle =
         Win32::EventLog->new($eventlog->{eventlog}, $eventlog->{computer});
     $lasterror = Win32::GetLastError();

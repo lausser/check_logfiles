@@ -1,1 +1,37 @@
-sorry, there will be contributions in the next release
+############################################################################
+encodeconfig
+
+This script transforms the contents a file into a single, encoded line.
+If you encode a check_logfiles config file, you can use the resulting
+string as the argument for the --config parameter.
+The plugin will detect that it is not a real file but an encoded
+representation.
+
+$ cat simple.cfg 
+@searches=({
+tag=>'simple',
+logfile=>'/var/log/simple.log',
+criticalpatterns=>'error',
+});
+
+$ ./encodeconfig simple.cfg
+%40searches%3D%28%7B%0Atag%3D%3E%27simple%27%2C%0Alogfile%3D%3E%27%2Fvar%2Flog%2Fsimple%2Elog%27%2C%0Acriticalpatterns%3D%3E%27error%27%2C%0A%7D%29%3B%0A
+
+$ check_logfiles --config %40searches%3D%28%7B%0Atag%3D%3E%27simple...
+
+This feature is useful if you don't want to keep and maintain config files
+at a central repository. Instead of pushing updated config files to the
+client hosts you encode them and use the resulting strings in your
+Nagios service definitions.
+
+define command {
+  command_name check_nrpe_arg
+  command_line check_nrpe -H $HOSTADDRESS$ -c $ARG1$ -a $ARG2$
+}
+
+define service {
+  ...
+  check_command check_nrpe_arg!check_logfiles!%40searches%3D%28%7B%0Atag%3D%3E%27simple...
+}
+
+[check_logfiles]=/usr/local/nagios/libexec/check_logfiles --config $ARG1$
