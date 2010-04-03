@@ -1,0 +1,15 @@
+In this file i note what i found out about necessary privileges, when using
+the type eventlog to scan the logs of remote computers.
+
+Server: XP
+Client: 2003 R2
+
+Local user "nagios" in group "Users"
+can read registry, cannot read eventlog (Zugriff verweigert)
+
+
+Server: XP
+Client: 2008 R2
+
+Local user "nagios" in groups "Benutzer, Ereignisprotokollleser"
+can read registry, can read eventlog.

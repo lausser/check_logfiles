@@ -277,7 +277,8 @@ sub TIEHANDLE {
       $mustabort = 1;
       $internal_error = 'Win32::NetResource not installed';
     } else {
-      trace(sprintf "connect as %s with password ***", $eventlog->{username});
+      trace(sprintf "connect to %s as %s with password ***",
+          $eventlog->{computer}, $eventlog->{username});
       if (Win32::NetResource::AddConnection({
           'Scope' => 0,
           'Type' => 0,
@@ -324,7 +325,9 @@ sub TIEHANDLE {
             { Access=>Win32::TieRegistry::KEY_READ(), Delimiter => "/" } );
       }
       if ($data) {
-        push(@haseventlogs, map { lc $_ } $data->SubKeyNames);
+        push(@haseventlogs, grep { 
+            my $var = $_; ! grep /^$var$/, @haseventlogs
+        } map { lc $_ } $data->SubKeyNames);
         trace(sprintf "known eventlogs: %s", join(',', @haseventlogs));
         undef $data;
       } else {
