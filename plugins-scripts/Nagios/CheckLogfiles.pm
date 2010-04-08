@@ -1629,6 +1629,7 @@ sub rewind {
   }
   $self->addevent(0, "reset");
   $self->{newstate}->{logoffset} = 0;
+  $self->{newstate}->{logtime} = 0;
   $self->savestate();
   return $self;
 }

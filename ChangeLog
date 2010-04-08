@@ -10,7 +10,7 @@
 - add 099benchmark.t
 
 3.1.5 - 2010-03-05
-- loopback option is now allowed in the config file
+- lookback option is now allowed in the config file
 - fixed a bug which caused a perl-warning (only if criticalpattern=.* and last line is empty). (Thanks Sven Nierlein)
 - matching empty lines are displayed as _(null)_
 
