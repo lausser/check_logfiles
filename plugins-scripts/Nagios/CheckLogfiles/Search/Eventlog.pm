@@ -46,8 +46,15 @@ sub init {
   if ($self->get_option('winwarncrit')) {
     push(@{$self->{patterns}->{WARNING}}, "EE_WW_TT");
     push(@{$self->{patterns}->{CRITICAL}}, "EE_EE_TT");
+    push(@{$self->{patternfuncs}->{WARNING}}, 
+        eval "sub { local \$_ = shift; return m/EE_WW_TT/o; }");
+    push(@{$self->{patternfuncs}->{CRITICAL}},
+        eval "sub { local \$_ = shift; return m/EE_EE_TT/o; }");
+
   }
   push(@{$self->{patterns}->{UNKNOWN}}, "EE_UU_TT");
+  push(@{$self->{patternfuncs}->{UNKNOWN}},
+      eval "sub { local \$_ = shift; return m/EE_UU_TT/o; }");
   $self->{eventlog} = { 
     # system, security, application
     eventlog => $params->{eventlog}->{eventlog} || 'system',
