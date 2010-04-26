@@ -761,7 +761,11 @@ sub refresh_options {
       $self->{maxstickytime} = $self->{options}->{sticky};
       $self->{options}->{sticky} = 1;
     } else {
-      $self->{maxstickytime} = 3600 * 24 * 365 * 10;
+      # durch mehrmaliges refresh (seitens des CheckLogfiles-Objekts kann maxstickytime
+      # zerschossen werden
+      if (! exists $self->{maxstickytime} || $self->{maxstickytime} == 0) {
+        $self->{maxstickytime} = 3600 * 24 * 365 * 10;
+      }
     }
   }
   if ($self->{options}->{syslogclient}) {

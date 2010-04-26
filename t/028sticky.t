@@ -282,7 +282,6 @@ $door = undef;
 #   repeat the stuff with maxstickytime, but this time initialize cl with sticky=15
 #
 
-
 $cl = Nagios::CheckLogfiles::Test->new({
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
