@@ -74,32 +74,42 @@ objShell.Run("%windir%\regedit.exe" &_
 objReg.EnumKey HKEY_LOCAL_MACHINE, strKeyPath, eventlogNames
 For I = 0 To UBound(eventlogNames)
     intResult = objReg.GetStringValue(HKEY_LOCAL_MACHINE,_
-    	strKeyPath & eventlogNames(I), "CustomSD", customSD)
+        strKeyPath & eventlogNames(I), "CustomSD", customSD)
     If intResult = 0 Then
         fragments = Split(customSD, "(", 2, 1)
         prefix = fragments(0)
         remainder = fragments(1)
         rules = Split(remainder, "(", -1, 1)
-        done = False
+        found = False
         For x = 0 to UBound(rules)
             rule = Replace(rules(x), ")", "")
             parts = Split(rule, ";", -1, 1)
             If parts(5) = sid Then
-                done = True
+                found = True
             End If
         Next
-        If done = True Then
-            WScript.Echo strDomainName & "\" & strUserName &_
-    			" already had permissions for " & eventlogNames(I)
+        If found = True Then
+            If colNamedArguments.Exists("Del") Then
+            ' rauswerfen
+            Else
+                WScript.Echo strDomainName & "\" & strUserName &_
+                    " already had permissions for " & eventlogNames(I)
+            End If
         Else
             customSD = customSD & "(A;;0x1;;;" & sid & ")"
             WScript.Echo "c+st of " & strKeyPath & eventlogNames(I) &_
-    			"\CustomSD" & " is " & customSD
-			objReg.SetStringValue HKEY_LOCAL_MACHINE, strKeyPath &_
-    			eventlogNames(I), "CustomSD", customSD
+                "\CustomSD" & " is " & customSD
+            objReg.SetStringValue HKEY_LOCAL_MACHINE, strKeyPath &_
+                eventlogNames(I), "CustomSD", customSD
         End If
     Else
-        WScript.Echo eventlogNames(I) & " has no key CustomSD"
+        If Not colNamedArguments.Exists("Del") Then
+            WScript.Echo eventlogNames(I) & " has no key CustomSD"
+            'not force => anweisung zum selbermachen
+            ' argument /AUTO
+	    'objReg.CreateKey HKEY_LOCAL_MACHINE, strKeyPath &_
+	    '    eventlogNames(I) ???
+	    'objReg.SetStringvalue    defheader & "(A;;0x1;;;" & sid & ")"
+        End If
     End If 
 Next
-

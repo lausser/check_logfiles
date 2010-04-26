@@ -58,12 +58,13 @@ sub init {
   $self->{searches} = [];
   $self->{selectedsearches} = $params->{selectedsearches} || [];
   $self->{dynamictag} = $params->{dynamictag} || "";
-  #$self->{report} = $params->{report} || 'short';
   $self->{cmdlinemacros} = $params->{cmdlinemacros} || {};
   $self->{reset} = $params->{reset} || 0;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
-      supersmartpostscript => 0, report => 'short', maxlength => 4096 });
+      supersmartpostscript => 0, report => 'short', maxlength => 4096,
+      seekfileerror => 'critical',
+  });
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
       # multiple cfgfiles found in a config dir
@@ -133,8 +134,8 @@ sub init {
     }
   } else {
     $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
-    $self->refresh_options();
-    $self->set_option('report', $params->{report});
+    # first the global options (from the commandline in this case)
+    $self->refresh_options($params->{options});
     $self->init_macros;
     foreach (@{$params->{searches}}) {
       $_->{seekfilesdir} = $self->{seekfilesdir};
@@ -142,8 +143,9 @@ sub init {
       %{$_->{macros}} = %{$self->{macros}};
       $_->{tracefile} = $self->{tracefile};
       $_->{cfgbase} = $self->{cfgbase};
-      $_->{report} = $self->{report};
       if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
+        # maybe override default search options with global ones (ex. report)
+        $search->refresh_options($self->get_options('report,seekfileerror'));
         push(@{$self->{searches}}, $search);
       } else {
         $ExitCode = $ERROR_UNKNOWN;
@@ -164,9 +166,6 @@ sub init {
     $ExitCode = $ERROR_UNKNOWN;
     $ExitMsg = sprintf "UNKNOWN - output must be short, long or html";
     return undef;
-  }
-  foreach (@{$self->{searches}}) {
-    $_->set_option('report', $self->get_option('report'));
   }
   $self->{protocolfile} = 
       sprintf "%s/%s.protocol-%04d-%02d-%02d-%02d-%02d-%02d",
@@ -253,7 +252,6 @@ sub init_from_file {
   $self->{postscriptstdin} = $postscriptstdin if $postscriptstdin;
   $self->{postscriptdelay} = $postscriptdelay if $postscriptdelay;
   $self->{macros} = $MACROS if $MACROS;
-  $self->{report} = $report if $report;
   $self->{timeout} = $timeout if $timeout;
   $self->{pidfile} = $pidfile if $pidfile;
   $self->{privatestate} = {};
@@ -279,7 +277,6 @@ sub init_from_file {
         $self->{options}->{supersmartprescript} ? "super" : "",
         $self->{options}->{smartprescript} ? "smart" : "";
     $_->{privatestate} = $self->{privatestate};
-    $_->{report} = $self->{report};   
     my $search = Nagios::CheckLogfiles::Search::Prescript->new($_);
     push(@{$self->{searches}}, $search); 
   }
@@ -294,8 +291,8 @@ sub init_from_file {
       next;
     }
     $_->{dynamictag} = $self->{dynamictag};
-    $_->{report} = $self->{report};   
     if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
+      $search->refresh_options($self->get_options('report,seekfileerror'));
       push(@{$self->{searches}}, $search);
       $_->{privatestate}->{$search->{tag}} = $search->{privatestate};
     } else {
@@ -318,7 +315,6 @@ sub init_from_file {
         $self->{options}->{supersmartpostscript} ? "super" : "",
         $self->{options}->{smartpostscript} ? "smart" : "";
     $_->{privatestate} = $self->{privatestate};
-    $_->{report} = $self->{report};   
     my $search = Nagios::CheckLogfiles::Search::Postscript->new($_);
     push(@{$self->{searches}}, $search); 
   }
@@ -690,35 +686,57 @@ sub get_option {
       $self->{options}->{$option} : undef;
 }
 
+sub get_options {
+  my $self = shift;
+  my $list = shift;
+  if (! $list) {
+    return $self->{options};
+  } else {
+    my %h = map {($_, $self->{options}->{$_})} split(',', $list);
+    return \%h;
+  }
+}
+
 sub refresh_options {
   my $self = shift;
   my $options = shift;
   if ($options) {
-    foreach my $option (split /,/, $options) {
-      my $optarg = undef;
-      $option =~ s/^\s+//;
-      $option =~ s/\s+$//;
-      if ($option =~ /(.*)=(.*)/) {
-      	$option = $1;
-      	$optarg = $2;
-        $optarg =~ s/^"//;
-        $optarg =~ s/"$//;
-        $optarg =~ s/^'//;
-        $optarg =~ s/'$//;
-      }
-      foreach my $defoption (keys %{$self->{options}}) {
-        if ($option eq $defoption) {
-          if ($optarg) {
-          	# example: sticky=3600,syslogclient="winhost1.dom"
-          	$self->{options}->{$defoption} = $optarg;
-          } else {
-            $self->{options}->{$defoption} = 1;
+    if (ref($options) eq 'HASH') { # already as hash
+      foreach my $option (keys %{$options}) {
+        my $optarg = $options->{$option};
+        foreach my $defoption (keys %{$self->{options}}) {
+          if ($option eq $defoption) {
+            $self->{options}->{$defoption} = $optarg;
           }
-        } elsif ($option eq 'no'.$defoption) {
-          $self->{options}->{$defoption} = 0;
         }
       }
-    } 
+    } else { # comes as string
+      foreach my $option (split /,/, $options) {
+        my $optarg = undef;
+        $option =~ s/^\s+//;
+        $option =~ s/\s+$//;
+        if ($option =~ /(.*)=(.*)/) {
+        	$option = $1;
+        	$optarg = $2;
+          $optarg =~ s/^"//;
+          $optarg =~ s/"$//;
+          $optarg =~ s/^'//;
+          $optarg =~ s/'$//;
+        }
+        foreach my $defoption (keys %{$self->{options}}) {
+          if ($option eq $defoption) {
+            if ($optarg) {
+            	# example: sticky=3600,syslogclient="winhost1.dom"
+            	$self->{options}->{$defoption} = $optarg;
+            } else {
+              $self->{options}->{$defoption} = 1;
+            }
+          } elsif ($option eq 'no'.$defoption) {
+            $self->{options}->{$defoption} = 0;
+          }
+        }
+      } 
+    }
   } 
   # reset [smart][pre|post]script options if no script should be called 
   foreach my $option (qw(script prescript postscript)) {
@@ -1318,7 +1336,6 @@ sub new {
   $self->{tracefile} = $params->{tracefile};
   $self->{prefilter} = $params->{prefilter};
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
-  $self->{report} = $params->{report};
   if (exists $params->{tivolipatterns}) {
     my $tivoliparams = { };
     my $tivolipatterns = [];
@@ -1410,6 +1427,7 @@ sub init {
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
   $self->{patterns} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
+  $self->{patternfuncs} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{negpatterns} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{negpatterncnt} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{exceptions} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
@@ -1438,7 +1456,9 @@ sub init {
       savethresholdcount => 1, encoding => 0, maxlength => 0, 
       lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
       preferredlevel => 0,
-      warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0 } );
+      warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
+      report => 'short', seekfileerror => 'critical',
+  });
   $self->refresh_options($params->{options});
   #
   #  Dynamic logfile names may contain macros.
@@ -1559,6 +1579,10 @@ sub init {
       } else {
         $self->{threshold}->{$level} = 0;
       }
+      foreach my $pattern (@{$self->{patterns}->{$level}}) {
+        push(@{$self->{patternfuncs}->{$level}},
+            eval "sub { local \$_ = shift; return m/\$pattern/o; }");
+      }
     }
   }
   foreach my $level qw(CRITICAL WARNING UNKNOWN) {
@@ -1569,6 +1593,10 @@ sub init {
   if (exists $self->{tivoli}->{object}) {
     $self->{patterns} = { OK => [], WARNING => [],
         CRITICAL => ['.*'], UNKNOWN => [] };
+    push(@{$self->{patternfuncs}->{OK}}, sub { return undef; });
+    push(@{$self->{patternfuncs}->{WARNING}}, sub { return undef; });
+    push(@{$self->{patternfuncs}->{UNKNOWN}}, sub { return undef; });
+    push(@{$self->{patternfuncs}->{CRITICAL}}, eval "sub { local \$_ = shift; return m/.*/o; }");
     $self->{tivoli}->{object}->set_format_mappings(
       hostname => $self->{macros}->{CL_HOSTNAME},
       fqhostname => $self->{macros}->{CL_FQDN},
@@ -1933,8 +1961,8 @@ sub savestate {
         $self->{newstate}->{devino});
   } else {
     $self->{options}->{count} = 1;
-    $self->addevent(WARNING, sprintf "cannot write status file %s",
-    $self->{seekfile});
+    $self->addevent($self->get_option('seekfileerror'), 
+        sprintf "cannot write status file %s! check your filesystem (permissions/usage/integrity) and disk devices", $self->{seekfile});
   }
   return $self;
 }
@@ -1968,6 +1996,8 @@ sub addevent {
   }
   if ($level =~ /^\d/) {
     $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
+  } else {
+    $level = uc $level;
   }
   push(@{$self->{matchlines}->{$level}}, $errormessage);
   $self->{lastmsg}->{$level} =
@@ -2105,9 +2135,16 @@ sub scan {
         }
         next if $outplayed;
         my $patcnt = -1;
-        foreach my $pattern (@{$self->{patterns}->{$level}}) {          
+        #foreach my $pattern (@{$self->{patterns}->{$level}}) {          
+        #  $patcnt++;
+        #  printf STDERR "-->%s\n<<<%s\n", $line, $pattern;
+        #  if ($line =~ /$pattern/) {
+        #    push(@{$matches->{$level}}, $patcnt);
+        #  }
+        #}
+        foreach my $patternfunc (@{$self->{patternfuncs}->{$level}}) {
           $patcnt++;
-          if ($line =~ /$pattern/) {
+          if (&${patternfunc}($line)) {
             push(@{$matches->{$level}}, $patcnt);
           }
         }
@@ -3040,7 +3077,8 @@ sub init {
   $self->{scriptstdin} = $params->{scriptstdin};
   $self->{scriptdelay} = $params->{scriptdelay};   
   $self->default_options({ script => 0, protocol => 0, count => 1,
-      smartscript => 0, supersmartscript => 0 });
+      smartscript => 0, supersmartscript => 0,
+      report => 'short', seekfileerror => 'critical', });
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
@@ -3106,7 +3144,8 @@ sub init {
   $self->{scriptdelay} = $params->{scriptdelay};   
   $self->{privatestate} = $params->{privatestate};   
   $self->default_options({ script => 0, protocol => 0, count => 1,
-      smartscript => 0, supersmartscript => 0 });
+      smartscript => 0, supersmartscript => 0,
+      report => 'short', seekfileerror => 'critical', });
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;

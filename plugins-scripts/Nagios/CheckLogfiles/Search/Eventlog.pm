@@ -634,6 +634,8 @@ sub format_message {
       localtime($event->{Timewritten})).$tz;
   $format->{'%g'} = strftime("%Y-%m-%dT%H:%M:%S",
       localtime($event->{TimeGenerated})).$tz;
+  $format->{'%W'} = $event->{Timewritten};
+  $format->{'%G'} = $event->{TimeGenerated};
   my $message = $eventlogformat;
   foreach (keys %{$format}) {
     $message =~ s/$_/$format->{$_}/g;

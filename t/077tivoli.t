@@ -210,6 +210,7 @@ ok (${$tivtest->{matchlines}->{WARNING}}[2] eq "ServerView RAID: Drive Array Dev
 diag(Data::Dumper::Dumper($tivtest->{matchlines}));
 diag(Data::Dumper::Dumper($tivtest->{privatestate}));
 diag(Data::Dumper::Dumper($cl->{privatestate}->{tivtest}));
+diag(Data::Dumper::Dumper($tivtest));
 #diag(Data::Dumper::Dumper($cl));
 
 diag("-----------------------");

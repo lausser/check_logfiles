@@ -12,11 +12,11 @@ use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
-plan tests => 34;
+plan tests => 35;
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
-  report => 'long',
+  options => 'report=long',
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -28,6 +28,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
         ]    });
 
 my $ssh = $cl->get_search_by_tag("ssh");
+ok($ssh->{options}->{report} eq "long");
 $ssh->delete_logfile();
 $ssh->delete_seekfile();
 $ssh->trace("deleted logfile and seekfile");
@@ -229,7 +230,7 @@ ok((length $cl->{long_exitmessage} <= 8192) && (length $cl->{long_exitmessage} >
 # Return 0 aus einem Supersmartscript zaehlt nicht.
 
 $cl = Nagios::CheckLogfiles::Test->new({
-        report => 'long',
+        options => 'report=long',
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -300,7 +301,7 @@ ok($cl->{long_exitmessage} eq "");
 
 
 $cl = Nagios::CheckLogfiles::Test->new({
-        report => 'long',
+        options => 'report=long',
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -362,7 +363,7 @@ ok($cl->expect_result(1, 0, 3, 0, 2));
 
 # handle empty lines
 $cl = Nagios::CheckLogfiles::Test->new({
-        report => 'long',
+        options => 'report=long',
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

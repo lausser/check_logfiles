@@ -162,6 +162,7 @@ my @params = (
     "protocolsdir=s",
     "protocolsretention=i",
     "macro=s%",
+    "seekfileerror=s",
     #
     # search
     #
@@ -402,9 +403,13 @@ if (my $cl = Nagios::CheckLogfiles->new({
               $commandline{archivedir} ?
                   $commandline{archivedir} : undef,
       })],
+      options => join(',', grep { $_ }
+          $commandline{report} ? "report=".$commandline{report} : undef,
+          $commandline{seekfileerror} ? "seekfileerror=".(uc $commandline{seekfileerror}) : undef,
+      ),
       selectedsearches => [split(/,/, $commandline{selectedsearches})],
       dynamictag => $commandline{tag} ? $commandline{tag} : undef,
-      report => $commandline{report} ? $commandline{report} : undef,
+      #report => $commandline{report} ? $commandline{report} : undef,
       cmdlinemacros => $commandline{macro},
       seekfilesdir => $commandline{seekfilesdir} ? $commandline{seekfilesdir} : undef,
       protocolsdir => $commandline{protocolsdir} ? $commandline{protocolsdir} : undef,
