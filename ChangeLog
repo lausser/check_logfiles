@@ -2,7 +2,7 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
-3.3 - 2010-04-26
+3.3 - 2010-04-27
 - speedup in pattern matching
 - new (global) option seekfileerror
 - added Win32::Daemon to the windows version
