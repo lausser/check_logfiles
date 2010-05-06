@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.4
+- used a new version of par::packer for check_logfiles.exe (there were problems if PERL5LIB was set by an oracle/veritas/... perl installation)
+
 3.3 - 2010-04-27
 - speedup in pattern matching
 - new (global) option seekfileerror

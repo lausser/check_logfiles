@@ -1474,6 +1474,7 @@ sub init {
     $self->resolve_macros(\$self->{tag});
     $self->{macros}->{CL_TAG} = $self->{tag};
   }
+  $self->{logfile_before_resolving} = $self->{logfile};
   $self->resolve_macros(\$self->{logfile});
   $self->{macros}->{CL_LOGFILE} = $self->{logfile};
   $self->{logbasename} = basename($self->{logfile});
@@ -1619,7 +1620,12 @@ sub init {
 sub construct_seekfile {
   my $self = shift;
   # since 2.0 the complete path to the logfile is mapped to the seekfilename
-  $self->{seekfilebase} = $self->{logfile};
+  if ($self->{logfile} ne $self->{logfile_before_resolving}) {
+    $self->{seekfilebase} = $self->{logfile_before_resolving};
+    $self->{seekfilebase} =~ s/\$/_/g;
+  } else {
+    $self->{seekfilebase} = $self->{logfile};
+  }
   $self->{seekfilebase} =~ s/\//_/g;
   $self->{seekfilebase} =~ s/\\/_/g;
   $self->{seekfilebase} =~ s/:/_/g;
@@ -2716,19 +2722,26 @@ sub collectfiles {
     $self->trace("looking for rotated files in %s with pattern %s",
         $self->{archivedir}, $self->{filenamepattern});
     opendir(DIR, $self->{archivedir});
+    @rotatedfiles = map { 
+        sprintf "%s/%s", $self->{archivedir}, $_; 
+    } grep /^$self->{filenamepattern}/, readdir(DIR);
+    closedir(DIR);
+    
+#    opendir(DIR, $self->{archivedir});
     # read the filenames from DIR, match the filenamepattern, check the file age
     # open the file and return the handle
     # sort the handles by modification time
     #@rotatedfiles = sort { (stat $a->{fh})[9] <=> (stat $b->{fh})[9] } map {
     @rotatedfiles = sort { $a->{modtime} <=> $b->{modtime} } map {
-      if (/^$self->{filenamepattern}/) {
-        my $archive = sprintf "%s/%s", $self->{archivedir}, $_;
+      #if (/^$self->{filenamepattern}/) {
+        #my $archive = sprintf "%s/%s", $self->{archivedir}, $_;
+        my $archive = $_;
         $self->trace("archive %s matches (modified %s / accessed %s / inode %d / inode changed %s)", $archive,
             scalar localtime((stat $archive)[9]),
             scalar localtime((stat $archive)[8]),
             (stat $archive)[1],
             scalar localtime((stat $archive)[10]));
-        if ((stat $self->{archivedir}.'/'.$_)[9] >=
+        if ((stat $archive)[9] >=
             $self->{laststate}->{logtime}) {
           $self->trace("archive %s was modified after %s", $archive,
               scalar localtime($self->{laststate}->{logtime}));
@@ -2765,18 +2778,19 @@ sub collectfiles {
                   modtime => (stat $archive)[9],
                   fingerprint => $self->getfilefingerprint($archive).':'.$self->getfilesize($archive) });
             } else {
-              $self->trace("archive %s cannot be opened", $_);
+              $self->trace("archive %s cannot be opened", $archive);
               ();
             }
           }
         } else {
           ();
         }
-      } else {
-        ();
-      }
-    } readdir(DIR);
-    closedir(DIR);
+      #} else {
+      #  ();
+      #}
+    } @rotatedfiles;
+#    } readdir(DIR);
+#    closedir(DIR);
     if (scalar(@rotatedfiles) == 0) {
       #
       #  although a logfile rotation was detected, no archived files were found.

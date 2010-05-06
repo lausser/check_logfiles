@@ -539,7 +539,7 @@ sub TIEHANDLE {
         $firstoffset++;
       }
     } else {
-      printf STDERR "0 events\n";
+      #printf STDERR "0 events\n";
     }
   } else {
     my $now = time;
