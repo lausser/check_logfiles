@@ -96,6 +96,8 @@ sub init {
       $self->{eventlog}->{exclude}->{operation} ne 'and') {
     $self->{eventlog}->{exclude}->{operation} = 'or'
   }
+  $self->{orschlorschknorsch} = sprintf "%s/%s.temp_evtlog2file",
+        $self->system_tempdir(), $self->{tag};
 }
   
 sub prepare {
@@ -157,8 +159,7 @@ sub collectfiles {
       $self->{eventlog}->{lastsecond},
       $self->{eventlog}->{thissecond});
   if ($self->{logmodified}) {
-    open(*FH, sprintf ">%s/orschlorschknorsch_%s",
-        $self->system_tempdir(), $self->{tag});
+    open(*FH, ">$self->{orschlorschknorsch}");
     tie *FH, 'Nagios::CheckLogfiles::Search::Eventlog::Handle',
         $self->{eventlog}, 
         $self->get_option('winwarncrit'),
@@ -193,6 +194,9 @@ sub finish {
       $self->{lastmsg}->{$level} =~ s/EE_EE_TT//;
       $self->{lastmsg}->{$level} =~ s/EE_UU_TT//;
     }
+  }
+  if (-f $self->{orschlorschknorsch}) {
+    unlink $self->{orschlorschknorsch};
   }
 }
 
@@ -506,7 +510,9 @@ sub TIEHANDLE {
                   ($tmp_event->{EventType} ==
                       EVENTLOG_AUDIT_SUCCESS) ? 'AuditSuccess':
                   ($tmp_event->{EventType} ==
-                      EVENTLOG_AUDIT_FAILURE) ? 'AuditFailure': 'Unknown',
+                      EVENTLOG_AUDIT_FAILURE) ? 'AuditFailure':
+                  ($tmp_event->{EventType} ==
+                      EVENTLOG_SUCCESS) ? 'Success': 'Unknown',
                   'N/A',
                   join('_', split(" ", $tmp_event->{Source})),
                   $tmp_event->{EventID} & 0xffff,
@@ -631,7 +637,9 @@ sub format_message {
       ($event->{EventType} == EVENTLOG_AUDIT_SUCCESS) ?
           'AuditSuccess' :
       ($event->{EventType} == EVENTLOG_AUDIT_FAILURE) ?
-          'AuditFailure' : 'UnknType';
+          'AuditFailure' :
+      ($event->{EventType} == EVENTLOG_SUCCESS) ?
+          'Success' : 'UnknType';
   $format->{'%c'} = ! $event->{Category} ? 'None' :
       join('_', split(" ", $event->{Category}));
   $format->{'%s'} = join('_', split(" ", $event->{Source}));
@@ -698,10 +706,11 @@ sub included {
     $matches->{$attr} = 0;
     if (exists $filter->{$attr}) {
       foreach my $item (split(',', $filter->{$attr})) {
-        if ((lc $item =~ /warn/ && $event->{$attr} == EVENTLOG_WARNING_TYPE) ||
+        if ((lc $item =~ /^succ/ && $event->{$attr} == EVENTLOG_SUCCESS) ||
+            (lc $item =~ /warn/ && $event->{$attr} == EVENTLOG_WARNING_TYPE) ||
             (lc $item =~ /err/ && $event->{$attr} == EVENTLOG_ERROR_TYPE) ||
             (lc $item =~ /info/ && $event->{$attr} == EVENTLOG_INFORMATION_TYPE) ||
-            (lc $item =~ /succ/ && $event->{$attr} == EVENTLOG_AUDIT_SUCCESS) ||
+            (lc $item =~ /audit.*succ/ && $event->{$attr} == EVENTLOG_AUDIT_SUCCESS) ||
             (lc $item =~ /fail/ && $event->{$attr} == EVENTLOG_AUDIT_FAILURE)) {
           #printf "type %s matched\n", $item;
           $matches->{$attr}++;
@@ -760,10 +769,11 @@ sub excluded {
     $matches->{$attr} = 0;
     if (exists $filter->{$attr}) {
       foreach my $item (split(',', $filter->{$attr})) {
-        if ((lc $item =~ /warn/ && $event->{$attr} == EVENTLOG_WARNING_TYPE) ||
+        if ((lc $item =~ /^succ/ && $event->{$attr} == EVENTLOG_SUCCESS) ||
+            (lc $item =~ /warn/ && $event->{$attr} == EVENTLOG_WARNING_TYPE) ||
             (lc $item =~ /err/ && $event->{$attr} == EVENTLOG_ERROR_TYPE) ||
             (lc $item =~ /info/ && $event->{$attr} == EVENTLOG_INFORMATION_TYPE) ||
-            (lc $item =~ /succ/ && $event->{$attr} == EVENTLOG_AUDIT_SUCCESS) ||
+            (lc $item =~ /audit.*succ/ && $event->{$attr} == EVENTLOG_AUDIT_SUCCESS) ||
             (lc $item =~ /fail/ && $event->{$attr} == EVENTLOG_AUDIT_FAILURE)) {
           #printf "type %s matched\n", $item;
           $matches->{$attr}++;

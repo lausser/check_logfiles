@@ -2,7 +2,11 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
-3.4
+3.4.1 - 2010-05-08
+- new option archivedirregexp
+- fixed a bug in eventlogs. (take care of type EVENTLOG_SUCCESS)
+
+3.4 - 2010-05-07
 - used a new version of par::packer for check_logfiles.exe (there were problems if PERL5LIB was set by an oracle/veritas/... perl installation)
 
 3.3 - 2010-04-27

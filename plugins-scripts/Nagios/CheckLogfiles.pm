@@ -1462,6 +1462,7 @@ sub init {
       preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
       report => 'short', seekfileerror => 'critical',
+      archivedirregexp => 0,
   });
   $self->refresh_options($params->{options});
   #
@@ -2721,11 +2722,35 @@ sub collectfiles {
   if ($self->{logrotated} && $self->{rotation}) {
     $self->trace("looking for rotated files in %s with pattern %s",
         $self->{archivedir}, $self->{filenamepattern});
-    opendir(DIR, $self->{archivedir});
-    @rotatedfiles = map { 
-        sprintf "%s/%s", $self->{archivedir}, $_; 
-    } grep /^$self->{filenamepattern}/, readdir(DIR);
-    closedir(DIR);
+
+
+    if ($self->get_option('archivedirregexp')) {
+      my $volume = undef;
+      my @catdirs = ();
+      my @dirs = split(/\//, $self->{archivedir});
+      foreach my $i (1..(scalar(@dirs) - $self->get_option('archivedirregexp'))) {
+          push(@catdirs, shift @dirs);
+      }
+      my $searchdir = join('/', @catdirs);
+      File::Find::find(sub {
+        if (/^$self->{filenamepattern}/ && -f $_) {
+          push(@rotatedfiles, $File::Find::name);
+        }
+      }, $searchdir);
+    } else {
+      opendir(DIR, $self->{archivedir});
+      @rotatedfiles = map {
+          sprintf "%s/%s", $self->{archivedir}, $_;
+      } grep /^$self->{filenamepattern}/, readdir(DIR);
+      closedir(DIR);
+    }
+
+
+    #opendir(DIR, $self->{archivedir});
+    #@rotatedfiles = map { 
+    #    sprintf "%s/%s", $self->{archivedir}, $_; 
+    #} grep /^$self->{filenamepattern}/, readdir(DIR);
+    #closedir(DIR);
     
 #    opendir(DIR, $self->{archivedir});
     # read the filenames from DIR, match the filenamepattern, check the file age
@@ -2936,6 +2961,7 @@ package Nagios::CheckLogfiles::Search::Rotating::Uniform;
 use strict;
 use Exporter;
 use File::Basename;
+use File::Find;
 use vars qw(@ISA);
 
 use constant OK => 0;
@@ -2959,16 +2985,45 @@ sub prepare {
     $self->resolve_macros_in_pattern(\$self->{filenamepattern});
   }
   # find newest rotatingpattern = logfile
-  opendir(DIR, $self->{archivedir});
-  @matchingfiles = sort { $a->{modtime} <=> $b->{modtime} } map {
-      if (/^$self->{filenamepattern}/) {
-        my $archive = sprintf "%s/%s", $self->{archivedir}, $_;
-       ({ filename => $archive, modtime => (stat $archive)[9]});
-      } else {
-        ();
+
+  if ($self->get_option('archivedirregexp')) {
+    my $volume = undef;
+    my @catdirs = ();
+    my @dirs = split(/\//, $self->{archivedir});
+    foreach my $i (1..(scalar(@dirs) - $self->get_option('archivedirregexp'))) {
+        push(@catdirs, shift @dirs);
+    }
+    my $searchdir = join('/', @catdirs);
+    File::Find::find(sub {
+      if (/^$self->{filenamepattern}/ && -f $_) {
+        push(@matchingfiles, $File::Find::name);
       }
-  } readdir(DIR);
-  closedir(DIR);
+    }, $searchdir);
+    @matchingfiles = sort { $a->{modtime} <=> $b->{modtime} } map {
+        my $archive = $_;
+       ({ filename => $archive, modtime => (stat $archive)[9]});
+    } @matchingfiles;
+  } else {
+    opendir(DIR, $self->{archivedir});
+    @matchingfiles = sort { $a->{modtime} <=> $b->{modtime} } map {
+        my $archive = $_;
+       ({ filename => $archive, modtime => (stat $archive)[9]});
+    } map {
+        sprintf "%s/%s", $self->{archivedir}, $_;
+    } grep /^$self->{filenamepattern}/, readdir(DIR);
+    closedir(DIR);
+  }
+
+  #opendir(DIR, $self->{archivedir});
+  #@matchingfiles = sort { $a->{modtime} <=> $b->{modtime} } map {
+  #    if (/^$self->{filenamepattern}/) {
+  #      my $archive = sprintf "%s/%s", $self->{archivedir}, $_;
+  #     ({ filename => $archive, modtime => (stat $archive)[9]});
+  #    } else {
+  #      ();
+  #    }
+  #} readdir(DIR);
+  #closedir(DIR);
   if (@matchingfiles) {
     $self->{logfile} = $matchingfiles[-1]->{filename};
     $self->{macros}->{CL_LOGFILE} = $self->{logfile};
@@ -2985,7 +3040,11 @@ sub construct_seekfile {
   my $self = shift;
   # modify seekfilename so it can be found even if the logfile has changed
   $self->{logbasename} = basename($self->{logfile});
-  $self->{seekfilebase} = dirname($self->{logfile}).'/uniformlogfile';
+  if ($self->get_option('archivedirregexp')) {
+    $self->{seekfilebase} = '/regexpuniformlogfile';
+  } else {
+    $self->{seekfilebase} = dirname($self->{logfile}).'/uniformlogfile';
+  }
   $self->{seekfilebase} =~ s/\//_/g;
   $self->{seekfilebase} =~ s/\\/_/g;
   $self->{seekfilebase} =~ s/:/_/g;
