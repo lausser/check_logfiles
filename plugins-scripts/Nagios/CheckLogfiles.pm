@@ -1529,17 +1529,6 @@ sub init {
       foreach my $pattern (@{$self->{patterns}->{$level}}) {
         $self->resolve_macros_in_pattern(\$pattern);
       }
-
-      if (exists $params->{(lc $level).'exceptions'}) {
-        if (ref($params->{(lc $level).'exceptions'}) ne 'ARRAY') {
-          $self->{exceptions}->{$level} = [$params->{(lc $level).'exceptions'}];
-        } else {
-          push(@{$self->{exceptions}->{$level}}, @{$params->{(lc $level).'exceptions'}});
-        }
-        foreach my $pattern (@{$self->{exceptions}->{$level}}) {
-          $self->resolve_macros_in_pattern(\$pattern);
-        }
-      }
       #
       #  separate the pattern arrays. patterns beginning with a "!" will raise
       #  an error if they cannot be found.
@@ -1590,6 +1579,16 @@ sub init {
             eval "sub { local \$_ = shift; return m/\$pattern/o; }");
       }
     }
+    if (exists $params->{(lc $level).'exceptions'}) {
+      if (ref($params->{(lc $level).'exceptions'}) ne 'ARRAY') {
+        $self->{exceptions}->{$level} = [$params->{(lc $level).'exceptions'}];
+      } else {
+        push(@{$self->{exceptions}->{$level}}, @{$params->{(lc $level).'exceptions'}});
+      }
+      foreach my $pattern (@{$self->{exceptions}->{$level}}) {
+        $self->resolve_macros_in_pattern(\$pattern);
+      }
+    }
   }
   foreach my $level qw(CRITICAL WARNING UNKNOWN) {
     foreach my $pattern (@{$self->{negpatterns}->{$level}}) {
@@ -1631,15 +1630,17 @@ sub construct_seekfile {
   $self->{seekfilebase} =~ s/\\/_/g;
   $self->{seekfilebase} =~ s/:/_/g;
   $self->{seekfilebase} =~ s/\s/_/g;
+  $self->{seekfiletag} = $self->{tag};
+  $self->{seekfiletag} =~ s/\//_/g;
   $self->{seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{seekfilebase},
-      $self->{tag} eq "default" ? "seek" : $self->{tag};
+      $self->{tag} eq "default" ? "seek" : $self->{seekfiletag};
   $self->{pre3seekfile} = sprintf "/tmp/%s.%s.%s",
       $self->{cfgbase}, $self->{seekfilebase},
-      $self->{tag} eq "default" ? "seek" : $self->{tag};
+      $self->{tag} eq "default" ? "seek" : $self->{seekfiletag};
   $self->{pre2seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{logbasename},
-      $self->{tag} eq "default" ? "seek" : $self->{tag};
+      $self->{tag} eq "default" ? "seek" : $self->{seekfiletag};
 }
 
 sub force_cfgbase {
