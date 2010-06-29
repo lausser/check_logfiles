@@ -1557,9 +1557,6 @@ sub init {
       	foreach my $pattern (@{$self->{negpatterns}->{$level}}) {
       	  $pattern = '(?i)'.$pattern;
       	}
-      	foreach my $pattern (@{$self->{exceptions}->{$level}}) {
-      	  $pattern = '(?i)'.$pattern;
-      	}
       }
       #
       #  ignore the match unless a minimum of threshold occurrances were found
@@ -1587,6 +1584,11 @@ sub init {
       }
       foreach my $pattern (@{$self->{exceptions}->{$level}}) {
         $self->resolve_macros_in_pattern(\$pattern);
+      }
+      if (! $self->{options}->{case}) {
+      	foreach my $pattern (@{$self->{exceptions}->{$level}}) {
+      	  $pattern = '(?i)'.$pattern;
+      	}
       }
     }
   }
