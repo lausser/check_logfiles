@@ -259,7 +259,8 @@ sub TIEHANDLE {
       'Source' => undef, 
       'Computer' => undef,
       'Strings' => undef,
-      'Data' => undef
+      'Data' => undef,
+      'User' => undef,
   };
   @events = ();
   my $offsetcache = {};
@@ -623,6 +624,7 @@ sub format_message {
   # %w Timewritten
   # %g Timegenerated
   # %d Date/Time
+  # %u User # not documented @ cpan
   my $tz = '';
   my $format = {};
   $format->{'%t'} =
@@ -651,6 +653,7 @@ sub format_message {
       localtime($event->{TimeGenerated})).$tz;
   $format->{'%W'} = $event->{Timewritten};
   $format->{'%G'} = $event->{TimeGenerated};
+  $format->{'%u'} = $event->{User} || 'undef';
   my $message = $eventlogformat;
   foreach (keys %{$format}) {
     $message =~ s/$_/$format->{$_}/g;

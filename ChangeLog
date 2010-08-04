@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.4.2.1 - 2010-08-04
+- add %u (User) to option eventlogformat
+
 3.4.2 - 2010-06-29
 - fixed a bug where exceptions only worked if patterns were defined. (Thanks Heiko)
 - small patch so filenames can be specified with --tag
