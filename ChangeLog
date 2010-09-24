@@ -2,6 +2,8 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+- add pattern loglog0bz2log1bz2  (Thanks Christian Schulz)
+
 3.4.2.1 - 2010-08-04
 - add %u (User) to option eventlogformat
 

@@ -2926,6 +2926,9 @@ sub prepare {
   } elsif ("LOGLOG0GZLOG1GZ" eq uc($self->{rotation})) {
     $self->{filenamepattern} = sprintf '^%s\.((0)|([1-9]+[0-9]*))\.gz$',
         $self->{logbasename};
+  } elsif ("LOGLOG0BZ2LOG1BZ2" eq uc($self->{rotation})) {
+    $self->{filenamepattern} = sprintf '^%s\.((0)|([1-9]+[0-9]*))\.bz2$',
+        $self->{logbasename};
   } elsif ("LOGLOG0LOG1" eq uc($self->{rotation})) {
     $self->{filenamepattern} = sprintf '^%s\.((0)|([1-9]+[0-9]*))$',
         $self->{logbasename};
