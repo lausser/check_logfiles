@@ -2948,6 +2948,9 @@ sub prepare {
   } elsif ("BMWHPUX" eq uc($self->{rotation})) {
     $self->{filenamepattern} = sprintf 'OLD%s|%s\\.[A-Z][0-9]+_[0-9]+\\.gz$',
         $self->{logbasename}, $self->{logbasename};
+  } elsif ("EHL" eq uc($self->{rotation})) {
+    $self->{filenamepattern} = sprintf '^%s_%s\.\d\d\d\d_\d+_\d+_\d+_\d+_\d+$',
+        $self->{macros}->{CL_HOSTNAME}, $self->{logbasename};
   } elsif ("MOD_LOG_ROTATE" eq uc($self->{rotation})) {
     $self->{filenamepattern} = sprintf 'access\.log\.\d{10}';
     bless $self, "Nagios::CheckLogfiles::Search::Rotating::Uniform";

@@ -2,7 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.4.2.2 - 2010-09-29
 - add pattern loglog0bz2log1bz2  (Thanks Christian Schulz)
+- add pattern ehl (Thanks Daniel Haist)
 
 3.4.2.1 - 2010-08-04
 - add %u (User) to option eventlogformat
