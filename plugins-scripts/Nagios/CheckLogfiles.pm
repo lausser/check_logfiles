@@ -1251,8 +1251,6 @@ sub run_as_daemon {
       }
     }
   } else {
-    $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
-printf "pidfile is %s\n", $self->{pidfile};
     chdir '/';
     die "cannot detach from controlling terminal" unless POSIX::setsid();
     exit if (fork());
@@ -1268,6 +1266,7 @@ printf "pidfile is %s\n", $self->{pidfile};
         $keep_going = 0;
       };
     }
+    $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
     if (! $self->check_pidfile()) {
       $self->trace("Exiting because another daemon was found");
       die;
