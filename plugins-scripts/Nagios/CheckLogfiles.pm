@@ -10,6 +10,7 @@ use Data::Dumper;
 use Socket;
 use POSIX qw(strftime);
 use IPC::Open2;
+use Errno;
 
 
 use constant GZIP => '#GZIP#';
@@ -53,7 +54,7 @@ sub init {
   $self->{protocolretention} = ($params->{protocolretention} || 7) * 24 * 3600;
   $self->{macros} = $params->{macros};
   $self->{timeout} = $params->{timeout};
-  $self->{pidfile} = $params->{pidfile} || '/var/run/check_logfiles.pid';
+  $self->{pidfile} = $params->{pidfile};
   $self->{perfdata} = "";
   $self->{searches} = [];
   $self->{selectedsearches} = $params->{selectedsearches} || [];
@@ -1116,6 +1117,60 @@ sub system_tempdir {
   }
 }
 
+sub construct_pidfile {
+  my $self = shift;
+  $self->{pidfilebase} = File::Spec->rel2abs($self->{cfgfile});
+  $self->{pidfilebase} =~ s/\//_/g;
+  $self->{pidfilebase} =~ s/\\/_/g; 
+  $self->{pidfilebase} =~ s/:/_/g;
+  $self->{pidfilebase} =~ s/\s/_/g;
+  $self->{pidfilebase} =~ s/\.cfg$//g;
+  return sprintf "%s/%s.pid", $self->{seekfilesdir},
+      $self->{pidfilebase};
+}
+
+sub write_pidfile {
+  my $self = shift;
+  my $fh = new IO::File;
+  $fh->autoflush(1);
+  if ($fh->open($self->{pidfile}, "w")) {
+    $fh->printf("%s", $$);
+    $fh->close();
+  } else {
+    $self->trace("Could not write pidfile %s", $self->{pidfile});
+    die "pid file could not be written";
+  }
+}
+
+sub check_pidfile {
+  my $self = shift;
+  my $fh = new IO::File;
+  if ($fh->open($self->{pidfile}, "r")) {
+    my $pid = $fh->getline();
+    $fh->close();
+    if (! $pid) {
+      $self->trace("Found pidfile %s with no valid pid. Exiting.", 
+          $self->{pidfile});
+      return 0;
+    } else {
+      $self->trace("Found pidfile %s with pid %d", $self->{pidfile}, $pid);
+      kill 0, $pid;
+      if ($! == Errno::ESRCH) {
+        $self->trace("The pidfile is stale. Writing a new one");
+        $self->write_pidfile();
+        return 1;
+      } else {
+        $self->trace("The pidfile is held by a running process. Exiting");
+        return 0;
+      }
+    }
+  } else {
+    $self->trace("Found no pidfile. Writing a new one");
+    $self->write_pidfile();
+    return 1;
+  }
+}
+
 sub run_as_daemon {
   my $self = shift;
   my $delay = shift;
@@ -1196,6 +1251,8 @@ sub run_as_daemon {
       }
     }
   } else {
+    $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
+printf "pidfile is %s\n", $self->{pidfile};
     chdir '/';
     die "cannot detach from controlling terminal" unless POSIX::setsid();
     exit if (fork());
@@ -1204,7 +1261,6 @@ sub run_as_daemon {
     open STDOUT, '+>&STDIN';
     open STDERR, '+>&STDIN';
     my $keep_going = 1;
-    # $self->{pidfile};
     $self->trace(sprintf "Daemon running with pid %d", $$);
     foreach my $signal (qw(HUP INT TERM QUIT)) {
       $SIG{$signal}  = sub {
@@ -1212,11 +1268,16 @@ sub run_as_daemon {
         $keep_going = 0;
       };
     }
+    if (! $self->check_pidfile()) {
+      $self->trace("Exiting because another daemon was found");
+      die;
+    }
     $self->trace("Entering main loop");
     do {
       $self->run();
+      $self->write_pidfile();
       $self->trace(sprintf "%s%s\n%s", $self->{exitmessage},
-          $self->{perfdata} ? "|".$self->{perfdata} : "",
+      $self->{perfdata} ? "|".$self->{perfdata} : "",
           $self->{long_exitmessage} ? $self->{long_exitmessage}."\n" : "");
       $self->reset();
       foreach (1..$delay) {
@@ -1227,6 +1288,7 @@ sub run_as_daemon {
         }
       }
     } while($keep_going);
+    -f $self->{pidfile} && unlink $self->{pidfile};
     $self->trace("Daemon exiting...");
   }
 }
@@ -1470,10 +1532,14 @@ sub init {
   #
   if (exists $self->{template} && exists $self->{dynamictag}) {
     $self->{macros}->{CL_TAG} = $self->{dynamictag};
+    $self->{macros}->{CL_tag} = lc $self->{dynamictag};
     $self->{macros}->{CL_TEMPLATE} = $self->{template};
   } else {
     $self->resolve_macros(\$self->{tag});
     $self->{macros}->{CL_TAG} = $self->{tag};
+    # http://www.nagios-portal.org/wbb/index.php?page=Thread&threadID=18392
+    # this saves a lot of time when you are working with oracle alertlogs
+    $self->{macros}->{CL_tag} = lc $self->{tag};
   }
   $self->{logfile_before_resolving} = $self->{logfile};
   $self->resolve_macros(\$self->{logfile});
@@ -2888,6 +2954,20 @@ sub collectfiles {
       $seen{$_->{fingerprint}} = $_->{filename};
       $_;
     }
+  } reverse @rotatedfiles;
+  # cleanup again. this is for rotating::uniform, where the current logfile is
+  # analyzed twice. with a fast-growing logfile it may happen that we find
+  # the current logfile with two different fingerprints (dev:inode:size) here
+  %seen = ();
+  @rotatedfiles = reverse map {
+    if (exists $seen{$_->{filename}}) {
+      $self->trace("skipping duplicate %s (was growing during analysis)",
+          $_->{filename});
+      ();
+    } else {
+      $seen{$_->{filename}} = 1;
+      $_;  
+    }    
   } reverse @rotatedfiles;
   if (0 && (scalar(@rotatedfiles) == 1) &&
       ($rotatedfiles[0]->{filename} eq $self->{logfile}) &&

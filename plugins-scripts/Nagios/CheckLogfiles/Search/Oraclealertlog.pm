@@ -35,6 +35,7 @@ sub init {
   $self->resolve_macros(\$self->{oraalert}->{tns}->{connect});
   $self->resolve_macros(\$self->{oraalert}->{tns}->{username});
   $self->resolve_macros(\$self->{oraalert}->{tns}->{password});
+  return $self;
 }
     
 sub prepare {
