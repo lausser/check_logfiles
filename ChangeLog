@@ -2,7 +2,7 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
-3.4.3 - 2011-01-18
+3.4.3 - 2011-01-19
 - add pid file handling to avoid concurrent processes with --daemon
 
 3.4.2.2 - 2010-09-29

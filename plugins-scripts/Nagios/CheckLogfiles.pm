@@ -191,7 +191,7 @@ sub init {
 
 sub init_from_file {
   my $self = shift;
-  my $fullcfgfile;
+  my $abscfgfile;
   #
   #  variables from the config file.
   #
@@ -213,29 +213,31 @@ sub init_from_file {
     }
   } else {
     if (-f $self->{cfgfile}) {
-      $fullcfgfile = $self->{cfgfile};
+      $abscfgfile = $self->{cfgfile};
     } elsif (-f $self->{cfgfile}.'.cfg') {
-      $fullcfgfile = $self->{cfgfile}.'.cfg';
+      $abscfgfile = $self->{cfgfile}.'.cfg';
     } elsif (-f $ENV{HOME}.'/'.$self->{cfgfile}) {
-      $fullcfgfile = $ENV{HOME}.'/'.$self->{cfgfile};
+      $abscfgfile = $ENV{HOME}.'/'.$self->{cfgfile};
     } elsif (-f $ENV{HOME}.'/'.$self->{cfgfile}.'.cfg') {
-      $fullcfgfile = $ENV{HOME}.'/'.$self->{cfgfile}.'.cfg';
+      $abscfgfile = $ENV{HOME}.'/'.$self->{cfgfile}.'.cfg';
     } else {
       $ExitCode = $ERROR_UNKNOWN;
       $ExitMsg = sprintf "UNKNOWN - can not load configuration file %s", 
           $self->{cfgfile};
       return undef;
     }
-    $fullcfgfile = File::Spec->rel2abs($fullcfgfile) 
-        unless File::Spec->file_name_is_absolute($fullcfgfile);
+    $abscfgfile = File::Spec->rel2abs($abscfgfile) 
+        unless File::Spec->file_name_is_absolute($abscfgfile);
     eval {
-      require $fullcfgfile;
+      require $abscfgfile;
     };
     if ($@) {
       $ExitCode = $ERROR_UNKNOWN;
       $ExitMsg = sprintf "UNKNOWN - syntax error %s", (split(/\n/, $@))[0];
       return undef;
     }
+    # We might need this for a pidfile
+    $self->{abscfgfile} = $abscfgfile;
   } 
   $self->{tracefile} = $tracefile if $tracefile;
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
@@ -1119,7 +1121,7 @@ sub system_tempdir {
 
 sub construct_pidfile {
   my $self = shift;
-  $self->{pidfilebase} = File::Spec->rel2abs($self->{cfgfile});
+  $self->{pidfilebase} = $self->{abscfgfile};
   $self->{pidfilebase} =~ s/\//_/g;
   $self->{pidfilebase} =~ s/\\/_/g; 
   $self->{pidfilebase} =~ s/:/_/g;
@@ -1156,11 +1158,11 @@ sub check_pidfile {
       $self->trace("Found pidfile %s with pid %d", $self->{pidfile}, $pid);
       kill 0, $pid;
       if ($! == Errno::ESRCH) {
-        $self->trace("The pidfile is stale. Writing a new one");
+        $self->trace("This pidfile is stale. Writing a new one");
         $self->write_pidfile();
         return 1;
       } else {
-        $self->trace("The pidfile is held by a running process. Exiting");
+        $self->trace("This pidfile is held by a running process. Exiting");
         return 0;
       }
     }
@@ -1251,8 +1253,20 @@ sub run_as_daemon {
       }
     }
   } else {
+    # pidfile must be created before the chdir because it is based on the
+    # cfgfile which can be a relative path
+    $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
+    if (! $self->check_pidfile()) {
+      $self->trace("Exiting because another daemon is already running");
+      printf STDERR "Exiting because another daemon is already running\n";
+      exit 3;
+    }
+    if (! POSIX::setsid()) {
+      $self->trace("Cannot detach from controlling terminal");
+      printf STDERR "Cannot detach from controlling terminal\n";
+      exit 3;
+    }
     chdir '/';
-    die "cannot detach from controlling terminal" unless POSIX::setsid();
     exit if (fork());
     exit if (fork());
     open STDIN, '+>/dev/null';
@@ -1265,11 +1279,6 @@ sub run_as_daemon {
         $self->trace("Caught SIG%s:  exiting gracefully", $signal);
         $keep_going = 0;
       };
-    }
-    $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
-    if (! $self->check_pidfile()) {
-      $self->trace("Exiting because another daemon was found");
-      die;
     }
     $self->trace("Entering main loop");
     do {
