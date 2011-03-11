@@ -140,6 +140,7 @@ my @params = (
     "daemon:i",
     "report=s",
     "reset",
+    "unstick",
     #
     #
     #
@@ -415,6 +416,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
       protocolsdir => $commandline{protocolsdir} ? $commandline{protocolsdir} : undef,
       protocolsretention => $commandline{protocolsretention} ? $commandline{protocolsretention} : undef,
       reset => $commandline{reset} ? $commandline{reset} : undef,
+      unstick => $commandline{unstick} ? $commandline{unstick} : undef,
   })) {
   $cl->{verbose} = $commandline{verbose} ? 1 : 0;
   $cl->{timeout} = $commandline{timeout} ? $commandline{timeout} : 60;

@@ -61,6 +61,7 @@ sub init {
   $self->{dynamictag} = $params->{dynamictag} || "";
   $self->{cmdlinemacros} = $params->{cmdlinemacros} || {};
   $self->{reset} = $params->{reset} || 0;
+  $self->{unstick} = $params->{unstick} || 0;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
@@ -330,6 +331,14 @@ sub run {
     foreach my $search (@{$self->{searches}}) {
       if ($search->{tag} ne "prescript" && $search->{tag} ne "postscript") {
         $search->rewind();
+      }
+    }
+    return $self;
+  }
+  if ($self->{unstick}) {
+    foreach my $search (@{$self->{searches}}) {
+      if ($search->{tag} ne "prescript" && $search->{tag} ne "postscript") {
+        $search->unstick();
       }
     }
     return $self;
@@ -1133,6 +1142,20 @@ sub construct_pidfile {
 
 sub write_pidfile {
   my $self = shift;
+  if (! -d dirname($self->{pidfile})) {
+    eval "require File::Path;";
+    if (defined(&File::Path::mkpath)) {
+      import File::Path;
+      eval { mkpath(dirname($self->{pidfile})); };
+    } else {
+      my @dirs = ();
+      map { 
+          push @dirs, $_;
+          mkdir(join('/', @dirs)) 
+              if join('/', @dirs) && ! -d join('/', @dirs);
+      } split(/\//, dirname($self->{pidfile}));
+    }
+  }
   my $fh = new IO::File;
   $fh->autoflush(1);
   if ($fh->open($self->{pidfile}, "w")) {
@@ -1750,6 +1773,18 @@ sub rewind {
   return $self;
 }
 
+sub unstick {
+  my $self = shift;
+  $self->loadstate();
+  foreach (keys %{$self->{laststate}}) {
+    $self->{newstate}->{$_} = $self->{laststate}->{$_};
+  }
+  $self->addevent(0, "unstick");
+  $self->trace("remove the sticky error with --unstick");
+  $self->{laststate}->{laststicked} = 0;
+  $self->savestate();
+  return $self;
+}
 
 sub run {
   my $self = shift;
