@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.4.3.2 - 2011-03-15
+- fix a bug with --type on the commandline
+
 3.4.3.1 - 2011-03-10
 - create the pidfile's directory if it doesn't exist
 - new option unstick (Thanks Holger Reif)

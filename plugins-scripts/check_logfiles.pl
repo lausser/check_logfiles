@@ -328,7 +328,9 @@ if (my $cl = Nagios::CheckLogfiles->new({
       cfgfile => $commandline{config} ? $commandline{config} : undef,
       searches => [ 
           map {
-            if (exists $commandline{type}) {
+            if (exists $commandline{type} && $commandline{type} eq 'rotating::uniform') {
+              $_->{type} = $commandline{type};
+            } elsif (exists $commandline{type}) {
               # "eventlog" or "eventlog:eventlog=application,include,source=cdrom,source=dvd,eventid=23,eventid=29,operation=or,exclude,eventid=4711,operation=and"
               my ($type, $details) = split(":", $commandline{type});
               $_->{type} = $type;
