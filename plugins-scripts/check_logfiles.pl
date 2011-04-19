@@ -176,6 +176,7 @@ my @params = (
     "criticalexception=s",
     "warningpattern=s",
     "warningexception=s",
+    "patternfile=s",
     "okpattern=s",
     "type=s",
     "archivedir=s",
@@ -384,6 +385,9 @@ if (my $cl = Nagios::CheckLogfiles->new({
           okpatterns =>
               $commandline{okpattern} ?
                   $commandline{okpattern} : undef,
+          patternfile =>
+              $commandline{patternfile} ?
+                  $commandline{patternfile} : undef,
           options => join(',', grep { $_ }
               $commandline{noprotocol} ? "noprotocol" : undef,
               $commandline{nocase} ? "nocase" : undef,

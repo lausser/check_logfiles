@@ -1530,6 +1530,7 @@ sub init {
   $self->{exceptions} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{threshold} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
   $self->{thresholdcnt} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
+  $self->{filepatterns} = {};
   $self->{hasinversepat} = 0;
   $self->{likeavirgin} = 0;
   $self->{linesread} = 0;
@@ -1612,6 +1613,68 @@ sub init {
   #
   #  Setup the structure describing what to search for.
   #
+  if (exists $params->{patternfile} && -r $params->{patternfile}) {
+    our($criticalpatterns, $warningpatterns, $criticalexceptions, $warningexceptions);
+    eval {
+      require $params->{patternfile};
+    };
+    if ($@) {
+      printf STDERR "%s\n", $@;
+      $self->addevent(3, $@);
+    } else {
+      $self->{filepatterns}->{criticalpatterns} = $criticalpatterns
+          if $criticalpatterns;
+      $self->{filepatterns}->{warningpatterns} = $warningpatterns
+          if $warningpatterns;
+      $self->{filepatterns}->{criticalexceptions} = $criticalexceptions
+          if $criticalexceptions;
+      $self->{filepatterns}->{warningexceptions} = $warningexceptions
+          if $warningexceptions;
+      foreach my $level qw(ok warning critical unknown) {
+        # normalize
+        if (exists $self->{filepatterns}->{$level.'patterns'}) {
+          if (ref($self->{filepatterns}->{$level.'patterns'}) ne 'ARRAY') {
+            $self->{filepatterns}->{$level.'patterns'} = 
+                [$self->{filepatterns}->{$level.'patterns'}];
+          }
+        } else {
+          $self->{filepatterns}->{$level.'patterns'} = [];
+        }
+        if (exists $self->{filepatterns}->{$level.'exceptions'}) {
+          if (ref($self->{filepatterns}->{$level.'exceptions'}) ne 'ARRAY') {
+            $self->{filepatterns}->{$level} = 
+                [$self->{filepatterns}->{$level.'exceptions'}];
+          }
+        } else {
+          $self->{filepatterns}->{$level.'exceptions'} = [];
+        }
+        if (exists $params->{$level.'patterns'}) {
+          if (ref($params->{$level.'patterns'}) ne 'ARRAY') {
+            $params->{$level.'patterns'} = [$params->{$level.'patterns'}];
+          }
+          if (exists $self->{filepatterns}->{$level.'patterns'}) {
+            unshift(@{$params->{$level.'patterns'}},
+                @{$self->{filepatterns}->{$level.'patterns'}});
+          }
+        } else {
+          $params->{$level.'patterns'}  
+              = $self->{filepatterns}->{$level.'patterns'};
+        }
+        if (exists $params->{$level.'exceptions'}) {
+          if (ref($params->{$level.'exceptions'}) ne 'ARRAY') {
+            $params->{$level.'exceptions'} = [$params->{$level.'exceptions'}];
+          }
+          if (exists $self->{filepatterns}->{$level.'exceptions'}) {
+            unshift(@{$params->{$level.'exceptions'}},
+                @{$self->{filepatterns}->{$level.'exceptions'}});
+          }
+        } else {
+          $params->{$level.'exceptions'}  
+              = $self->{filepatterns}->{$level.'exceptions'};
+        }
+      }
+    }
+  }
   foreach my $level qw(OK CRITICAL WARNING UNKNOWN) {
     #
     #  if a single pattern was given as a scalar, force it into an array
@@ -1619,7 +1682,7 @@ sub init {
     #
     if (exists $params->{(lc $level).'patterns'}) {
       if (ref($params->{(lc $level).'patterns'}) ne 'ARRAY') {
-        $self->{patterns}->{$level} = [$params->{(lc $level).'patterns'}];
+        push(@{$self->{patterns}->{$level}}, $params->{(lc $level).'patterns'});
       } else {
         push(@{$self->{patterns}->{$level}}, @{$params->{(lc $level).'patterns'}});
       }
