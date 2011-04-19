@@ -385,7 +385,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
           okpatterns =>
               $commandline{okpattern} ?
                   $commandline{okpattern} : undef,
-          patternfile =>
+          patternfiles =>
               $commandline{patternfile} ?
                   $commandline{patternfile} : undef,
           options => join(',', grep { $_ }

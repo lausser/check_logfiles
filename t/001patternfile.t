@@ -6,7 +6,7 @@
 #
 
 use strict;
-use Test::More tests => 4;
+use Test::More tests => 7;
 use Cwd;
 use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
@@ -29,7 +29,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
 	    {
 	      tag => "ssh",
 	      logfile => TESTDIR."/var/adm/messages",
-              patternfile => TESTDIR."/etc/patternfile.pat",
+              patternfiles => TESTDIR."/etc/patternfile.pat",
 	      criticalexceptions => "Failed password for invalid user (lausser|seppl)",
 	      warningpatterns => ["Failed password for invalid user seppl"],
 	    }
@@ -92,3 +92,61 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 3, 2, 0, 2));
+
+
+
+$cl = Nagios::CheckLogfiles::Test->new({
+	seekfilesdir => TESTDIR."/var/tmp",
+	searches => [
+	    {
+	      tag => "ssh",
+	      logfile => TESTDIR."/var/adm/messages",
+              patternfiles => [
+                  TESTDIR."/etc/patternfile.pat",
+                  TESTDIR."/etc/patternfile2.pat",
+              ],
+	      criticalexceptions => "Failed password for invalid user (lausser|seppl)",
+	      warningpatterns => ["Failed password for invalid user seppl"],
+	    }
+	]    });
+$ssh = $cl->get_search_by_tag("ssh");
+$ssh->delete_logfile();
+$ssh->delete_seekfile();
+$ssh->trace("deleted logfile and seekfile");
+
+# logfile will be created. there is no seekfile. position at the end of file
+# and remember this as starting point for the next run.
+$ssh->logger(undef, undef, 2, "Failed password for invalid user user1...");
+sleep 1;
+$ssh->trace("initial run");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
+
+# now find the four criticals and two warnings
+$cl->reset();
+$ssh->loggercrap(undef, undef, 100);
+$ssh->logger(undef, undef, 2, "Failed password for invalid user user2");
+$ssh->logger(undef, undef, 2, "Failed password for invalid user sepp");
+$ssh->loggercrap(undef, undef, 100);
+$ssh->logger(undef, undef, 2, "Unknown user hiasl");
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 2, 4, 0, 2));
+
+# now find the four criticals and one warnings
+# now find a critical where the pattern is defined in a secondary patternfile
+$cl->reset();
+$ssh->loggercrap(undef, undef, 100);
+$ssh->logger(undef, undef, 2, "ALAAARM");   #c
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 2, 0, 2));
+
+
+
