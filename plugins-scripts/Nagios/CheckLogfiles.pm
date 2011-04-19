@@ -2386,6 +2386,8 @@ sub scan {
               $level = (qw(OK WARNING CRITICAL UNKNOWN))[$self->{tivoli}->{match}->{exit_code}];
               next if $self->{tivoli}->{match}->{format_name} eq 'NO MATCHING RULE';
               $line = $self->{tivoli}->{match}->{subject};
+            } else {
+              $self->{privatestate}->{matchingpattern} = $pattern;
             }
             if ($self->{options}->{script}) {
               $self->{macros}->{CL_SERVICESTATE} = $level;
