@@ -48,7 +48,7 @@ sub init {
   $year += 1900; $mon += 1;
   $self->{tracefile} = $self->system_tempdir().'/check_logfiles.trace';
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
-  $self->{seekfilesdir} = $params->{seekfilesdir} || '#SEEKFILES_DIR#';
+  $self->{seekfilesdir} = $params->{seekfilesdir} || $self->system_seekfilesdir();
   $self->{protocolsdir} = $params->{protocolsdir} || '#PROTOCOLS_DIR#';
   $self->{scriptpath} = $params->{scriptpath} || '#TRUSTED_PATH#';
   $self->{protocolretention} = ($params->{protocolretention} || 7) * 24 * 3600;
@@ -1112,6 +1112,18 @@ sub old_getfileisreadable {
     return -r $file;
   } else { 
     return -r $file;
+  }
+}
+
+sub system_seekfilesdir {
+  my $self = shift;
+  if (exists $ENV{OMD_ROOT}) {
+    -d $ENV{OMD_ROOT}."/var" || mkdir $ENV{OMD_ROOT}."/var";
+    -d $ENV{OMD_ROOT}."/var/tmp" || mkdir $ENV{OMD_ROOT}."/var/tmp";
+    -d $ENV{OMD_ROOT}."/var/tmp/check_logfiles" || mkdir $ENV{OMD_ROOT}."/var/tmp/check_logfiles";
+    return $ENV{OMD_ROOT}."/var/tmp/check_logfiles";
+  } else {
+    return '#SEEKFILES_DIR#';
   }
 }
 
