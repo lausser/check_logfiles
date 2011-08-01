@@ -38,7 +38,10 @@ use constant CRITICAL => 2;
 use constant UNKNOWN => 3;
 
 Getopt::Long::Configure qw(no_ignore_case); # compatibility with old perls
-use vars qw (%commandline);
+use vars qw (%commandline $SEEKFILESDIR $PROTOCOLSDIR $SCRIPTPATH);
+$SEEKFILESDIR = '#SEEKFILES_DIR#';
+$PROTOCOLSDIR = '#PROTOCOLS_DIR#';
+$SCRIPTPATH = '#TRUSTED_PATH#';
 my @cfgfiles = ();
 my $needs_restart = 0;
 my $enough_info = 0;
@@ -325,6 +328,14 @@ if (exists $commandline{warningpattern}) {
   delete $commandline{warningpattern} if
       $commandline{warningpattern} eq 'match_never_ever';
 }
+if (! exists $commandline{seekfilesdir}) {
+  if (exists $ENV{OMD_ROOT}) {
+    $commandline{seekfilesdir} = $ENV{OMD_ROOT}."/var/tmp/check_logfiles";
+  } else {
+    $commandline{seekfilesdir} = $SEEKFILESDIR;
+  } 
+}
+
 if (my $cl = Nagios::CheckLogfiles->new({
       cfgfile => $commandline{config} ? $commandline{config} : undef,
       searches => [ 
@@ -420,6 +431,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
       cmdlinemacros => $commandline{macro},
       seekfilesdir => $commandline{seekfilesdir} ? $commandline{seekfilesdir} : undef,
       protocolsdir => $commandline{protocolsdir} ? $commandline{protocolsdir} : undef,
+      scriptpath => $commandline{scriptpath} ? $commandline{scriptpath} : undef,
       protocolsretention => $commandline{protocolsretention} ? $commandline{protocolsretention} : undef,
       reset => $commandline{reset} ? $commandline{reset} : undef,
       unstick => $commandline{unstick} ? $commandline{unstick} : undef,

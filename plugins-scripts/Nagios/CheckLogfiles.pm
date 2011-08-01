@@ -48,7 +48,7 @@ sub init {
   $year += 1900; $mon += 1;
   $self->{tracefile} = $self->system_tempdir().'/check_logfiles.trace';
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
-  $self->{seekfilesdir} = $params->{seekfilesdir} || $self->system_seekfilesdir();
+  $self->{seekfilesdir} = $params->{seekfilesdir} || '#SEEKFILES_DIR#';
   $self->{protocolsdir} = $params->{protocolsdir} || '#PROTOCOLS_DIR#';
   $self->{scriptpath} = $params->{scriptpath} || '#TRUSTED_PATH#';
   $self->{protocolretention} = ($params->{protocolretention} || 7) * 24 * 3600;
@@ -1115,18 +1115,6 @@ sub old_getfileisreadable {
   }
 }
 
-sub system_seekfilesdir {
-  my $self = shift;
-  if (exists $ENV{OMD_ROOT}) {
-    -d $ENV{OMD_ROOT}."/var" || mkdir $ENV{OMD_ROOT}."/var";
-    -d $ENV{OMD_ROOT}."/var/tmp" || mkdir $ENV{OMD_ROOT}."/var/tmp";
-    -d $ENV{OMD_ROOT}."/var/tmp/check_logfiles" || mkdir $ENV{OMD_ROOT}."/var/tmp/check_logfiles";
-    return $ENV{OMD_ROOT}."/var/tmp/check_logfiles";
-  } else {
-    return '#SEEKFILES_DIR#';
-  }
-}
-
 sub system_tempdir {
   my $self = shift;
   if ($^O =~ /MSWin/) {
@@ -2158,7 +2146,18 @@ sub savestate {
   $self->{newstate}->{privatestate} = $self->{privatestate};
   $self->{newstate}->{runcount} = $self->{laststate}->{runcount};
   $self->{newstate}->{runtime} = $now;
-  mkdir $self->{seekfilesdir} if ! -d $self->{seekfilesdir};
+  # check if the file can be written
+  if (! -d $self->{seekfilesdir}) {
+    eval {
+      use File::Path;
+      mkpath $self->{seekfilesdir};
+    };
+  }
+  if ($@ || ! -w $self->{seekfilesdir}) {
+    $self->addevent($self->get_option('seekfileerror'), 
+        sprintf "cannot write status file %s! check your filesystem (permissions/usage/integrity) and disk devices", $self->{seekfile});
+    return $self;
+  }
   if ($seekfh->open($self->{seekfile}, "w")) {
     my $dumpstate = Data::Dumper->new([$self->{newstate}], [qw(state)]);
     #printf("save %s\n", $dumpstate->Dump());
