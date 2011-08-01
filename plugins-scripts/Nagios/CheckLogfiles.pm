@@ -2038,6 +2038,7 @@ sub savestate {
   my $self = shift;
   my $seekfh = new IO::File;
   my $now = time;
+  $@ = undef; # reset this. when a pre-3.0 statefile was read, this is set
   $self->searchresult(); # calculate servicestateid and serviceoutput
   if ($self->{options}->{sticky}) {
     if ($self->get_option('report') ne 'short') {
