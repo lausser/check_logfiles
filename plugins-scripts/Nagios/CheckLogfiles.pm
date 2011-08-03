@@ -1530,6 +1530,7 @@ sub init {
   $self->{exceptions} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{threshold} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
   $self->{thresholdcnt} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
+  $self->{patternkeys} = { OK => {}, WARNING => {}, CRITICAL => {}, UNKNOWN => {} };
   $self->{filepatterns} = {};
   $self->{hasinversepat} = 0;
   $self->{likeavirgin} = 0;
@@ -1613,21 +1614,43 @@ sub init {
   #
   #  Setup the structure describing what to search for.
   #
+  foreach my $level qw(OK CRITICAL WARNING UNKNOWN) {
+    #
+    #  if a single pattern was given as a scalar, force it into an array
+    #  and resolve macros.
+    #
+    if (exists $params->{(lc $level).'patterns'}) {
+      if (ref($params->{(lc $level).'patterns'}) eq 'HASH') {
+        map {
+          my $value = $params->{(lc $level).'patterns'}->{$_};
+          $self->{patternkeys}->{$level}->{$value} = $_;
+        } keys %{$params->{(lc $level).'patterns'}};
+        my $tmphash = $params->{(lc $level).'patterns'};
+        $params->{(lc $level).'patterns'} = [];
+        @{$params->{(lc $level).'patterns'}} = values %{$tmphash};
+      } elsif (ref($params->{(lc $level).'patterns'}) eq 'ARRAY') {
+      } else {
+        $params->{(lc $level).'patterns'} =
+            [$params->{(lc $level).'patterns'}];
+      }
+    }
+    if (exists $params->{(lc $level).'exceptions'}) {
+      if (ref($params->{(lc $level).'exceptions'}) eq 'HASH') {
+        $params->{(lc $level).'exceptions'} =
+            values %{$params->{(lc $level).'exceptions'}};
+        my $tmphash = $params->{(lc $level).'exceptions'};
+        $params->{(lc $level).'exceptions'} = [];
+        @{$params->{(lc $level).'exceptions'}} = values %{$tmphash};
+      } elsif (ref($params->{(lc $level).'exceptions'}) eq 'ARRAY') {
+      } else {
+        $params->{(lc $level).'exceptions'} =
+            [$params->{(lc $level).'exceptions'}];
+      }
+    }
+  }
   if (exists $params->{patternfiles}) {
     if (ref($params->{patternfiles}) ne 'ARRAY') {
       $params->{patternfiles} = [$params->{patternfiles}];
-    }
-    foreach my $level qw(ok warning critical unknown) {
-      if (exists $params->{$level.'patterns'}) {
-        if (ref($params->{$level.'patterns'}) ne 'ARRAY') {
-          $params->{$level.'patterns'} = [$params->{$level.'patterns'}];
-        }
-      }
-      if (exists $params->{$level.'exceptions'}) {
-        if (ref($params->{$level.'exceptions'}) ne 'ARRAY') {
-          $params->{$level.'exceptions'} = [$params->{$level.'exceptions'}];
-        }
-      }
     }
     foreach my $patternfile (@{$params->{patternfiles}}) {
       our($criticalpatterns, $warningpatterns,
@@ -1653,14 +1676,32 @@ sub init {
         foreach my $level qw(ok warning critical unknown) {
           # normalize
           if (exists $filepatterns->{$level.'patterns'}) {
-            if (ref($filepatterns->{$level.'patterns'}) ne 'ARRAY') {
+            if (ref($filepatterns->{$level.'patterns'}) eq 'HASH') {
+              map {
+                my $value = $filepatterns->{$level.'patterns'}->{$_};
+                $self->{patternkeys}->{$level}->{$value} = $_;
+              } keys %{$filepatterns->{$level.'patterns'}};
+              my $tmphash = $filepatterns->{$level.'patterns'};
+              $filepatterns->{$level.'patterns'} = [];
+              @{$filepatterns->{$level.'patterns'}} = values %{$tmphash};
+            } elsif (ref($filepatterns->{$level.'patterns'}) eq 'ARRAY') {
+            } else {
               $filepatterns->{$level.'patterns'} = 
                   [$filepatterns->{$level.'patterns'}];
             }
           }
           if (exists $filepatterns->{$level.'exceptions'}) {
-            if (ref($filepatterns->{$level.'exceptions'}) ne 'ARRAY') {
-              $filepatterns->{$level} = 
+            if (ref($filepatterns->{$level.'exceptions'}) eq 'HASH') {
+              map {
+                my $value = $filepatterns->{$level.'exceptions'}->{$_};
+                $self->{patternkeys}->{$level}->{$value} = $_;
+              } keys %{$filepatterns->{$level.'exceptions'}};
+              my $tmphash = $filepatterns->{$level.'exceptions'};
+              $filepatterns->{$level.'exceptions'} = [];
+              @{$filepatterns->{$level.'exceptions'}} = values %{$tmphash};
+            } elsif (ref($filepatterns->{$level.'exceptions'}) eq 'ARRAY') {
+            } else {
+              $filepatterns->{$level.'exceptions'} =
                   [$filepatterns->{$level.'exceptions'}];
             }
           }
@@ -1671,7 +1712,8 @@ sub init {
             }
           } else {
             if (exists $filepatterns->{$level.'patterns'}) {
-              $params->{$level.'patterns'} = $filepatterns->{$level.'patterns'};
+              @{$params->{$level.'patterns'}} = 
+                  @{$filepatterns->{$level.'patterns'}};
             }
           }
           if (exists $params->{$level.'exceptions'}) {
@@ -1681,7 +1723,8 @@ sub init {
             }
           } else {
             if (exists $filepatterns->{$level.'exceptions'}) {
-              $params->{$level.'exceptions'} = $filepatterns->{$level.'exceptions'};
+              @{$params->{$level.'exceptions'}} = 
+                  @{$filepatterns->{$level.'exceptions'}};
             }
           }
         }
@@ -1694,13 +1737,11 @@ sub init {
     #  and resolve macros.
     #
     if (exists $params->{(lc $level).'patterns'}) {
-      if (ref($params->{(lc $level).'patterns'}) ne 'ARRAY') {
-        push(@{$self->{patterns}->{$level}}, $params->{(lc $level).'patterns'});
-      } else {
-        push(@{$self->{patterns}->{$level}}, @{$params->{(lc $level).'patterns'}});
-      }
+      @{$self->{patterns}->{$level}} = @{$params->{(lc $level).'patterns'}};
       foreach my $pattern (@{$self->{patterns}->{$level}}) {
+        my $key = $self->{patternkeys}->{$level}->{$pattern};
         $self->resolve_macros_in_pattern(\$pattern);
+        $self->{patternkeys}->{$level}->{$pattern} = $key;
       }
       #
       #  separate the pattern arrays. patterns beginning with a "!" will raise
@@ -1750,11 +1791,7 @@ sub init {
       }
     }
     if (exists $params->{(lc $level).'exceptions'}) {
-      if (ref($params->{(lc $level).'exceptions'}) ne 'ARRAY') {
-        $self->{exceptions}->{$level} = [$params->{(lc $level).'exceptions'}];
-      } else {
-        push(@{$self->{exceptions}->{$level}}, @{$params->{(lc $level).'exceptions'}});
-      }
+      push(@{$self->{exceptions}->{$level}}, @{$params->{(lc $level).'exceptions'}});
       foreach my $pattern (@{$self->{exceptions}->{$level}}) {
         $self->resolve_macros_in_pattern(\$pattern);
       }
@@ -2405,7 +2442,14 @@ sub scan {
               $self->{macros}->{CL_SERVICESTATE} = $level;
               $self->{macros}->{CL_SERVICESTATEID} = $ERRORS{$level};
               $self->{macros}->{CL_SERVICEOUTPUT} = $line;
+              $self->{macros}->{CL_PATTERN_PATTERN} = $pattern;
               $self->{macros}->{CL_PATTERN_NUMBER} = $patcnt;
+              if (exists $self->{patternkeys}->{$level}->{$pattern}) {
+                $self->{macros}->{CL_PATTERN_KEY} = 
+                    $self->{patternkeys}->{$level}->{$pattern}
+              } else {
+                $self->{macros}->{CL_PATTERN_KEY} = "unknown_pattern";
+              }
               my ($actionsuccess, $actionrc, $actionoutput) =
                   $self->action($self->{script}, $self->{scriptparams},
                   $self->{scriptstdin}, $self->{scriptdelay},
