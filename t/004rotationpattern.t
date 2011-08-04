@@ -60,8 +60,13 @@ sub log_to_file {
   $dummy->loggercrap(undef, undef, 100);
 }
 
-system("rm -rf ./var/rot");
-mkdir "./var/rot";
+if ($^O =~ /MSWin/) {
+  system ('rd /S /Q .\var\rot');
+  system ('md var\rot');
+} else {
+  system("rm -rf ./var/rot");
+  mkdir "./var/rot";
+}
 
 #################### 31.5. 00:00
 ($year, $mon, $day, $hour) = (2010, 05, 31, 00);
