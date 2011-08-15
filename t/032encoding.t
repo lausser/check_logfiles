@@ -31,10 +31,11 @@ postscript => sub {
 	    {
 	      tag => "enc",
 	      type => 'simple',
-	      logfile => 'C:\WINDOWS\SchedLgU.txt',
+              logfile => -f 'c:\Windows\Tasks\SchedLgU.txt' ?
+                'c:\Windows\Tasks\SchedLgU.txt' : 'C:\WINDOWS\SchedLgU.txt',
 	      #criticalpatterns => "MpCmdRun\.exe",
 # sollte immer drinstehen wegen was auch immer
-              criticalpatterns => 'Ergebnis',
+              criticalpatterns => ['Ergebnis', 'Gestartet'],
 	      options => 'encoding=ucs-2'
 	    }
 	]    });
