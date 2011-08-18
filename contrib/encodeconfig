@@ -1,6 +1,13 @@
 #! /usr/bin/perl -w
 
-if (-f $ARGV[0]) {
+if (-p STDIN) {
+  my $saveterm = $/;
+  undef $/;
+  my $contents = <STDIN>;
+  $/ = $saveterm;
+  $contents =~ s/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg;
+  printf "%s\n", $contents;
+} elsif ($ARGV[0] && -f $ARGV[0]) {
   my $contents = do { local (@ARGV, $/) = $ARGV[0]; <> };
   $contents =~ s/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg;
   printf "%s\n", $contents;
