@@ -201,6 +201,7 @@ my @params = (
     "warningthreshold=i",
     "encoding=s",
     "preferredlevel=s",
+    "rununique",
 );
 if (! GetOptions(\%commandline, @params)) {
   print_help();
@@ -435,6 +436,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
       protocolsretention => $commandline{protocolsretention} ? $commandline{protocolsretention} : undef,
       reset => $commandline{reset} ? $commandline{reset} : undef,
       unstick => $commandline{unstick} ? $commandline{unstick} : undef,
+      rununique => $commandline{rununique} ? $commandline{rununique} : undef,
   })) {
   $cl->{verbose} = $commandline{verbose} ? 1 : 0;
   $cl->{timeout} = $commandline{timeout} ? $commandline{timeout} : 60;

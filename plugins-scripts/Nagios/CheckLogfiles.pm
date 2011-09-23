@@ -62,6 +62,7 @@ sub init {
   $self->{cmdlinemacros} = $params->{cmdlinemacros} || {};
   $self->{reset} = $params->{reset} || 0;
   $self->{unstick} = $params->{unstick} || 0;
+  $self->{rununique} = $params->{rununique} || 0;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
@@ -342,6 +343,14 @@ sub run {
       }
     }
     return $self;
+  }
+  if ($self->{rununique}) {
+    $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
+    if (! $self->check_pidfile()) {
+      $self->trace("Exiting because another check is already running");
+      printf STDERR "Exiting because another check is already running\n";
+      exit 3;
+    }
   }
   foreach my $search (@{$self->{searches}}) {
     if (1) { # there will be a timesrunningout variable
