@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.4.5
+- add paramerter --rununique
+
 3.4.4.2 - 2011-08-03
 - patterns can be hashes
 
