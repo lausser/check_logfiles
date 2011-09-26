@@ -207,10 +207,10 @@ ok (${$tivtest->{matchlines}->{CRITICAL}}[0] eq "Raid kaputt: mirror broken"); #
 ok (${$tivtest->{matchlines}->{CRITICAL}}[1] eq "Raid kaputt: mirror broken");
 ok (${$tivtest->{matchlines}->{WARNING}}[2] eq "ServerView RAID: Drive Array Device Failure battery low");
 
-diag(Data::Dumper::Dumper($tivtest->{matchlines}));
-diag(Data::Dumper::Dumper($tivtest->{privatestate}));
-diag(Data::Dumper::Dumper($cl->{privatestate}->{tivtest}));
-diag(Data::Dumper::Dumper($tivtest));
+#diag(Data::Dumper::Dumper($tivtest->{matchlines}));
+#diag(Data::Dumper::Dumper($tivtest->{privatestate}));
+#diag(Data::Dumper::Dumper($cl->{privatestate}->{tivtest}));
+#diag(Data::Dumper::Dumper($tivtest));
 #diag(Data::Dumper::Dumper($cl));
 
 diag("-----------------------");
@@ -232,15 +232,15 @@ $tivtest->logger(undef, undef, 1, "  occurred at Fri Jun  5 12:28:47 2009 and lo
 sleep 1;
 $cl->run();
 diag("now run");
-printf STDERR "%s\n", Data::Dumper::Dumper($tivtest->{matchlines});
+#printf STDERR "%s\n", Data::Dumper::Dumper($tivtest->{matchlines});
 ok(${$tivtest->{matchlines}->{WARNING}}[0] =~
     /.+ Event= 87:MLXEV_SYSDEV_CRITICAL$/);
 ok(${$tivtest->{matchlines}->{WARNING}}[1] eq
     "SeqNo=8 ctl=0 chn=0 tgt=0 lun=0 Event= XY:MLXEV_SYSDEV_AECHZ");
 diag($cl->has_result());
 diag($cl->{exitmessage});
-diag(Data::Dumper::Dumper($tivtest->{matchlines}));
-diag(Data::Dumper::Dumper($tivtest->{privatestate}));
+#diag(Data::Dumper::Dumper($tivtest->{matchlines}));
+#diag(Data::Dumper::Dumper($tivtest->{privatestate}));
 
 
 

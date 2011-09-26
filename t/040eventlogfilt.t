@@ -13,6 +13,16 @@ use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 use Data::Dumper;
 
+sub sleep_until_next_minute {
+  my($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0, 1, 2, 3, 4, 5];
+  while ($sec < 59) {
+    sleep 1;
+    ($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0, 1, 2, 3, 4, 5];
+  }
+  sleep 2;
+  # now it is ~ hh:00, hh:01
+}
+
 if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   diag("this is not a windows machine");
   plan skip_all => 'Test only relevant on Windows';
@@ -51,7 +61,7 @@ $ssh->trace("deleted seekfile");
 # 1 logfile will be created. there is no seekfile. position at the end of file
 # and remember this as starting point for the next run.
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 1);
-sleep 2;
+sleep_until_next_minute();
 $ssh->trace("initial run");
 $cl->run(); # cleanup
 diag("1st run");
@@ -83,7 +93,8 @@ ok($cl->expect_result(0, 0, 0, 0, 0)); #1
 # 2 now find the two criticals 1xFWproblem1 1xFWproblem2
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 2);
 $cl->reset();
-sleep 30;
+sleep_until_next_minute();
+# these events were created in the current minute and are ignored by the run()
 $ssh->logger(undef, undef, 1, "Fireball 2hihi");
 $ssh->logger(undef, undef, 1, "Fireball 3hihi");
 $ssh->logger(undef, undef, 1, "Firewall problem1");
@@ -126,7 +137,7 @@ ok(($? >> 8) == 0);
 # 2 now find the two criticals 1xFWproblem1 1xFWproblem2
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 2);
 $cl->reset();
-sleep 30;
+sleep_until_next_minute();
 $ssh->logger(undef, undef, 1, "Fireball 2hihi");
 $ssh->logger(undef, undef, 1, "Fireball 3hihi");
 $ssh->logger(undef, undef, 1, "Firewall problem1");
