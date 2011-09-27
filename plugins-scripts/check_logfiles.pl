@@ -224,7 +224,7 @@ if (exists $commandline{config}) {
   $enough_info = 1;
 } elsif (exists $commandline{logfile}) {
   $enough_info = 1;
-} elsif (exists $commandline{type} && $commandline{type} =~ /^eventlog/) {
+} elsif (exists $commandline{type} && $commandline{type} =~ /^(eventlog|errpt|ipmitool)/) {
   $enough_info = 1;
 } elsif (exists $commandline{deinstall}) {
   $commandline{type} = 'dummy';
