@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.4.5.1 - 2011-09-28
+- seekfilesdir can be "autodetect" with a configfile
+
 3.4.5
 - add parameter --rununique
 
