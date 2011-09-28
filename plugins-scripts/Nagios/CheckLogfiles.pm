@@ -240,6 +240,22 @@ sub init_from_file {
     }
     # We might need this for a pidfile
     $self->{abscfgfile} = $abscfgfile;
+    # autodetect a good place for a seekfilesdir
+    # abscfgfile usially is in path/etc
+    # 1. path/var/tmp
+    # 2. path/tmp
+    if ($seekfilesdir eq "autodetect") {
+      my $basedir = dirname($abscfgfile);
+      if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
+        $seekfilesdir = $basedir.'/var/tmp';
+      } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
+        $seekfilesdir = $basedir.'/tmp';
+      } else {
+        $ExitCode = $ERROR_UNKNOWN;
+        $ExitMsg = sprintf "UNKNOWN - unable to autodetect an adequate seekfilesdir";
+        return undef;
+      }
+    }
   } 
   $self->{tracefile} = $tracefile if $tracefile;
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
@@ -1168,235 +1184,235 @@ sub write_pidfile {
   my $fh = new IO::File;
   $fh->autoflush(1);
   if ($fh->open($self->{pidfile}, "w")) {
-    $fh->printf("%s", $$);
-    $fh->close();
+	  $fh->printf("%s", $$);
+	  $fh->close();
   } else {
-    $self->trace("Could not write pidfile %s", $self->{pidfile});
-    die "pid file could not be written";
+	  $self->trace("Could not write pidfile %s", $self->{pidfile});
+	  die "pid file could not be written";
   }
 }
 
 sub check_pidfile {
-  my $self = shift;
-  my $fh = new IO::File;
-  if ($fh->open($self->{pidfile}, "r")) {
-    my $pid = $fh->getline();
-    $fh->close();
-    if (! $pid) {
-      $self->trace("Found pidfile %s with no valid pid. Exiting.", 
-          $self->{pidfile});
-      return 0;
-    } else {
-      $self->trace("Found pidfile %s with pid %d", $self->{pidfile}, $pid);
-      kill 0, $pid;
-      if ($! == Errno::ESRCH) {
-        $self->trace("This pidfile is stale. Writing a new one");
-        $self->write_pidfile();
-        return 1;
-      } else {
-        $self->trace("This pidfile is held by a running process. Exiting");
-        return 0;
-      }
-    }
-  } else {
-    $self->trace("Found no pidfile. Writing a new one");
-    $self->write_pidfile();
-    return 1;
-  }
+	my $self = shift;
+	my $fh = new IO::File;
+	if ($fh->open($self->{pidfile}, "r")) {
+		my $pid = $fh->getline();
+		$fh->close();
+		if (! $pid) {
+			$self->trace("Found pidfile %s with no valid pid. Exiting.", 
+					$self->{pidfile});
+			return 0;
+		} else {
+			$self->trace("Found pidfile %s with pid %d", $self->{pidfile}, $pid);
+			kill 0, $pid;
+			if ($! == Errno::ESRCH) {
+				$self->trace("This pidfile is stale. Writing a new one");
+				$self->write_pidfile();
+				return 1;
+			} else {
+				$self->trace("This pidfile is held by a running process. Exiting");
+				return 0;
+			}
+		}
+	} else {
+		$self->trace("Found no pidfile. Writing a new one");
+		$self->write_pidfile();
+		return 1;
+	}
 }
 
 sub run_as_daemon {
-  my $self = shift;
-  my $delay = shift;
-  if ($^O =~ /MSWin/) {
-    if ($ENV{PROMPT}) { # i was called from a shell
-      # vielleicht irgendwas mit detach
-      die "not yet implemented";
-    } else {
-      eval "require Win32::Daemon;";
-      if (defined(&Win32::Daemon::StartService)) {
-        import Win32::Daemon;
-        my $svc_callback = sub {
-          my( $event, $context ) = @_;
-          #
-          # entgegen der DRECKSDOKU enthaelt $event NICHT den Status
-          # 
-          $event = Win32::Daemon::State();
-          $context->{last_event} = $event;
-          if ($event == SERVICE_RUNNING()) {
-            # main loop
-            $self->trace("Entering main loop");
-            do {
-              $self->run();
-              $self->trace(sprintf "%s%s\n%s", $self->{exitmessage},
-                  $self->{perfdata} ? "|".$self->{perfdata} : "",
-                  $self->{long_exitmessage} ?
-                      $self->{long_exitmessage}."\n" : "");
-              $self->reset();
-              foreach (1..$delay) {
-                if (Win32::Daemon::State() == SERVICE_RUNNING()) {
-                  sleep 1;
-                } else {
-                  last;
-                }
-              }
-            } while(Win32::Daemon::State() == SERVICE_RUNNING());
-            $self->trace("Leaving main loop");
-          } elsif ($event == SERVICE_START_PENDING()) {
-            # Initialization code
-            $self->trace("Service initialized");
-            $context->{last_state} = SERVICE_RUNNING();
-            Win32::Daemon::State(SERVICE_RUNNING());
-          } elsif ($event == SERVICE_PAUSE_PENDING()) {
-            $self->trace("Service makes a break");
-            $context->{last_state} = SERVICE_PAUSED();
-            Win32::Daemon::State(SERVICE_PAUSED());
-          } elsif ($event == SERVICE_CONTINUE_PENDING()) {
-            $self->trace("Service continues");
-            $context->{last_state} = SERVICE_RUNNING();
-            Win32::Daemon::State(SERVICE_RUNNING());
-          } elsif ($event == SERVICE_STOP_PENDING()) {
-            $self->trace("Service stops");
-            $context->{last_state} = SERVICE_STOPPED();
-            $self->trace("Daemon exiting...");
-            Win32::Daemon::State(SERVICE_STOPPED());
-            Win32::Daemon::StopService();
-          } else {
-            # Take care of unhandled states by setting the State()
-            # to whatever the last state was we set...
-            $self->trace("Service got an unhandled call");
-            Win32::Daemon::State( $context->{last_state} );
-          }
-          return();
-        };
-        Win32::Daemon::RegisterCallbacks($svc_callback);
-        my %context = (
-            count   =>  0,
-            start_time => time(),
-            keep_going => 0,
-            make_a_break => 0,
-        );
-        # Start the service passing in a context and
-        # indicating to callback using the "Running" event
-        # every 2000 milliseconds (2 seconds).
-        Win32::Daemon::StartService(\%context, 2000);
-      } else {
-        die "omeiomeiomei nix Win32::Daemon";
-      }
-    }
-  } else {
-    # pidfile must be created before the chdir because it is based on the
-    # cfgfile which can be a relative path
-    $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
-    if (! $self->check_pidfile()) {
-      $self->trace("Exiting because another daemon is already running");
-      printf STDERR "Exiting because another daemon is already running\n";
-      exit 3;
-    }
-    if (! POSIX::setsid()) {
-      $self->trace("Cannot detach from controlling terminal");
-      printf STDERR "Cannot detach from controlling terminal\n";
-      exit 3;
-    }
-    chdir '/';
-    exit if (fork());
-    exit if (fork());
-    open STDIN, '+>/dev/null';
-    open STDOUT, '+>&STDIN';
-    open STDERR, '+>&STDIN';
-    my $keep_going = 1;
-    $self->trace(sprintf "Daemon running with pid %d", $$);
-    foreach my $signal (qw(HUP INT TERM QUIT)) {
-      $SIG{$signal}  = sub {
-        $self->trace("Caught SIG%s:  exiting gracefully", $signal);
-        $keep_going = 0;
-      };
-    }
-    $self->trace("Entering main loop");
-    do {
-      $self->run();
-      $self->write_pidfile();
-      $self->trace(sprintf "%s%s\n%s", $self->{exitmessage},
-      $self->{perfdata} ? "|".$self->{perfdata} : "",
-          $self->{long_exitmessage} ? $self->{long_exitmessage}."\n" : "");
-      $self->reset();
-      foreach (1..$delay) {
-        if ($keep_going) {
-          sleep 1;
-        } else {
-          last;
-        }
-      }
-    } while($keep_going);
-    -f $self->{pidfile} && unlink $self->{pidfile};
-    $self->trace("Daemon exiting...");
-  }
+	my $self = shift;
+	my $delay = shift;
+	if ($^O =~ /MSWin/) {
+		if ($ENV{PROMPT}) { # i was called from a shell
+# vielleicht irgendwas mit detach
+			die "not yet implemented";
+		} else {
+			eval "require Win32::Daemon;";
+			if (defined(&Win32::Daemon::StartService)) {
+				import Win32::Daemon;
+				my $svc_callback = sub {
+					my( $event, $context ) = @_;
+#
+# entgegen der DRECKSDOKU enthaelt $event NICHT den Status
+# 
+					$event = Win32::Daemon::State();
+					$context->{last_event} = $event;
+					if ($event == SERVICE_RUNNING()) {
+# main loop
+						$self->trace("Entering main loop");
+						do {
+							$self->run();
+							$self->trace(sprintf "%s%s\n%s", $self->{exitmessage},
+									$self->{perfdata} ? "|".$self->{perfdata} : "",
+									$self->{long_exitmessage} ?
+									$self->{long_exitmessage}."\n" : "");
+							$self->reset();
+							foreach (1..$delay) {
+								if (Win32::Daemon::State() == SERVICE_RUNNING()) {
+									sleep 1;
+								} else {
+									last;
+								}
+							}
+						} while(Win32::Daemon::State() == SERVICE_RUNNING());
+						$self->trace("Leaving main loop");
+					} elsif ($event == SERVICE_START_PENDING()) {
+# Initialization code
+						$self->trace("Service initialized");
+						$context->{last_state} = SERVICE_RUNNING();
+						Win32::Daemon::State(SERVICE_RUNNING());
+					} elsif ($event == SERVICE_PAUSE_PENDING()) {
+						$self->trace("Service makes a break");
+						$context->{last_state} = SERVICE_PAUSED();
+						Win32::Daemon::State(SERVICE_PAUSED());
+					} elsif ($event == SERVICE_CONTINUE_PENDING()) {
+						$self->trace("Service continues");
+						$context->{last_state} = SERVICE_RUNNING();
+						Win32::Daemon::State(SERVICE_RUNNING());
+					} elsif ($event == SERVICE_STOP_PENDING()) {
+						$self->trace("Service stops");
+						$context->{last_state} = SERVICE_STOPPED();
+						$self->trace("Daemon exiting...");
+						Win32::Daemon::State(SERVICE_STOPPED());
+						Win32::Daemon::StopService();
+					} else {
+# Take care of unhandled states by setting the State()
+# to whatever the last state was we set...
+						$self->trace("Service got an unhandled call");
+						Win32::Daemon::State( $context->{last_state} );
+					}
+					return();
+				};
+				Win32::Daemon::RegisterCallbacks($svc_callback);
+				my %context = (
+						count   =>  0,
+						start_time => time(),
+						keep_going => 0,
+						make_a_break => 0,
+					      );
+# Start the service passing in a context and
+# indicating to callback using the "Running" event
+# every 2000 milliseconds (2 seconds).
+				Win32::Daemon::StartService(\%context, 2000);
+			} else {
+				die "omeiomeiomei nix Win32::Daemon";
+			}
+		}
+	} else {
+# pidfile must be created before the chdir because it is based on the
+# cfgfile which can be a relative path
+		$self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
+		if (! $self->check_pidfile()) {
+			$self->trace("Exiting because another daemon is already running");
+			printf STDERR "Exiting because another daemon is already running\n";
+			exit 3;
+		}
+		if (! POSIX::setsid()) {
+			$self->trace("Cannot detach from controlling terminal");
+			printf STDERR "Cannot detach from controlling terminal\n";
+			exit 3;
+		}
+		chdir '/';
+		exit if (fork());
+		exit if (fork());
+		open STDIN, '+>/dev/null';
+		open STDOUT, '+>&STDIN';
+		open STDERR, '+>&STDIN';
+		my $keep_going = 1;
+		$self->trace(sprintf "Daemon running with pid %d", $$);
+		foreach my $signal (qw(HUP INT TERM QUIT)) {
+			$SIG{$signal}  = sub {
+				$self->trace("Caught SIG%s:  exiting gracefully", $signal);
+				$keep_going = 0;
+			};
+		}
+		$self->trace("Entering main loop");
+		do {
+			$self->run();
+			$self->write_pidfile();
+			$self->trace(sprintf "%s%s\n%s", $self->{exitmessage},
+					$self->{perfdata} ? "|".$self->{perfdata} : "",
+					$self->{long_exitmessage} ? $self->{long_exitmessage}."\n" : "");
+			$self->reset();
+			foreach (1..$delay) {
+				if ($keep_going) {
+					sleep 1;
+				} else {
+					last;
+				}
+			}
+		} while($keep_going);
+		-f $self->{pidfile} && unlink $self->{pidfile};
+		$self->trace("Daemon exiting...");
+	}
 }
 
 sub install_windows_service {
-  my $self = shift;
-  my $servicename = shift || 'check_logfiles';
-  my $cfgfile = shift;
-  my $username = shift;
-  my $password = shift;
-  if ($^O =~ /MSWin/) {
-    eval "require Win32::Daemon;";
-    if (defined(&Win32::Daemon::StartService)) {
-      import Win32::Daemon;
-      my $fullpath = Win32::GetFullPathName($0);
-      my ($cwd, $base, $ext) = ( $fullpath =~ /^(.*\\)(.*)\.(.*)$/ ) [0..2] ;
-      my $servicepath = ($ext eq 'exe') ?
-          "\"$fullpath\"" : "\"$^X\"";
-      my $serviceparameters = ($ext eq 'exe') ?
-          "--daemon --config \"$cfgfile\"" :
-          " \"$fullpath\" --daemon --config \"$cfgfile\"";
-      my $service = {
-        machine => '',
-        name => $servicename,
-        display => $servicename,
-        path => $servicepath,
-        parameters => $serviceparameters,
-        user => ($username || ''),
-        password => ($password || ''),
-        description => 'This is the Nagios plugin check_logfiles',
-      };
-      if (Win32::Daemon::CreateService($service)) {
-        $self->{exitmessage} = 'Successfully added service';
-        $self->{exitcode} = 0;
-      } else {
-        $self->{exitmessage} = 'Failed to add service: '.
-            Win32::FormatMessage(Win32::Daemon::GetLastError());
-        $self->{exitcode} = 3;
-      }
-    } else {
-      die "nix Win32::Daemon, nix Service, nix install";
-    }
-  } else {
-    $self->{exitmessage} = 'You just installed a Windows service on a Unix machine. Good luck.';
-    $self->{exitcode} = 0;
-  }
+	my $self = shift;
+	my $servicename = shift || 'check_logfiles';
+	my $cfgfile = shift;
+	my $username = shift;
+	my $password = shift;
+	if ($^O =~ /MSWin/) {
+		eval "require Win32::Daemon;";
+		if (defined(&Win32::Daemon::StartService)) {
+			import Win32::Daemon;
+			my $fullpath = Win32::GetFullPathName($0);
+			my ($cwd, $base, $ext) = ( $fullpath =~ /^(.*\\)(.*)\.(.*)$/ ) [0..2] ;
+			my $servicepath = ($ext eq 'exe') ?
+				"\"$fullpath\"" : "\"$^X\"";
+			my $serviceparameters = ($ext eq 'exe') ?
+				"--daemon --config \"$cfgfile\"" :
+				" \"$fullpath\" --daemon --config \"$cfgfile\"";
+			my $service = {
+				machine => '',
+				name => $servicename,
+				display => $servicename,
+				path => $servicepath,
+				parameters => $serviceparameters,
+				user => ($username || ''),
+				password => ($password || ''),
+				description => 'This is the Nagios plugin check_logfiles',
+			};
+			if (Win32::Daemon::CreateService($service)) {
+				$self->{exitmessage} = 'Successfully added service';
+				$self->{exitcode} = 0;
+			} else {
+				$self->{exitmessage} = 'Failed to add service: '.
+					Win32::FormatMessage(Win32::Daemon::GetLastError());
+				$self->{exitcode} = 3;
+			}
+		} else {
+			die "nix Win32::Daemon, nix Service, nix install";
+		}
+	} else {
+		$self->{exitmessage} = 'You just installed a Windows service on a Unix machine. Good luck.';
+		$self->{exitcode} = 0;
+	}
 }
 
 sub deinstall_windows_service {
-  my $self = shift;
-  my $servicename = shift || 'check_logfiles';
-  if ($^O =~ /MSWin/) {
-    eval "require Win32::Daemon;";
-    if (defined(&Win32::Daemon::StartService)) {
-      import Win32::Daemon;
-      if (Win32::Daemon::DeleteService('', $servicename)) {
-        $self->{exitmessage} = 'Successfully deinstalled service';
-        $self->{exitcode} = 0;
-      } else {
-        $self->{exitmessage} = 'Failed to deinstall service: '.
-            Win32::FormatMessage(Win32::Daemon::GetLastError());
-        $self->{exitcode} = 3;
-      }
-    }
-  } else {
-    $self->{exitmessage} = 'Congrats. You just deinstalled a Windows service on a Unix machine.';
-    $self->{exitcode} = 0;
-  }
+	my $self = shift;
+	my $servicename = shift || 'check_logfiles';
+	if ($^O =~ /MSWin/) {
+		eval "require Win32::Daemon;";
+		if (defined(&Win32::Daemon::StartService)) {
+			import Win32::Daemon;
+			if (Win32::Daemon::DeleteService('', $servicename)) {
+				$self->{exitmessage} = 'Successfully deinstalled service';
+				$self->{exitcode} = 0;
+			} else {
+				$self->{exitmessage} = 'Failed to deinstall service: '.
+					Win32::FormatMessage(Win32::Daemon::GetLastError());
+				$self->{exitcode} = 3;
+			}
+		}
+	} else {
+		$self->{exitmessage} = 'Congrats. You just deinstalled a Windows service on a Unix machine.';
+		$self->{exitcode} = 0;
+	}
 }
 
 package Nagios::CheckLogfiles::Search;
@@ -1417,178 +1433,178 @@ use constant UNKNOWN => 3;
 @ISA = qw(Nagios::CheckLogfiles);
 
 sub new {
-  my $self = bless {}, shift;
-  my $params = shift;
-  $self->{tag} = $params->{tag} || 'default';
-  $self->{template} = $params->{template} if $params->{template};
-  $self->{dynamictag} = $params->{dynamictag} if $params->{dynamictag};
-  if (exists $self->{template} && exists $self->{dynamictag}) {
-    $self->{tag} = $self->{template}.'_'.$self->{dynamictag};
-  } else {
-    $self->{tag} = $params->{tag} || 'default';
-  }
-  $self->{type} = $params->{type};
-  $self->{logfile} = $params->{logfile};
-  $self->{rotation} = $params->{rotation};
-  $self->{script} = $params->{script};
-  $self->{scriptparams} = $params->{scriptparams};
-  $self->{scriptstdin} = $params->{scriptstdin};
-  $self->{scriptdelay} = $params->{scriptdelay};
-  $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
-  $self->{seekfilesdir} = $params->{seekfilesdir} || $self->system_tempdir();
-  $self->{archivedir} = $params->{archivedir};
-  $self->{scriptpath} = $params->{scriptpath};
-  $self->{macros} = $params->{macros};
-  $self->{tracefile} = $params->{tracefile};
-  $self->{prefilter} = $params->{prefilter};
-  $self->{trace} = -e $self->{tracefile} ? 1 : 0;
-  if (exists $params->{tivolipatterns}) {
-    my $tivoliparams = { };
-    my $tivolipatterns = [];
-    my $tivoliformatfiles = [];
-    my $tivoliformatstrings = [];
-    if (ref($params->{tivolipatterns}) ne 'ARRAY') {
-      $tivolipatterns = [$params->{tivolipatterns}];
-    } else {
-      push(@{$tivolipatterns}, @{$params->{tivolipatterns}});
-    }
-    foreach my $pattern (@{$tivolipatterns}) {
-      if (scalar(@{[split /\n/, $pattern]}) == 1) {
-        push(@{$tivoliparams->{formatfile}}, $pattern);
-      } else {
-        #push(@{$tivoliparams->{formatstring}}, $pattern);
-        # erstmal nur skalar moeglich
-        $tivoliparams->{formatstring} = $pattern;
-      }
-    }
-    if (exists $params->{tivolimapping}) {
-      foreach (keys %{$params->{tivolimapping}}) {
-        $tivoliparams->{severity_mappings}->{lc $_} = 0 if 
-            $params->{tivolimapping}->{$_} =~ /(?i)ok/;
-        $tivoliparams->{severity_mappings}->{lc $_} = 1 if 
-            $params->{tivolimapping}->{$_} =~ /(?i)warning/;
-        $tivoliparams->{severity_mappings}->{lc $_} = 2 if 
-            $params->{tivolimapping}->{$_} =~ /(?i)critical/;
-        $tivoliparams->{severity_mappings}->{lc $_} = 3 if 
-            $params->{tivolimapping}->{$_} =~ /(?i)unknown/;
-        $tivoliparams->{severity_mappings}->{lc $_} =
-            $params->{tivolimapping}->{$_} if 
-            $params->{tivolimapping}->{$_} =~ /\d/;
-      }
-    }
-    if ($self->{tivoli}->{object} = Nagios::Tivoli::Config::Logfile->new(
-        $tivoliparams )) {
-    } else {
-      die "could not create tivoli object from $params->{tivolipatterns}";
-    }
-  }
-  if (! $self->{type}) {
-    if ($self->{rotation}) {
-      $self->{type} = "rotating";
-    } else {
-      $self->{type} = "simple";
-    }
-  }
-  $self->{privatestate} = {};
-  my $class = sprintf "Nagios::CheckLogfiles::Search::%s",
-      join "::", map {
-          (uc substr($_, 0, 1)).substr($_, 1);
-      } split(/::/, $self->{type});
-  bless $self, $class;
-  if (! $self->can("init")) {
-  	#
-  	#  Maybe $class was not defined in this file. Try to find 
-  	#  the external module.
-  	#
-    my $module = $class.".pm";
-    $module =~ s/::/\//g;
-  	foreach (@INC) {
-  	  if (-f $_."/$module") {
-  	    require $module;
-  	    bless $self, $class;
-  	    last;
-  	  }
-  	}
-  }
-  if ($self->can("init")) {
-    if ($self->init($params)) {
-      return $self;
-    } else {
-      return undef;
-    }
-  } else {
-    return undef;
-  }
+	my $self = bless {}, shift;
+	my $params = shift;
+	$self->{tag} = $params->{tag} || 'default';
+	$self->{template} = $params->{template} if $params->{template};
+	$self->{dynamictag} = $params->{dynamictag} if $params->{dynamictag};
+	if (exists $self->{template} && exists $self->{dynamictag}) {
+		$self->{tag} = $self->{template}.'_'.$self->{dynamictag};
+	} else {
+		$self->{tag} = $params->{tag} || 'default';
+	}
+	$self->{type} = $params->{type};
+	$self->{logfile} = $params->{logfile};
+	$self->{rotation} = $params->{rotation};
+	$self->{script} = $params->{script};
+	$self->{scriptparams} = $params->{scriptparams};
+	$self->{scriptstdin} = $params->{scriptstdin};
+	$self->{scriptdelay} = $params->{scriptdelay};
+	$self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
+	$self->{seekfilesdir} = $params->{seekfilesdir} || $self->system_tempdir();
+	$self->{archivedir} = $params->{archivedir};
+	$self->{scriptpath} = $params->{scriptpath};
+	$self->{macros} = $params->{macros};
+	$self->{tracefile} = $params->{tracefile};
+	$self->{prefilter} = $params->{prefilter};
+	$self->{trace} = -e $self->{tracefile} ? 1 : 0;
+	if (exists $params->{tivolipatterns}) {
+		my $tivoliparams = { };
+		my $tivolipatterns = [];
+		my $tivoliformatfiles = [];
+		my $tivoliformatstrings = [];
+		if (ref($params->{tivolipatterns}) ne 'ARRAY') {
+			$tivolipatterns = [$params->{tivolipatterns}];
+		} else {
+			push(@{$tivolipatterns}, @{$params->{tivolipatterns}});
+		}
+		foreach my $pattern (@{$tivolipatterns}) {
+			if (scalar(@{[split /\n/, $pattern]}) == 1) {
+				push(@{$tivoliparams->{formatfile}}, $pattern);
+			} else {
+#push(@{$tivoliparams->{formatstring}}, $pattern);
+# erstmal nur skalar moeglich
+				$tivoliparams->{formatstring} = $pattern;
+			}
+		}
+		if (exists $params->{tivolimapping}) {
+			foreach (keys %{$params->{tivolimapping}}) {
+				$tivoliparams->{severity_mappings}->{lc $_} = 0 if 
+					$params->{tivolimapping}->{$_} =~ /(?i)ok/;
+				$tivoliparams->{severity_mappings}->{lc $_} = 1 if 
+					$params->{tivolimapping}->{$_} =~ /(?i)warning/;
+				$tivoliparams->{severity_mappings}->{lc $_} = 2 if 
+					$params->{tivolimapping}->{$_} =~ /(?i)critical/;
+				$tivoliparams->{severity_mappings}->{lc $_} = 3 if 
+					$params->{tivolimapping}->{$_} =~ /(?i)unknown/;
+				$tivoliparams->{severity_mappings}->{lc $_} =
+					$params->{tivolimapping}->{$_} if 
+					$params->{tivolimapping}->{$_} =~ /\d/;
+			}
+		}
+		if ($self->{tivoli}->{object} = Nagios::Tivoli::Config::Logfile->new(
+					$tivoliparams )) {
+		} else {
+			die "could not create tivoli object from $params->{tivolipatterns}";
+		}
+	}
+	if (! $self->{type}) {
+		if ($self->{rotation}) {
+			$self->{type} = "rotating";
+		} else {
+			$self->{type} = "simple";
+		}
+	}
+	$self->{privatestate} = {};
+	my $class = sprintf "Nagios::CheckLogfiles::Search::%s",
+	   join "::", map {
+		   (uc substr($_, 0, 1)).substr($_, 1);
+	   } split(/::/, $self->{type});
+	bless $self, $class;
+	if (! $self->can("init")) {
+#
+#  Maybe $class was not defined in this file. Try to find 
+#  the external module.
+#
+		my $module = $class.".pm";
+		$module =~ s/::/\//g;
+		foreach (@INC) {
+			if (-f $_."/$module") {
+				require $module;
+				bless $self, $class;
+				last;
+			}
+		}
+	}
+	if ($self->can("init")) {
+		if ($self->init($params)) {
+			return $self;
+		} else {
+			return undef;
+		}
+	} else {
+		return undef;
+	}
 }
 
 #
 #  Read a hash with parameters
 #
 sub init {
-  my $self = shift;
-  my $params = shift;
-  $self->{laststate} = {};
-  $self->{relevantfiles} = [];
-  $self->{preliminaryfilter} = { SKIP => [], NEED => [] };
-  $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
-  $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
-  $self->{patterns} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
-  $self->{patternfuncs} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
-  $self->{negpatterns} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
-  $self->{negpatterncnt} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
-  $self->{exceptions} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
-  $self->{threshold} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
-  $self->{thresholdcnt} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
-  $self->{patternkeys} = { OK => {}, WARNING => {}, CRITICAL => {}, UNKNOWN => {} };
-  $self->{filepatterns} = {};
-  $self->{hasinversepat} = 0;
-  $self->{likeavirgin} = 0;
-  $self->{linesread} = 0;
-  $self->{linenumber} = 0; # used for context
-  $self->{perfdata} = "";
-  $self->{max_readsize} = 1024 * 1024 * 128;
-  # sysread can only read SSIZE_MAX bytes in one operation.
-  # this is often (1024 * 1024 * 1024 * 2) - 1 = 2GB - 1
-  # if we need to read from a non-seekable filehandle more than this
-  # amount of data, then we have to perform multiple reads.
-  # because the $bytes variable must hold the result of such a read and
-  # its size is limited by available memory, it is divided by 16
-  # so each read request does not overburden the sysread call and
-  # does not inflate the process to more than 128MB
-  #
-  # options
-  #
-  $self->default_options({ script => 0, smartscript => 0, supersmartscript => 0,
-      protocol => 1, count => 1, syslogserver => 0, logfilenocry => 1,
-      perfdata => 1, case => 1, sticky => 0, syslogclient => 0,
-      savethresholdcount => 1, encoding => 0, maxlength => 0, 
-      lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
-      preferredlevel => 0,
-      warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
-      report => 'short', seekfileerror => 'critical',
-      archivedirregexp => 0,
-  });
-  $self->refresh_options($params->{options});
-  #
-  #  Dynamic logfile names may contain macros.
-  #
-  if (exists $self->{template} && exists $self->{dynamictag}) {
-    $self->{macros}->{CL_TAG} = $self->{dynamictag};
-    $self->{macros}->{CL_tag} = lc $self->{dynamictag};
-    $self->{macros}->{CL_TEMPLATE} = $self->{template};
-  } else {
-    $self->resolve_macros(\$self->{tag});
-    $self->{macros}->{CL_TAG} = $self->{tag};
-    # http://www.nagios-portal.org/wbb/index.php?page=Thread&threadID=18392
-    # this saves a lot of time when you are working with oracle alertlogs
-    $self->{macros}->{CL_tag} = lc $self->{tag};
-  }
-  $self->{logfile_before_resolving} = $self->{logfile};
-  $self->resolve_macros(\$self->{logfile});
-  $self->{macros}->{CL_LOGFILE} = $self->{logfile};
-  $self->{logbasename} = basename($self->{logfile});
-  $self->{archivedir} = exists $params->{archivedir} ? $params->{archivedir} :
-      dirname($self->{logfile});
+	my $self = shift;
+	my $params = shift;
+	$self->{laststate} = {};
+	$self->{relevantfiles} = [];
+	$self->{preliminaryfilter} = { SKIP => [], NEED => [] };
+	$self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
+	$self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
+	$self->{patterns} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
+	$self->{patternfuncs} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
+	$self->{negpatterns} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
+	$self->{negpatterncnt} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
+	$self->{exceptions} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
+	$self->{threshold} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
+	$self->{thresholdcnt} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
+	$self->{patternkeys} = { OK => {}, WARNING => {}, CRITICAL => {}, UNKNOWN => {} };
+	$self->{filepatterns} = {};
+	$self->{hasinversepat} = 0;
+	$self->{likeavirgin} = 0;
+	$self->{linesread} = 0;
+	$self->{linenumber} = 0; # used for context
+		$self->{perfdata} = "";
+	$self->{max_readsize} = 1024 * 1024 * 128;
+# sysread can only read SSIZE_MAX bytes in one operation.
+# this is often (1024 * 1024 * 1024 * 2) - 1 = 2GB - 1
+# if we need to read from a non-seekable filehandle more than this
+# amount of data, then we have to perform multiple reads.
+# because the $bytes variable must hold the result of such a read and
+# its size is limited by available memory, it is divided by 16
+# so each read request does not overburden the sysread call and
+# does not inflate the process to more than 128MB
+#
+# options
+#
+	$self->default_options({ script => 0, smartscript => 0, supersmartscript => 0,
+			protocol => 1, count => 1, syslogserver => 0, logfilenocry => 1,
+			perfdata => 1, case => 1, sticky => 0, syslogclient => 0,
+			savethresholdcount => 1, encoding => 0, maxlength => 0, 
+			lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
+			preferredlevel => 0,
+			warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
+			report => 'short', seekfileerror => 'critical',
+			archivedirregexp => 0,
+			});
+	$self->refresh_options($params->{options});
+#
+#  Dynamic logfile names may contain macros.
+#
+	if (exists $self->{template} && exists $self->{dynamictag}) {
+		$self->{macros}->{CL_TAG} = $self->{dynamictag};
+		$self->{macros}->{CL_tag} = lc $self->{dynamictag};
+		$self->{macros}->{CL_TEMPLATE} = $self->{template};
+	} else {
+		$self->resolve_macros(\$self->{tag});
+		$self->{macros}->{CL_TAG} = $self->{tag};
+# http://www.nagios-portal.org/wbb/index.php?page=Thread&threadID=18392
+# this saves a lot of time when you are working with oracle alertlogs
+		$self->{macros}->{CL_tag} = lc $self->{tag};
+	}
+	$self->{logfile_before_resolving} = $self->{logfile};
+	$self->resolve_macros(\$self->{logfile});
+	$self->{macros}->{CL_LOGFILE} = $self->{logfile};
+	$self->{logbasename} = basename($self->{logfile});
+	$self->{archivedir} = exists $params->{archivedir} ? $params->{archivedir} :
+		dirname($self->{logfile});
   $self->resolve_macros(\$self->{archivedir});
   #
   #  Preliminary filter
