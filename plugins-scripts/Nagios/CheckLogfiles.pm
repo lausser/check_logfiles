@@ -247,9 +247,11 @@ sub init_from_file {
     if ($seekfilesdir eq "autodetect") {
       my $basedir = dirname(dirname($abscfgfile));
       if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
-        $seekfilesdir = $basedir.'/var/tmp';
+        $seekfilesdir = $basedir.'/var/tmp/check_logfiles';
+        mkdir($seekfilesdir);
       } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
-        $seekfilesdir = $basedir.'/tmp';
+        $seekfilesdir = $basedir.'/tmp/check_logfiles';
+        mkdir($seekfilesdir);
       } else {
         $ExitCode = $ERROR_UNKNOWN;
         $ExitMsg = sprintf "UNKNOWN - unable to autodetect an adequate seekfilesdir";
