@@ -245,7 +245,7 @@ sub init_from_file {
     # 1. path/var/tmp
     # 2. path/tmp
     if ($seekfilesdir eq "autodetect") {
-      my $basedir = dirname($abscfgfile);
+      my $basedir = dirname(dirname($abscfgfile));
       if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
         $seekfilesdir = $basedir.'/var/tmp';
       } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
