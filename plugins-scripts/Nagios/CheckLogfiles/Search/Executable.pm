@@ -38,7 +38,7 @@ sub collectfiles {
   if ($self->getfileisexecutable($self->{logfile})) {
     my $cmdline = $self->{logfile}.
         ($self->get_option('exeargs') ? " ".$self->get_option('exeargs') : "").
-        "|";
+        " 2>&1|";
     $fh->open($cmdline);
     $self->trace("opened command %s", $cmdline);
     push(@{$self->{relevantfiles}},
