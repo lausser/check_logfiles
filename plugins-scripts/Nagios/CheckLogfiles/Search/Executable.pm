@@ -19,6 +19,7 @@ sub new {
 
 sub init {
   my $self = shift;
+  my $params = shift;
   $self->default_options({ exeargs => "", });
   $self->SUPER::init($params);
 }
