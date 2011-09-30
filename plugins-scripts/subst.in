@@ -53,12 +53,12 @@ BEGIN {
 # subst will replace the fully qualified command with whatever is
 # returned from the which subroutine
 #
-/^[^#]/ && /(\/.*)?\/(bin|sbin|lib|libexec)\// {
-	match($0,/(\/.*)?\/(bin|sbin|lib|libexec)\/[-_a-zA-Z0-9]+/);
-	c=substr($0,RSTART,RLENGTH);
-	newc=which(c,path);
-	sub(c,newc);
-}
+##/^[^#]/ && /(\/.*)?\/(bin|sbin|lib|libexec)\// {
+##	match($0,/(\/.*)?\/(bin|sbin|lib|libexec)\/[-_a-zA-Z0-9]+/);
+##	c=substr($0,RSTART,RLENGTH);
+##	newc=which(c,path);
+##	sub(c,newc);
+##}
 
 # Replace the placeholders with the values from configure
 /#PERL#/ {sub(/#PERL#/,"@PERL@");}

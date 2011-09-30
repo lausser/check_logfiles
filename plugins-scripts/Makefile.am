@@ -31,6 +31,7 @@ $(libexec_SCRIPTS) : $(EXTRA_DIST)
 	$(SED) -e 's/^1;//g' < Nagios/Tivoli/Config/Logfile.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Dummy.pm | $(AWK) -f ./subst >> $@
+	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Executable.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Errpt.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Ipmitool.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Oraclealertlog.pm | $(AWK) -f ./subst >> $@

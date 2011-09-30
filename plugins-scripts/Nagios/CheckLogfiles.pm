@@ -244,7 +244,7 @@ sub init_from_file {
     # abscfgfile usially is in path/etc
     # 1. path/var/tmp
     # 2. path/tmp
-    if ($seekfilesdir eq "autodetect") {
+    if ($seekfilesdir && $seekfilesdir eq "autodetect") {
       my $basedir = dirname(dirname($abscfgfile));
       if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
         $seekfilesdir = $basedir.'/var/tmp/check_logfiles';
@@ -257,6 +257,27 @@ sub init_from_file {
         $ExitMsg = sprintf "UNKNOWN - unable to autodetect an adequate seekfilesdir";
         return undef;
       }
+    }
+    if ($protocolsdir && $protocolsdir eq "autodetect") {
+      my $basedir = dirname(dirname($abscfgfile));
+      if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
+        $protocolsdir = $basedir.'/var/tmp';
+      } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
+        $protocolsdir = $basedir.'/tmp';
+      } else {
+        $protocolsdir = $self->system_tempdir();
+      }
+    }
+    if ($scriptpath && $scriptpath eq "autodetect") {
+      my @path = ();
+      my $basedir = dirname(dirname($abscfgfile));
+      if (-d $basedir.'/local/lib/nagios/plugins') {
+        push(@path, $basedir.'/local/lib/nagios/plugins');
+      }
+      if (-d $basedir.'/lib/nagios/plugins') {
+        push(@path, $basedir.'/lib/nagios/plugins');
+      }
+      $scriptpath = join(($^O =~ /MSWin/) ? ';' : ':', @path);
     }
   } 
   $self->{tracefile} = $tracefile if $tracefile;
@@ -1118,6 +1139,24 @@ sub getfileisreadable {
     }
   }
 }
+
+sub getfileisexecutable {
+  my $self = shift;
+  my $file = shift;
+  if ($^O =~ /MSWin/) {
+    printf STDERR "not yet\n";
+  } elsif (-x $file) {
+    return 1;
+  } else {
+    use filetest 'access';
+    $self->trace("stat (%s) failed, try access instead", $file);
+    if (-x $file) {
+      return 1;
+    } else { 
+      return 0;
+    }
+  } 
+} 
 
 sub old_getfileisreadable {
   my $self = shift;
