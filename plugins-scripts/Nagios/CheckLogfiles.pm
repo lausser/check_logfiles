@@ -881,7 +881,8 @@ sub action {
     } else {
       $envmacro = "CHECK_LOGFILES_".$macro;
     }
-    $ENV{$envmacro} = $self->{macros}->{$macro};
+    $ENV{$envmacro} = defined($self->{macros}->{$macro}) ? 
+        $self->{macros}->{$macro} : "";
   }
   $ENV{CHECK_LOGFILES_SERVICESTATE} = qw(OK WARNING CRITICAL UNKNOWN)
       [$ENV{CHECK_LOGFILES_SERVICESTATEID}];
