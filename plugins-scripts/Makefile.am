@@ -6,7 +6,7 @@ VPATH=$(top_srcdir) $(top_srcdir)/plugins-scripts $(top_srcdir)/plugins-scripts/
 
 libexec_SCRIPTS=check_logfiles
 # psloglist deprecated
-EXTRA_DIST=check_logfiles.pl Nagios/CheckLogfiles.pm Nagios/CheckLogfiles/Search/Errpt.pm Nagios/CheckLogfiles/Search/Psloglist.pm Nagios/CheckLogfiles/Search/Ipmitool.pm Nagios/CheckLogfiles/Search/Oraclealertlog.pm Nagios/CheckLogfiles/Search/Eventlog.pm Nagios/CheckLogfiles/Search/Esxdiag.pm Ngios/CheckLogfiles/Search/Executable.pm agios/CheckLogfiles/Search/Dummy.pm Nagios/CheckLogfiles/Test.pm Nagios/Tivoli/Config/Logfile.pm Debug/TraceMethods.pm
+EXTRA_DIST=check_logfiles.pl Nagios/CheckLogfiles.pm Nagios/CheckLogfiles/Search/Errpt.pm Nagios/CheckLogfiles/Search/Psloglist.pm Nagios/CheckLogfiles/Search/Ipmitool.pm Nagios/CheckLogfiles/Search/Oraclealertlog.pm Nagios/CheckLogfiles/Search/Eventlog.pm Nagios/CheckLogfiles/Search/Esxdiag.pm Nagios/CheckLogfiles/Search/Executable.pm agios/CheckLogfiles/Search/Dummy.pm Nagios/CheckLogfiles/Test.pm Nagios/Tivoli/Config/Logfile.pm Debug/TraceMethods.pm
 
 CLEANFILES=$(libexec_SCRIPTS)
 
