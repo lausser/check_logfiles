@@ -337,6 +337,10 @@ if (! exists $commandline{seekfilesdir}) {
   } 
 }
 
+if ($^O eq "hpux") {
+  $ENV{PATH} = $ENV{PATH}.":/opt/contrib/bin";
+}
+
 if (my $cl = Nagios::CheckLogfiles->new({
       cfgfile => $commandline{config} ? $commandline{config} : undef,
       searches => [ 

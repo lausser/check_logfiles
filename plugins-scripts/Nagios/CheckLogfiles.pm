@@ -2511,7 +2511,8 @@ sub scan {
               $self->{macros}->{CL_SERVICEOUTPUT} = $line;
               $self->{macros}->{CL_PATTERN_PATTERN} = $pattern;
               $self->{macros}->{CL_PATTERN_NUMBER} = $patcnt;
-              if (exists $self->{patternkeys}->{$level}->{$pattern}) {
+              if (exists $self->{patternkeys}->{$level}->{$pattern} &&
+                  defined $self->{patternkeys}->{$level}->{$pattern}) {
                 $self->{macros}->{CL_PATTERN_KEY} = 
                     $self->{patternkeys}->{$level}->{$pattern}
               } else {

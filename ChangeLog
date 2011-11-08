@@ -2,11 +2,15 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.4.5.2 - 2011-11-08
+- set the path to gzip for hpux /opt/contrib..)
+
 3.4.5.1 - 2011-09-28
 - seekfilesdir can be "autodetect" with a configfile 
 - also protocolsdir (dirname(dirname(cfgfile)) + [/var/tmp|/tmp]
 - also scriptpath (dirname(dirname(cfgfile)) + [/local/lib/nagios/plugins|/lib/nagios/plugins]
 - type executable
+- fix a perl undef (patternkey stuff which i don't remember)
 
 3.4.5
 - add parameter --rununique
