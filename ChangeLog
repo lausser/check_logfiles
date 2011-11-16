@@ -4,6 +4,7 @@
 
 3.4.5.2 - 2011-11-08
 - set the path to gzip for hpux /opt/contrib..)
+- fix a bug where % in error messages caused ugly perl-errors when used with scriptstdin (Thanks Thomas Klaradic)
 
 3.4.5.1 - 2011-09-28
 - seekfilesdir can be "autodetect" with a configfile 

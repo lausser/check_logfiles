@@ -973,6 +973,8 @@ sub action {
         #  characters must be expanded.
         $stdinformat[0] =~ s/\\t/\t/g;
         $stdinformat[0] =~ s/\\n/\n/g;
+        # if there is a % in CL_SERVICEOUTPUT we have to escape it
+        $stdinformat[0] =~ s/%/%%/g;
         $SIG{'PIPE'} = sub {};
         $SIG{'CHLD'} = sub {};
         my($chld_out, $chld_in);
