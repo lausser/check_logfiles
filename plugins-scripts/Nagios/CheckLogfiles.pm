@@ -30,8 +30,11 @@ $| = 1;
 eval "require Win32;";
 #eval "require Net::Domain qw(hostname hostdomain hostfqdn);";
 eval "require Net::Domain;";
-eval "require 'syscall.ph'";
-eval "require 'sys/resource.ph'";
+{
+  local $^W = 0; # shut up!
+  eval "require 'syscall.ph'";
+  eval "require 'sys/resource.ph'";
+}
 
 sub new {
   my $class = shift;
