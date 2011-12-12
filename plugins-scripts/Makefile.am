@@ -25,8 +25,9 @@ AM_INSTALL_PROGRAM_FLAGS=@INSTALL_OPTS@
 	chmod +x $@
 
 $(libexec_SCRIPTS) : $(EXTRA_DIST)
-	$(ECHO) "#! #PERL# -w" | $(AWK) -f ./subst > $@
+	$(ECHO) "#! #PERL# " | $(AWK) -f ./subst > $@
 	$(ECHO) "# nagios: -epn" >> $@
+	$(ECHO) "use warnings;" >> $@
 	$(SED) -e 's/^1;//g' < Debug/TraceMethods.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/Tivoli/Config/Logfile.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles.pm | $(AWK) -f ./subst >> $@

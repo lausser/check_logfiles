@@ -5,6 +5,7 @@ use utf8;
 use File::Basename;
 use File::Find;
 use Getopt::Long;
+
 #import Devel::TraceMethods qw( 
 #    Nagios::CheckLogfiles
 #    Nagios::CheckLogfiles::Search
@@ -144,6 +145,10 @@ my @params = (
     "report=s",
     "reset",
     "unstick",
+    #
+    # limit process address space to i megabytes
+    #
+    "maxmemsize=i",
     #
     #
     #
@@ -342,105 +347,106 @@ if ($^O eq "hpux") {
 }
 
 if (my $cl = Nagios::CheckLogfiles->new({
-      cfgfile => $commandline{config} ? $commandline{config} : undef,
-      searches => [ 
-          map {
-            if (exists $commandline{type} && $commandline{type} eq 'rotating::uniform') {
-              $_->{type} = $commandline{type};
-            } elsif (exists $commandline{type}) {
-              # "eventlog" or "eventlog:eventlog=application,include,source=cdrom,source=dvd,eventid=23,eventid=29,operation=or,exclude,eventid=4711,operation=and"
-              my ($type, $details) = split(":", $commandline{type});
-              $_->{type} = $type;
-              if ($details) {
-                $_->{$type} = {};
-                my $toplevel = $_->{$type};
-                foreach my $detail (split(",", $details)) {
-                  my ($key, $value) = split("=", $detail);
-                  if ($value) {
-               	    if (exists $toplevel->{$key}) {
-                      $toplevel->{$key} .= ','.$value;
-                    } else {
-                      $toplevel->{$key} = $value;	
-                    }
+    cfgfile => $commandline{config} ? $commandline{config} : undef,
+    searches => [ 
+        map {
+          if (exists $commandline{type} && $commandline{type} eq 'rotating::uniform') {
+            $_->{type} = $commandline{type};
+          } elsif (exists $commandline{type}) {
+            # "eventlog" or "eventlog:eventlog=application,include,source=cdrom,source=dvd,eventid=23,eventid=29,operation=or,exclude,eventid=4711,operation=and"
+            my ($type, $details) = split(":", $commandline{type});
+            $_->{type} = $type;
+            if ($details) {
+              $_->{$type} = {};
+              my $toplevel = $_->{$type};
+              foreach my $detail (split(",", $details)) {
+                my ($key, $value) = split("=", $detail);
+                if ($value) {
+             	    if (exists $toplevel->{$key}) {
+                    $toplevel->{$key} .= ','.$value;
                   } else {
-                    $_->{$type}->{$key} = {};
-                    $toplevel = $_->{$type}->{$key};
+                    $toplevel->{$key} = $value;	
                   }
+                } else {
+                  $_->{$type}->{$key} = {};
+                  $toplevel = $_->{$type}->{$key};
                 }
               }
             }
-            $_;
           }
-          map { # ausputzen
-              foreach my $key (keys %{$_}) { 
-      	      delete $_->{$key} unless $_->{$key}}; $_;
-          } ({
-          tag => 
-              $commandline{tag} ? $commandline{tag} : undef,
-          logfile => 
-              $commandline{logfile} ? $commandline{logfile} : undef,
-          type => 
-              $commandline{type} ? $commandline{type} : undef,
-          rotation => 
-              $commandline{rotation} ? $commandline{rotation} : undef,
-          tivolipatterns =>
-              $commandline{tivolipattern} ?
-                  $commandline{tivolipattern} : undef,
-          criticalpatterns =>
-              $commandline{criticalpattern} ?
-                  $commandline{criticalpattern} : undef,
-          criticalexceptions =>
-              $commandline{criticalexception} ?
-                  $commandline{criticalexception} : undef,
-          warningpatterns =>
-              $commandline{warningpattern} ?
-                  $commandline{warningpattern} : undef,
-          warningexceptions =>
-              $commandline{warningexception} ?
-                  $commandline{warningexception} : undef,
-          okpatterns =>
-              $commandline{okpattern} ?
-                  $commandline{okpattern} : undef,
-          patternfiles =>
-              $commandline{patternfile} ?
-                  $commandline{patternfile} : undef,
-          options => join(',', grep { $_ }
-              $commandline{noprotocol} ? "noprotocol" : undef,
-              $commandline{nocase} ? "nocase" : undef,
-              $commandline{noperfdata} ? "noperfdata" : undef,
-              $commandline{winwarncrit} ? "winwarncrit" : undef,
-              $commandline{nologfilenocry} ? "nologfilenocry" : undef,
-              $commandline{syslogserver} ? "syslogserver" : undef,
-              $commandline{syslogclient} ? "syslogclient=".$commandline{syslogclient} : undef,
-              $commandline{maxlength} ? "maxlength=".$commandline{maxlength} : undef,
-              $commandline{lookback} ? "lookback=".$commandline{lookback} : undef,
-              $commandline{context} ? "context=".$commandline{context} : undef,
-              $commandline{allyoucaneat} ? "allyoucaneat" : undef,
-              $commandline{criticalthreshold} ? "criticalthreshold=".$commandline{criticalthreshold} : undef,
-              $commandline{warningthreshold} ? "warningthreshold=".$commandline{warningthreshold} : undef,
-              $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,
-              defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef,
-              $commandline{preferredlevel} ? "preferredlevel=".$commandline{preferredlevel} : undef,
-          ),
-          archivedir =>
-              $commandline{archivedir} ?
-                  $commandline{archivedir} : undef,
-      })],
-      options => join(',', grep { $_ }
-          $commandline{report} ? "report=".$commandline{report} : undef,
-          $commandline{seekfileerror} ? "seekfileerror=".(uc $commandline{seekfileerror}) : undef,
-      ),
-      selectedsearches => [split(/,/, $commandline{selectedsearches})],
-      dynamictag => $commandline{tag} ? $commandline{tag} : undef,
-      #report => $commandline{report} ? $commandline{report} : undef,
-      cmdlinemacros => $commandline{macro},
-      seekfilesdir => $commandline{seekfilesdir} ? $commandline{seekfilesdir} : undef,
-      protocolsdir => $commandline{protocolsdir} ? $commandline{protocolsdir} : undef,
-      scriptpath => $commandline{scriptpath} ? $commandline{scriptpath} : undef,
-      protocolsretention => $commandline{protocolsretention} ? $commandline{protocolsretention} : undef,
-      reset => $commandline{reset} ? $commandline{reset} : undef,
-      unstick => $commandline{unstick} ? $commandline{unstick} : undef,
-      rununique => $commandline{rununique} ? $commandline{rununique} : undef,
+          $_;
+        }
+        map { # ausputzen
+            foreach my $key (keys %{$_}) { 
+    	      delete $_->{$key} unless $_->{$key}}; $_;
+        } ({
+        tag => 
+            $commandline{tag} ? $commandline{tag} : undef,
+        logfile => 
+            $commandline{logfile} ? $commandline{logfile} : undef,
+        type => 
+            $commandline{type} ? $commandline{type} : undef,
+        rotation => 
+            $commandline{rotation} ? $commandline{rotation} : undef,
+        tivolipatterns =>
+            $commandline{tivolipattern} ?
+                $commandline{tivolipattern} : undef,
+        criticalpatterns =>
+            $commandline{criticalpattern} ?
+                $commandline{criticalpattern} : undef,
+        criticalexceptions =>
+            $commandline{criticalexception} ?
+                $commandline{criticalexception} : undef,
+        warningpatterns =>
+            $commandline{warningpattern} ?
+                $commandline{warningpattern} : undef,
+        warningexceptions =>
+            $commandline{warningexception} ?
+                $commandline{warningexception} : undef,
+        okpatterns =>
+            $commandline{okpattern} ?
+                $commandline{okpattern} : undef,
+        patternfiles =>
+            $commandline{patternfile} ?
+                $commandline{patternfile} : undef,
+        options => join(',', grep { $_ }
+            $commandline{noprotocol} ? "noprotocol" : undef,
+            $commandline{nocase} ? "nocase" : undef,
+            $commandline{noperfdata} ? "noperfdata" : undef,
+            $commandline{winwarncrit} ? "winwarncrit" : undef,
+            $commandline{nologfilenocry} ? "nologfilenocry" : undef,
+            $commandline{syslogserver} ? "syslogserver" : undef,
+            $commandline{syslogclient} ? "syslogclient=".$commandline{syslogclient} : undef,
+            $commandline{maxlength} ? "maxlength=".$commandline{maxlength} : undef,
+            $commandline{lookback} ? "lookback=".$commandline{lookback} : undef,
+            $commandline{context} ? "context=".$commandline{context} : undef,
+            $commandline{allyoucaneat} ? "allyoucaneat" : undef,
+            $commandline{criticalthreshold} ? "criticalthreshold=".$commandline{criticalthreshold} : undef,
+            $commandline{warningthreshold} ? "warningthreshold=".$commandline{warningthreshold} : undef,
+            $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,
+            defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef,
+            $commandline{preferredlevel} ? "preferredlevel=".$commandline{preferredlevel} : undef,
+        ),
+        archivedir =>
+            $commandline{archivedir} ?
+                $commandline{archivedir} : undef,
+    })],
+    options => join(',', grep { $_ }
+        $commandline{report} ? "report=".$commandline{report} : undef,
+        $commandline{seekfileerror} ? "seekfileerror=".(uc $commandline{seekfileerror}) : undef,
+        $commandline{maxmemsize} ? "maxmemsize=".$commandline{maxmemsize} : undef,
+    ),
+    selectedsearches => [split(/,/, $commandline{selectedsearches})],
+    dynamictag => $commandline{tag} ? $commandline{tag} : undef,
+    #report => $commandline{report} ? $commandline{report} : undef,
+    cmdlinemacros => $commandline{macro},
+    seekfilesdir => $commandline{seekfilesdir} ? $commandline{seekfilesdir} : undef,
+    protocolsdir => $commandline{protocolsdir} ? $commandline{protocolsdir} : undef,
+    scriptpath => $commandline{scriptpath} ? $commandline{scriptpath} : undef,
+    protocolsretention => $commandline{protocolsretention} ? $commandline{protocolsretention} : undef,
+    reset => $commandline{reset} ? $commandline{reset} : undef,
+    unstick => $commandline{unstick} ? $commandline{unstick} : undef,
+    rununique => $commandline{rununique} ? $commandline{rununique} : undef,
   })) {
   $cl->{verbose} = $commandline{verbose} ? 1 : 0;
   $cl->{timeout} = $commandline{timeout} ? $commandline{timeout} : 60;
