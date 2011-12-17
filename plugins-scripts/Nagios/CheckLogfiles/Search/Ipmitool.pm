@@ -49,7 +49,9 @@ sub init {
       ## cache => exists $params->{ipmitool}->{cache} ? 1 : 0,
       ## using a local cache makes no sense here
       ## maybe checking remote sdr will be a feature in the future
-      listcmd => exists $params->{ipmitool}->{elist} ? "elist" : "list"
+      extraparams => exists $params->{ipmitool}->{extraparams} ?
+          $params->{ipmitool}->{extraparams} : "",
+      listcmd => exists $params->{ipmitool}->{elist} ? "elist" : "list",
   };
 }
 
@@ -60,14 +62,19 @@ sub prepare {
       $self->system_tempdir(), $self->{tag};
   $self->{sdrcache} = sprintf "%s/ipmitool.sdr.cache",
       $self->system_tempdir();
+  #$self->trace("cache param %s %s", $self->{clo}->{cache}, $self->{sdrcache});
+  #$self->trace("list cmd %s", $self->{clo}->{listcmd});
+  #$self->trace("time - foo %s", (time - (stat($self->{sdrcache}))[9]));
+  #$self->trace("system comand: %s %s", $self->{clo}->{path}, $self->{sdrcache});
   if ($self->{clo}->{cache} && (! -f $self->{sdrcache} || 
-      ((time - ($self->{sdrcache})[9]) > 86400))) {
+      ((time - (stat($self->{sdrcache}))[9]) > 86400))) {
     ## $self->trace("creating/refreshing sdr cache %s", $self->{sdrcache});
     ## system($self->{clo}->{path}.' sdr dump '.$self->{sdrcache}.' >/dev/null 2>&1');
   }
   unlink $self->{logfile};
-  my $ipmitool_sel_list = sprintf "%s %s sel %s 2>&1 |",
+  my $ipmitool_sel_list = sprintf "%s %s %s sel %s 2>&1 |",
       $self->{clo}->{path}, 
+      $self->{clo}->{extraparams}, 
       $self->{clo}->{cache} ? "-S $self->{sdrcache}" : "",
       $self->{clo}->{listcmd};
   my $ipmitool_fh = new IO::File;

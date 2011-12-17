@@ -5,6 +5,7 @@
 3.4.6 - 2011-12-12
 - add maxmemsize
 - cleanup tab-indendation
+- add option logfileerror (unlike seekfileerror it is local)
 
 3.4.5.2 - 2011-11-08
 - set the path to gzip for hpux /opt/contrib..)
