@@ -6,6 +6,7 @@
 - add maxmemsize
 - cleanup tab-indendation
 - add option logfileerror (unlike seekfileerror it is local)
+- add option rotatewait (sleep until chaos during rotation is over)
 
 3.4.5.2 - 2011-11-08
 - set the path to gzip for hpux /opt/contrib..)

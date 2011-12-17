@@ -1676,7 +1676,7 @@ sub init {
       preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
       report => 'short',
-      seekfileerror => 'critical', logfileerror => 'critical',
+      seekfileerror => 'critical', logfileerror => 'critical', rotatewait => 0,
       archivedirregexp => 0,
   });
   $self->refresh_options($params->{options});
@@ -2019,11 +2019,24 @@ sub unstick {
   return $self;
 }
 
+sub await_while_rotate {
+  my $self = shift;
+  my($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0, 1, 2, 3, 4, 5];
+  if (($min == 0 || $min == 15 || $min == 30 || $min == 45) && $sec < 15) {
+    foreach (1..(15 - $sec)) {
+      sleep 1;
+    }
+  }
+}
+
 sub run {
   my $self = shift;
   $self->trace(sprintf "==================== %s ==================", $self->{logfile});
   $self->prepare();
   $self->loadstate();
+  if ($self->get_option('rotatewait')) {
+    $self->await_while_rotate();
+  }
   $self->analyze_situation();
   if ($self->{logrotated} || $self->{logmodified} || $self->{hasinversepat}) {
     # be lazy and examine files only if necessary
