@@ -1675,9 +1675,10 @@ sub init {
       lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
       preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
-      report => 'short', seekfileerror => 'critical',
+      report => 'short',
+      seekfileerror => 'critical', logfileerror => 'critical',
       archivedirregexp => 0,
-      });
+  });
   $self->refresh_options($params->{options});
   #
   #  Dynamic logfile names may contain macros.
@@ -2904,8 +2905,10 @@ sub collectfiles {
     } else {
       if (-e $self->{logfile}) {
         #  permission problem
-        $self->trace("could not open logfile %s", $self->{logfile});
-        $self->addevent('CRITICAL', sprintf "could not open logfile %s",
+        $self->trace("insufficient permissions to open logfile %s",
+            $self->{logfile});
+        $self->addevent($self->get_option('logfileerror'),
+            sprintf "insufficient permissions to open logfile %s",
             $self->{logfile});
       } else {
         if ($self->{options}->{logfilenocry}) {
@@ -3215,8 +3218,10 @@ sub collectfiles {
     } else {
       if (-e $self->{logfile}) {
         #  permission problem
-        $self->trace("could not open logfile %s", $self->{logfile});
-        $self->addevent('CRITICAL', sprintf "could not open logfile %s",
+        $self->trace("insufficient permissions to open logfile %s",
+            $self->{logfile});
+        $self->addevent($self->get_option('logfileerror'),
+            sprintf "insufficient permissions to open logfile %s", 
             $self->{logfile});
       } else {
         if ($self->{options}->{logfilenocry}) {
@@ -3225,7 +3230,7 @@ sub collectfiles {
           $self->trace("could not find logfile %s", $self->{logfile});
           $self->addevent('UNKNOWN', sprintf "could not find logfile %s",
               $self->{logfile});
-         } else {
+        } else {
           # dont care.
           $self->trace("could not find logfile %s, but that's ok", $self->{logfile});
         }
@@ -3493,9 +3498,11 @@ sub collectfiles {
   } else {
     if (-e $self->{logfile}) {
       #  permission problem
-      $self->trace("could not open logfile %s", $self->{logfile});
-      $self->addevent('CRITICAL', sprintf "could not open logfile %s",
-          $self->{logfile});
+        $self->trace("insufficient permissions to open logfile %s", 
+            $self->{logfile});
+        $self->addevent($self->get_option('logfileerror'),
+            sprintf "insufficient permissions to open logfile %s",
+            $self->{logfile});
     } else {
       if ($self->{options}->{logfilenocry}) {
         $self->trace("could not find logfile %s", $self->{logfile});

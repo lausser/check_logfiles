@@ -206,6 +206,7 @@ my @params = (
     "warningthreshold=i",
     "encoding=s",
     "preferredlevel=s",
+    "logfileerror=s",
     "rununique",
 );
 if (! GetOptions(\%commandline, @params)) {
@@ -426,6 +427,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
             $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,
             defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef,
             $commandline{preferredlevel} ? "preferredlevel=".$commandline{preferredlevel} : undef,
+            $commandline{logfileerror} ? "logfileerror=".(uc $commandline{logfileerror}) : undef,
         ),
         archivedir =>
             $commandline{archivedir} ?
