@@ -496,7 +496,7 @@ sub formulate_result {
   } else {
     $self->{hint} .= ")";
   }
-  foreach my $level qw(CRITICAL WARNING UNKNOWN OK) {
+  foreach my $level (qw(CRITICAL WARNING UNKNOWN OK)) {
     $self->{exitcode} = $ERRORS{$level};
     if (($level ne "OK") && ($self->{allerrors}->{$level})) {
       $self->{exitmessage} = sprintf "%s - %s - %s %s", $level, $self->{hint},
@@ -552,7 +552,7 @@ sub formulate_long_result {
       } else {
         last;
       }
-      foreach my $level qw(CRITICAL WARNING UNKNOWN) {
+      foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
         foreach my $message (@{$search->{matchlines}->{$level}}) {
           if ($self->get_option('report') eq "html") {
             $message =~ s/</&lt;/g;
@@ -587,7 +587,7 @@ sub reset_result {
 sub reset {
   my $self = shift;
   $self->{allerrors} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
-  foreach my $level qw(OK CRITICAL WARNING UNKNOWN) {
+  foreach my $level (qw(OK CRITICAL WARNING UNKNOWN)) {
     $self->{lastmsg}->{$level} = "";
   }
   foreach my $search (@{$self->{searches}}) {
@@ -895,7 +895,7 @@ sub action {
     $ENV{$envmacro} = defined($self->{macros}->{$macro}) ? 
         $self->{macros}->{$macro} : "";
   }
-  $ENV{CHECK_LOGFILES_SERVICESTATE} = qw(OK WARNING CRITICAL UNKNOWN)
+  $ENV{CHECK_LOGFILES_SERVICESTATE} = (qw(OK WARNING CRITICAL UNKNOWN))
       [$ENV{CHECK_LOGFILES_SERVICESTATEID}];
   if (ref $script eq "CODE") {
     $self->trace("script is of type %s", ref $script);
@@ -1740,7 +1740,7 @@ sub init {
   #
   #  Setup the structure describing what to search for.
   #
-  foreach my $level qw(OK CRITICAL WARNING UNKNOWN) {
+  foreach my $level (qw(OK CRITICAL WARNING UNKNOWN)) {
     #
     #  if a single pattern was given as a scalar, force it into an array
     #  and resolve macros.
@@ -1799,7 +1799,7 @@ sub init {
             if $criticalexceptions;
         $filepatterns->{warningexceptions} = $warningexceptions
             if $warningexceptions;
-        foreach my $level qw(ok warning critical unknown) {
+        foreach my $level (qw(ok warning critical unknown)) {
           # normalize
           if (exists $filepatterns->{$level.'patterns'}) {
             if (ref($filepatterns->{$level.'patterns'}) eq 'HASH') {
@@ -1857,7 +1857,7 @@ sub init {
       }
     }
   }
-  foreach my $level qw(OK CRITICAL WARNING UNKNOWN) {
+  foreach my $level (qw(OK CRITICAL WARNING UNKNOWN)) {
     #
     #  if a single pattern was given as a scalar, force it into an array
     #  and resolve macros.
@@ -1928,7 +1928,7 @@ sub init {
       }
     }
   }
-  foreach my $level qw(CRITICAL WARNING UNKNOWN) {
+  foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
     foreach my $pattern (@{$self->{negpatterns}->{$level}}) {
       push(@{$self->{negpatterncnt}->{$level}}, 0);
     }
@@ -2117,7 +2117,7 @@ sub loadstate {
     if (! $self->{laststate}->{serviceoutput}) {
       $self->{laststate}->{serviceoutput} = "OK";
     }
-    foreach my $level qw(CRITICAL WARNING UNKNOWN) {
+    foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
       if (exists $self->{laststate}->{thresholdcnt}->{$level}) {
         $self->{thresholdcnt}->{$level} =
             $self->{laststate}->{thresholdcnt}->{$level};
@@ -2312,7 +2312,7 @@ sub savestate {
   }  
   # save threshold counts if a threshold exists for a level
   if ($self->{options}->{savethresholdcount}) {
-    foreach my $level qw(CRITICAL WARNING UNKNOWN) {
+    foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
       if ($self->{threshold}->{$level}) {
         $self->{newstate}->{thresholdcnt}->{$level} =
             $self->{thresholdcnt}->{$level};
@@ -2509,7 +2509,7 @@ sub scan {
       $self->{linenumber}++;
       $self->update_context(0, $line); # store this line as before
       my $matches = {};
-      foreach my $nagioslevel qw(CRITICAL WARNING UNKNOWN) {
+      foreach my $nagioslevel (qw(CRITICAL WARNING UNKNOWN)) {
         my $level = $nagioslevel; # because it needs to be modified
         my $outplayed = 0;
         $matches->{$level} = [];
@@ -2543,13 +2543,13 @@ sub scan {
         if (scalar(@{$matches->{$preferredlevel}}) > 0) {
           # es gibt z.b. einen criticaltreffer und critical ist preferred
           # d.h. alle anderen level fliegen raus
-          foreach my $level qw(CRITICAL WARNING UNKNOWN) {
+          foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
             $matches->{$level} = [] unless $level eq $preferredlevel;
           }
         }
         
       }
-      foreach my $nagioslevel qw(CRITICAL WARNING UNKNOWN) {
+      foreach my $nagioslevel (qw(CRITICAL WARNING UNKNOWN)) {
         my $level = $nagioslevel; # because it needs to be modified
         foreach my $patcnt (@{$matches->{$level}}) {
           my $pattern = @{$self->{patterns}->{$level}}[$patcnt];
@@ -2659,7 +2659,7 @@ sub scan {
   #  if patterns beginning with ! were not found, treat this as an alert.
   #
   if ($self->{hasinversepat}) {
-    foreach my $level qw(CRITICAL WARNING) {
+    foreach my $level (qw(CRITICAL WARNING)) {
       my $patcnt = -1;
       foreach my $pattern (@{$self->{negpatterns}->{$level}}) {
         $patcnt++;
@@ -2768,7 +2768,7 @@ sub reset {
   $self->{thresholdcnt} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
   #$self->{preliminaryfilter} = { SKIP => [], NEED => [] };
   $self->{perfdata} = "";
-  foreach my $level qw(CRITICAL WARNING UNKNOWN) {
+  foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
     foreach my $pat (@{$self->{negpatterns}->{$level}}) {
       push(@{$self->{negpatterncnt}->{$level}}, 0);
     }

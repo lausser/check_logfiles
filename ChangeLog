@@ -8,6 +8,7 @@
 - add option logfileerror (unlike seekfileerror it is local)
 - add option rotatewait (sleep until chaos during rotation is over)
 - [selected]searches can be regexp
+- Eliminate "Use of qw(...) as parentheses is deprecated" warnings in perl 5.14 (Thanks Tommi)
 
 3.4.5.2 - 2011-11-08
 - set the path to gzip for hpux /opt/contrib..)
