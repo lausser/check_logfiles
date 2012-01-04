@@ -6,7 +6,7 @@
 #
 
 use strict;
-use Test::More tests => 6;
+use Test::More tests => 10;
 use Cwd;
 use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
@@ -26,7 +26,6 @@ my $configfile =<<EOCFG;
             {
               tag => "test",
               logfile => "./var/adm/messages",
-              logfile => "./var/adm/messages",
               criticalpatterns => "Failed password for invalid user9",
               warningpatterns => "Unknown user",
               options => "noperfdata,nologfilenocry"
@@ -34,6 +33,12 @@ my $configfile =<<EOCFG;
             {
               tag => "null",
               logfile => "./var/adm/messages",
+              criticalpatterns => ".*nonsense.*",
+              warningpatterns => "crap",
+              options => "perfdata,nologfilenocry"
+            },
+            {
+              tag => "doppelnull",
               logfile => "./var/adm/messages",
               criticalpatterns => ".*nonsense.*",
               warningpatterns => "crap",
@@ -108,3 +113,32 @@ diag($output);
 diag($? >> 8);
 ok(($? >> 8) == 2);
 ok($output =~ /CRITICAL - \(7 errors .* Failed password is nonsense /);
+
+diag("only searches with .*null.*");
+$command = sprintf 'perl ../plugins-scripts/check_logfiles -f ./etc/searches.cfg --searches=\'.*null.*\'';
+
+diag(sprintf "executing %s", $command);
+$ssh->trace("executing %s", $command);
+$output = `$command`;
+diag($output);
+diag($? >> 8);
+#ok(($? >> 8) == 2);
+ok($output =~ / null_warnings=/);
+ok($output =~ / doppelnull_warnings=/);
+
+diag("only searches with null");
+# doppelnull wird nicht ausgefuehrt, da 'null' keine * und ? enthaelt und daher
+# nicht als regexp zaehlt
+$command = sprintf 'perl ../plugins-scripts/check_logfiles -f ./etc/searches.cfg --searches=\'null\'';
+
+diag(sprintf "executing %s", $command);
+$ssh->trace("executing %s", $command);
+$output = `$command`;
+diag($output);
+diag($? >> 8);
+#ok(($? >> 8) == 2);
+ok($output =~ / null_warnings=/);
+ok($output !~ / doppelnull_warnings=/);
+
+
+

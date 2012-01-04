@@ -2,11 +2,12 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
-3.4.6 - 2011-12-12
+3.4.6 - 2012-01-04
 - add maxmemsize
 - cleanup tab-indendation
 - add option logfileerror (unlike seekfileerror it is local)
 - add option rotatewait (sleep until chaos during rotation is over)
+- [selected]searches can be regexp
 
 3.4.5.2 - 2011-11-08
 - set the path to gzip for hpux /opt/contrib..)

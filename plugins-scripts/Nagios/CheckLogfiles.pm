@@ -126,9 +126,15 @@ sub init {
     if (scalar(@{$self->{selectedsearches}})) {
       @{$self->{searches}} = map {
         my $srch = $_;
-        if (grep {/^$srch->{tag}$/} @{$self->{selectedsearches}}) {
+        if (grep { $srch->{tag} eq $_ } @{$self->{selectedsearches}}) {
+          # gilt sowohl fuer normale searches
           $srch;
-        } elsif (grep {/^$srch->{tag}$/} map { $_.'_'.$self->{dynamictag} } @{$self->{selectedsearches}}) {
+        } elsif ($srch->{template} && grep { $srch->{template} eq $_ } @{$self->{selectedsearches}}) {
+          # als auch fuer template (tag ist hier bereits template."_".tag,
+          # wobei tag auf der kommandozeile uebergeben wurde)
+          $srch;
+        } elsif (grep { $_ =~ /[*?]/ && $srch->{tag} =~ /$_/ } @{$self->{selectedsearches}}) {
+          # --selectedsearches "regexp,regexp"
           $srch;
         } elsif ($srch->{tag} eq "prescript") {
           $srch;

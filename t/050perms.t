@@ -6,7 +6,7 @@
 #
 
 use strict;
-use Test::More tests => 7;
+use Test::More tests => 14;
 use Cwd;
 use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
