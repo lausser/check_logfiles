@@ -428,8 +428,6 @@ if (my $cl = Nagios::CheckLogfiles->new({
             $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,
             defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef,
             $commandline{preferredlevel} ? "preferredlevel=".$commandline{preferredlevel} : undef,
-            $commandline{logfileerror} ? "logfileerror=".(uc $commandline{logfileerror}) : undef,
-            $commandline{rotatewait} ? "rotatewait" : undef,
         ),
         archivedir =>
             $commandline{archivedir} ?
@@ -438,7 +436,9 @@ if (my $cl = Nagios::CheckLogfiles->new({
     options => join(',', grep { $_ }
         $commandline{report} ? "report=".$commandline{report} : undef,
         $commandline{seekfileerror} ? "seekfileerror=".(uc $commandline{seekfileerror}) : undef,
+        $commandline{logfileerror} ? "logfileerror=".(uc $commandline{logfileerror}) : undef,
         $commandline{maxmemsize} ? "maxmemsize=".$commandline{maxmemsize} : undef,
+        $commandline{rotatewait} ? "rotatewait" : undef,
     ),
     selectedsearches => [split(/,/, $commandline{selectedsearches})],
     dynamictag => $commandline{tag} ? $commandline{tag} : undef,

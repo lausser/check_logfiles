@@ -2,6 +2,10 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.4.6.1 - 2012-01-05
+- make rotatewait a global option
+- make logfileerror a global option
+
 3.4.6 - 2012-01-04
 - add maxmemsize
 - cleanup tab-indendation

@@ -71,7 +71,8 @@ sub init {
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
-      seekfileerror => 'critical', maxmemsize => 0,
+      seekfileerror => 'critical', logfileerror => 'critical', 
+      maxmemsize => 0, rotatewait => 0,
   });
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
@@ -159,7 +160,7 @@ sub init {
       $_->{cfgbase} = $self->{cfgbase};
       if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
         # maybe override default search options with global ones (ex. report)
-        $search->refresh_options($self->get_options('report,seekfileerror'));
+        $search->refresh_options($self->get_options('report,seekfileerror,logfileerror'));
         push(@{$self->{searches}}, $search);
       } else {
         $ExitCode = $ERROR_UNKNOWN;
@@ -347,7 +348,7 @@ sub init_from_file {
     }
     $_->{dynamictag} = $self->{dynamictag};
     if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
-      $search->refresh_options($self->get_options('report,seekfileerror'));
+      $search->refresh_options($self->get_options('report,seekfileerror,logfileerror'));
       push(@{$self->{searches}}, $search);
       $_->{privatestate}->{$search->{tag}} = $search->{privatestate};
     } else {
@@ -401,6 +402,9 @@ sub run {
       printf STDERR "Exiting because another check is already running\n";
       exit 3;
     }
+  }
+  if ($self->get_option('rotatewait')) {
+    $self->await_while_rotate();
   }
   foreach my $search (@{$self->{searches}}) {
     if (1) { # there will be a timesrunningout variable
@@ -477,6 +481,17 @@ sub run {
   }
   $self->cleanup_protocols();
   return $self;
+}
+
+sub await_while_rotate {
+  my $self = shift;
+  my($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0, 1, 2, 3, 4, 5];
+  if (($min == 0 || $min == 15 || $min == 30 || $min == 45) && $sec < 15) {
+    $self->trace("waiting until **:**:15");
+    foreach (1..(15 - $sec)) {
+      sleep 1;
+    }
+  }
 }
 
 sub formulate_result {
@@ -1682,7 +1697,7 @@ sub init {
       preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
       report => 'short',
-      seekfileerror => 'critical', logfileerror => 'critical', rotatewait => 0,
+      seekfileerror => 'critical', logfileerror => 'critical', 
       archivedirregexp => 0,
   });
   $self->refresh_options($params->{options});
@@ -2025,24 +2040,11 @@ sub unstick {
   return $self;
 }
 
-sub await_while_rotate {
-  my $self = shift;
-  my($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0, 1, 2, 3, 4, 5];
-  if (($min == 0 || $min == 15 || $min == 30 || $min == 45) && $sec < 15) {
-    foreach (1..(15 - $sec)) {
-      sleep 1;
-    }
-  }
-}
-
 sub run {
   my $self = shift;
   $self->trace(sprintf "==================== %s ==================", $self->{logfile});
   $self->prepare();
   $self->loadstate();
-  if ($self->get_option('rotatewait')) {
-    $self->await_while_rotate();
-  }
   $self->analyze_situation();
   if ($self->{logrotated} || $self->{logmodified} || $self->{hasinversepat}) {
     # be lazy and examine files only if necessary
@@ -3567,7 +3569,7 @@ sub init {
   $self->{scriptdelay} = $params->{scriptdelay};   
   $self->default_options({ script => 0, protocol => 0, count => 1,
       smartscript => 0, supersmartscript => 0,
-      report => 'short', seekfileerror => 'critical', });
+      report => 'short', seekfileerror => 'critical', logfileerror => 'critical' });
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
@@ -3634,7 +3636,7 @@ sub init {
   $self->{privatestate} = $params->{privatestate};   
   $self->default_options({ script => 0, protocol => 0, count => 1,
       smartscript => 0, supersmartscript => 0,
-      report => 'short', seekfileerror => 'critical', });
+      report => 'short', seekfileerror => 'critical', logfileerror => 'critical', });
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
