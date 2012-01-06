@@ -512,6 +512,7 @@ Externe Links
     Deutsches Nagios Portal
 
 Changelog
+=========
 
 * 3.4.5.2 – 2011-11-08 +
 set the path to gzip for hpux /opt/contrib..) +
@@ -524,124 +525,134 @@ also scriptpath (dirname(dirname(cfgfile)) + [/local/lib/nagios/plugins|/lib/n a
 type executable +
 fix a perl undef (patternkey stuff which i don’t remember)
 
-3.4.5
+* 3.4.5 +
 add parameter –rununique
-3.4.4.2 – 2011-08-03
+
+* 3.4.4.2 – 2011-08-03 +
 patterns can be hashes
-3.4.4.1 – 2011-05-31
+
+* 3.4.4.1 – 2011-05-31 +
 seekfilesdir is now local (./var/tmp) in an OMD environment
-3.4.4 – 2011-04-19
+
+* 3.4.4 – 2011-04-19 +
 add parameter patternfile
-3.4.3.2 – 2011-03-15
+
+* 3.4.3.2 – 2011-03-15 +
 fix a bug with –type rotating::uniform on the commandline
-3.4.3.1 – 2011-03-10
 
-add option –nostick
-
+* 3.4.3.1 – 2011-03-10 +
+add option –nostick +
 create the pidfile’s directory if it doesn’t exist
-3.4.3 – 2011-01-19
 
+* 3.4.3 – 2011-01-19 +
 add pid file handling to avoid concurrent processes with –daemon
-3.4.2.2 – 2010-10-01
 
-add rotation pattern loglog0bz2log1bz2  (Thanks Christian Schulz)
-
+* 3.4.2.2 – 2010-10-01 +
+add rotation pattern loglog0bz2log1bz2  (Thanks Christian Schulz) +
 add rotation pattern ehl (Thanks Daniel Haist)
-3.4.2.1 – 2010-08-04
 
+* 3.4.2.1 – 2010-08-04 +
 add %u (User) to option eventlogformat
-3.4.2 – 2010-06-30
 
-Bugfix, criticalexceptions sind jetzt ohne vorangehende criticalpatterns wirksam
-
+* 3.4.2 – 2010-06-30 +
+Bugfix, criticalexceptions sind jetzt ohne vorangehende criticalpatterns wirksam +
 Das Argument von –tag kann Sonderzeichen enthalten (wie Pfadangaben)
-3.4.1 – 2010-05-09
 
-Bugfix bei type=eventlog (EVENTLOG_SUCCESS wurde als Unknown angezeigt)
-
+* 3.4.1 – 2010-05-09 +
+Bugfix bei type=eventlog (EVENTLOG_SUCCESS wurde als Unknown angezeigt) +
 Neue Option archivedirregexp
-3.4 – 2010-05-06
 
+* 3.4 – 2010-05-06 +
 check_logfiles.exe wurde mit einem neueren Compiler übersetzt (PERL5LIB-Probleme unter Windows)
-3.3 – 2010-04-12
 
-Performancetuning
-
-Neue (globale) Option seekfileerror
-
+* 3.3 – 2010-04-12 +
+Performancetuning +
+Neue (globale) Option seekfileerror +
 Win32::Daemon ist jetzt Bestandteil der exe-Datei
-3.2 – 2010-04-12
 
-type=eventlog kommt jetzt mit entfernten Eventlogs zurecht. Optionen computer,username,password können Macros enthalten.
-
+* 3.2 – 2010-04-12 +
+type=eventlog kommt jetzt mit entfernten Eventlogs zurecht. +
+Optionen computer,username,password können Macros enthalten. +
 Schnelleres Patternmatching im Tivoli-Modus.
-3.1.5 – 2010-03-08
 
-loopback option ist jetzt auch in einer Konfigdatei erlaubt.
-
+* 3.1.5 – 2010-03-08 +
+loopback option ist jetzt auch in einer Konfigdatei erlaubt. +
 Leere Trefferzeilen werden als _(null)_ dargestellt.
-3.1.4 – 2010-02-25
 
-Bugfix im IPMI-Modul
-
-Der Logfile-Name ist jetzt in $PRIVATESTATE enthalten
-
-Neue Option preferredlevel
-
+* 3.1.4 – 2010-02-25 +
+Bugfix im IPMI-Modul +
+Der Logfile-Name ist jetzt in $PRIVATESTATE enthalten +
+Neue Option preferredlevel +
 Neue Option randominode
-3.1.2 – 2009-12-08
 
+* 3.1.2 – 2009-12-08 +
 Bugfix bei der Macroauflösung in scriptparams+externes bat-file
-3.1.1 – 2009-12-03
 
+* 3.1.1 – 2009-12-03 +
 Neue (globale) Option maxlength.
-3.1 – 2009-11-22
 
-Neue option allyoucaneat. Neue Option eventlogformat. Neue (globale) Option report. Neue Filtermöglichkeiten für Eventlog.  
-3.0.4 – 2009-09-20 
+* 3.1 – 2009-11-22 +
+Neue option allyoucaneat. Neue Option eventlogformat. +
+Neue (globale) Option report. +
+Neue Filtermöglichkeiten für Eventlog.  
+
+* 3.0.4 – 2009-09-20 +
 Anstelle eines Konfigurationsfiles kann ein encodierter String engegeben werden
-3.0.3.1 – 2009-09-07 
+
+* 3.0.3.1 – 2009-09-07 +
 Bug in type=eventlog, bei dem inkorrekte EventIDs aus dem System-EventLog gelesen wurden
-3.0.3 – 2009-08-26 
-Optimierung von type=eventlog.- Bug gefixt, bei dem –daemon sich nicht vom Terminal gelöst hat
-3.0.2 – 2009-07-23 
-Bugfix für –config. (Windows benutzt HOMEPATH anstatt HOME)- Bugfix in Eventlog+Tivoli (Danke Werner Breitschmid)
-3.0.1 – 2009-06-25 
-Bugfix in Eventlog+Tivoli 
+
+* 3.0.3 – 2009-08-26 +
+Optimierung von type=eventlog. +
+Bug gefixt, bei dem –daemon sich nicht vom Terminal gelöst hat
+
+* 3.0.2 – 2009-07-23 +
+Bugfix für –config. (Windows benutzt HOMEPATH anstatt HOME) +
+Bugfix in Eventlog+Tivoli (Danke Werner Breitschmid)
+
+* 3.0.1 – 2009-06-25 +
+Bugfix in Eventlog+Tivoli  +
 Vordefinierte Pattern match_them_all und match_never_ever
-2009-06-19 3.0 neue Parameter –service, –install, –deinstall. check_logfiles läuft jetzt als Windows-Service.
-2009-05-25 2.6 neue Parameter –lookback, –archivedir, –daemon, –warning/criticalthreshold. warning/criticalthresholds in options verlegt, match_them_all anstelle von .* auf der Kommandozeile
-2009-03-27 2.5.6.1 hab vergessen, aus der 2.5.6 Debuggingschrott zu löschen.
-2009-03-27 2.5.6 Bugfixes bei Oraclealertlog+sticky, neuer Parameter –macro, neuer Parameter –nocase
-2009-02-20 2.5.5.2 Option maxlength schneided lange Zeilen ab. Option winwarncrit benutzt Eventlog Type WARNING/ERROR anstelle von Patterns.
-2009-02-02 2.5.5.1 2.5.5 war Schrott.
-2009-01-23 2.5.5 Bugfixes, Auslesen von Windows Eventlog mit Win32, mehrzeilige Ausgabe
-2008-10-30 2.4.1.9 Bugfix wg. absoluten Konfigfile-Pfaden.
-2008-10-24 2.4.1.8 Bugfix in $scriptpath unter Windows (Danke Markus Wagner).
-2008-10-10 2.4.1.7 Bugfix in rotating::uniform und Macros in rotation. Bugfix in scriptparams mit $CL_TAG$. Danke Markus Wagner.
-2008-09-03 2.4.1.6 neuer Parameter –environment
-2008-08-15 2.4.1.5 syslogclient Hostnamen können case-insensitiv sein (mit nocase)
-2008-07-28 2.4.1.4 Bugfix in type=uniform, Scripts haben Zugriff auf einen State-Hash.
-2008-06-24 2.4.1.3 Bugfix (–sticky=<…>). Danke Severin Rossignol.
-2008-06-18 2.4.1.2 Bugfix in CL_DATE_YY
-2008-05-29 2.4.1.1 Archivedir kann jetzt Macros enthalten
-2008-05-27 2.4.1 Bugfix im sticky-Code (warningpattern konnte Critical auf Warning zurückstufen). Danke Nils Müller.
-2008-05-07 2.4 Support für Oracle Alertlogs per Datenbankverbindung
-2008-05-06 2.3.3 Option -F, mit der ganze Verzeichnisse nach Konfigdateien durchsucht werden können.
-2008-02-26 2.3.2.1 Bugfix wg. Perl5.10, Frickelei am Encoding
-2008-02-12 2.3.2 Support für IPMI System Event Log, Errpt Bugfix, ucs-2 codierte Dateien unter Windows.
-2007-12-27 2.3.1.2 Bugfix für sehr große Dateien, $CL_PROTOCOLFILE$, $CL_SERVICEPERFDATA$, noch mehr Kommandozeilenoptionen.
-2007-11-16 2.3.1.1 Bugfix im sticky-Code. Danke Marc Richter. Neue Option savethresholdcount. Danke Hannu Kivimäki.
-2007-10-16 2.3.1 Templates, bzip2 Archive, Scriptparam Bugfix, Thresholdzähler werden weitergereicht.
-2007-09-10 2.3 Bugfixes. Type errpt. Okpatterns. Optionen sticky und syslogclient. Neues Format der Performancedaten.
-2007-06-08 2.2.4.1 Bugfix (–searches)
-2007-06-06 2.2.4 Unterstützung für "virtuelle" Dateien (z.b. Linux /proc/*)
-2007-06-05 2.2.3 Bugfixes
-2007-06-02 2.2.2 Supersmart Scripts mit leerer Ausgabe werden unterstützt.
-2007-06-01 2.2.1 Smart scripts. Scripts können Codereferenzen sein.
-2007-05-21 2.1.1 Bugfixes
-2007-05-21 2.1 Windows wird unterstützt. Neue Option –selectedsearches. Neue Rotationsmethode mod_log_rotate.
-2007-05-10 2.0 Komplettes Redesign. Bessere Unterstützung nichtrotierender Logfiles. Performancedaten.
+
+* 2009-06-19 3.0 neue Parameter –service, –install, –deinstall. check_logfiles läuft jetzt als Windows-Service.
+
+* 2009-05-25 2.6 neue Parameter –lookback, –archivedir, –daemon, –warning/criticalthreshold. warning/criticalthresholds in options verlegt, match_them_all anstelle von .* auf der Kommandozeile
+
+* 2009-03-27 2.5.6.1 hab vergessen, aus der 2.5.6 Debuggingschrott zu löschen.
+
+* 2009-03-27 2.5.6 Bugfixes bei Oraclealertlog+sticky, neuer Parameter –macro, neuer Parameter –nocase
+
+* 2009-02-20 2.5.5.2 Option maxlength schneided lange Zeilen ab. Option winwarncrit benutzt Eventlog Type WARNING/ERROR anstelle von Patterns.
+
+* 2009-02-02 2.5.5.1 2.5.5 war Schrott.
+
+* 2009-01-23 2.5.5 Bugfixes, Auslesen von Windows Eventlog mit Win32, mehrzeilige Ausgabe
+* 2008-10-30 2.4.1.9 Bugfix wg. absoluten Konfigfile-Pfaden.
+* 2008-10-24 2.4.1.8 Bugfix in $scriptpath unter Windows (Danke Markus Wagner).
+* 2008-10-10 2.4.1.7 Bugfix in rotating::uniform und Macros in rotation. Bugfix in scriptparams mit $CL_TAG$. Danke Markus Wagner.
+* 2008-09-03 2.4.1.6 neuer Parameter –environment
+* 2008-08-15 2.4.1.5 syslogclient Hostnamen können case-insensitiv sein (mit nocase)
+* 2008-07-28 2.4.1.4 Bugfix in type=uniform, Scripts haben Zugriff auf einen State-Hash.
+* 2008-06-24 2.4.1.3 Bugfix (–sticky=<…>). Danke Severin Rossignol.
+* 2008-06-18 2.4.1.2 Bugfix in CL_DATE_YY
+* 2008-05-29 2.4.1.1 Archivedir kann jetzt Macros enthalten
+* 2008-05-27 2.4.1 Bugfix im sticky-Code (warningpattern konnte Critical auf Warning zurückstufen). Danke Nils Müller.
+* 2008-05-07 2.4 Support für Oracle Alertlogs per Datenbankverbindung
+* 2008-05-06 2.3.3 Option -F, mit der ganze Verzeichnisse nach Konfigdateien durchsucht werden können.
+* 2008-02-26 2.3.2.1 Bugfix wg. Perl5.10, Frickelei am Encoding
+* 2008-02-12 2.3.2 Support für IPMI System Event Log, Errpt Bugfix, ucs-2 codierte Dateien unter Windows.
+* 2007-12-27 2.3.1.2 Bugfix für sehr große Dateien, $CL_PROTOCOLFILE$, $CL_SERVICEPERFDATA$, noch mehr Kommandozeilenoptionen.
+* 2007-11-16 2.3.1.1 Bugfix im sticky-Code. Danke Marc Richter. Neue Option savethresholdcount. Danke Hannu Kivimäki.
+* 2007-10-16 2.3.1 Templates, bzip2 Archive, Scriptparam Bugfix, Thresholdzähler werden weitergereicht.
+* 2007-09-10 2.3 Bugfixes. Type errpt. Okpatterns. Optionen sticky und syslogclient. Neues Format der Performancedaten.
+* 2007-06-08 2.2.4.1 Bugfix (–searches)
+* 2007-06-06 2.2.4 Unterstützung für "virtuelle" Dateien (z.b. Linux /proc/*)
+* 2007-06-05 2.2.3 Bugfixes
+* 2007-06-02 2.2.2 Supersmart Scripts mit leerer Ausgabe werden unterstützt.
+* 2007-06-01 2.2.1 Smart scripts. Scripts können Codereferenzen sein.
+* 2007-05-21 2.1.1 Bugfixes
+* 2007-05-21 2.1 Windows wird unterstützt. Neue Option –selectedsearches. Neue Rotationsmethode mod_log_rotate.
+* 2007-05-10 2.0 Komplettes Redesign. Bessere Unterstützung nichtrotierender Logfiles. Performancedaten.
 
 Copyright
 
