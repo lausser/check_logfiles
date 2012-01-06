@@ -160,7 +160,7 @@ sub init {
       $_->{cfgbase} = $self->{cfgbase};
       if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
         # maybe override default search options with global ones (ex. report)
-        $search->refresh_options($self->get_options('report,seekfileerror,logfileerror'));
+        $search->refresh_default_options($self->get_options('report,seekfileerror,logfileerror'));
         push(@{$self->{searches}}, $search);
       } else {
         $ExitCode = $ERROR_UNKNOWN;
@@ -745,8 +745,10 @@ sub resolve_macros_in_pattern {
 sub default_options {
   my $self = shift;
   my $defaults = shift;
+  $self->{defaultoptions} = {};
   while (my($key, $value) = each %{$defaults}) {
     $self->{options}->{$key} = $value;
+    $self->{defaultoptions}->{$key} = $value;
   }
 }
 
@@ -780,6 +782,44 @@ sub get_options {
   } else {
     my %h = map {($_, $self->{options}->{$_})} split(',', $list);
     return \%h;
+  }
+}
+
+sub get_non_default_options {
+  my $self = shift;
+  my $list = shift;
+  if (! $list) {
+    my %h = map {
+      ($_, $self->{options}->{$_})
+    } grep {
+      ! exists $self->{defaultoptions}->{$_} ||
+          "$self->{defaultoptions}->{$_}" ne "$self->{options}->{$_}";
+    } keys %{$self->{options}};
+    return \%h;
+  } else {
+    my %h = map {
+      ($_, $self->{options}->{$_})
+    } grep {
+      ! exists $self->{defaultoptions}->{$_} ||
+          "$self->{defaultoptions}->{$_}" ne "$self->{options}->{$_}";
+    } split(',', $list);
+    return \%h;
+  }
+}
+
+sub refresh_default_options {
+  my $self = shift;
+  my $options = shift;
+  if ($options) {
+    if (ref($options) eq 'HASH') { # already as hash
+      foreach my $option (keys %{$options}) {
+        my $optarg = $options->{$option};
+        if (! exists $self->{defaultoptions}->{$option} ||
+            "$self->{defaultoptions}->{$option}" eq "$self->{options}->{$option}") {
+          $self->{options}->{$option} = $optarg;
+        }
+      }
+    }
   }
 }
 
