@@ -79,6 +79,7 @@ Format der Konfigurationsdatei
 
 Die Variablendefinitionen in dieser Datei werden in Perl-Syntax geschrieben. Es wird unterschieden zwischen globalen Variablen, die den gesamten Lauf von check_logfiles betreffen und solchen Variablen, die einen sogenannten "search" betreffen, derer es mehrere geben kann. Ein "search" fasst zusammen, wo gesucht wird, wonach gesucht wird, welche Relevanz ein Treffer hat, welche Aktion ggf. bei einem Treffer ausgelöst wird, usw.
 
+[width="80%",options="header"]
 |====================================
 |$seekfilesdir | Ein Verzeichnis, in dem Statusdateien nach einem Lauf von check_logfiles geschrieben werden. Diese Dateien enthalten Informationen darüber, bis zu welcher Zeile eine Logdatei gelesen und untersucht wurde. Beim nächsten Lauf von check_logfiles sorgen diese Informationen dafür, dass nur die neu hinzugekommenen Zeilen in der Logdatei analysiert werden. | Die Defaulteinstellung ist /tmp oder das Verzeichnis, welches bei ./configure mit with-seekfiles-dir angegeben wurde.
 |$protocolsdir | Ein Verzeichnis, in dem check_logfiles bei jedem Lauf die gefundenen Zeilen in eine Protokolldatei schreibt (sofern dieses gewünscht ist). | Die Defaulteinstellung ist /tmp oder das Verzeichnis, welches bei ./configure mit with-protocol-dir angegeben wurde.
@@ -87,7 +88,7 @@ Die Variablendefinitionen in dieser Datei werden in Perl-Syntax geschrieben. Es 
 |$MACROS | Ein Hash, in dem eigene Macrodefinitionen eingetragen werden. | siehe unten.
 |$prescript | Ein Script, welches in der Startphase von check_logfiles aufgerufen wird. Es hat noch nichts mit der späteren Suche nach Mustern zu tun, kann aber z.B. verwendet werden, um eine Applikation zum Leeren ihres Logbuffers zu zwingen. Der Macro $CL_TAG erhält den Wert "startup". $prescriptparams, $prescriptstdin und $prescriptdelay können analog zu scriptparams, scriptstdin und scriptdelay verwendet werden. |
 |$postscript | Ein Script, welches zum Abschluss von check_logfiles aufgerufen wird. Es kann verwendet werden, um das Gesamtergebnis des Laufs zu verarbeiten, wenn bei vielen zu erwartenden Treffern keine Einzelverarbeitung gewünscht wird. Der Macro $CL_TAG erhält den Wert "summary". $postscriptparams, $postscriptstdin und $postscriptdelay können analog zu scriptparams, scriptstdin und scriptdelay verwendet werden. |
-|$options | Eine Liste von Optionen, die den Einfluss von Pre- und Postscript regeln. Siehe Abschnitt "Scripts". Mögliche Werte sind smartpostscript, supersmartpostscript, smartprescript und supersmartprescript. Mit der Option report="short|long|html" kann man die Ausgabe des Plugins gestalten. Verwendet man report=long/html, so kann die Ausgabe des Plugins u.U. sehr lang werden. Defaultmässig wird diese nach 4096 Zeichen abgebrochen (Soviel wie ein ungepatchtes Nagios einlesen kann). Mit der Option maxlength lässt sich dieses Limit erhöhen, z.B. maxlength=8192. Die Option seekfileerror bestimmt die Schwere des Fehlers, wenn ein seekfile nicht geschrieben werden kann, z.B. seekfileerror=unknown (default:critical) |
+|$options | Eine Liste von Optionen, die den Einfluss von Pre- und Postscript regeln. Siehe Abschnitt "Scripts". Mögliche Werte sind smartpostscript, supersmartpostscript, smartprescript und supersmartprescript. Mit der Option report="short/long/html" kann man die Ausgabe des Plugins gestalten. Verwendet man report=long/html, so kann die Ausgabe des Plugins u.U. sehr lang werden. Defaultmässig wird diese nach 4096 Zeichen abgebrochen (Soviel wie ein ungepatchtes Nagios einlesen kann). Mit der Option maxlength lässt sich dieses Limit erhöhen, z.B. maxlength=8192. Die Option seekfileerror bestimmt die Schwere des Fehlers, wenn ein seekfile nicht geschrieben werden kann, z.B. seekfileerror=unknown (default:critical) |
 |@searches | Ein Array, das einen oder mehrere Einträge (Hashreferenzen) besitzt, welche die eigentliche Aufgabe von check_logfiles beschreiben. Die Schlüsselwerte für diese Hashes werden in der folgenden Tabelle beschrieben |
 |====================================
 
@@ -143,6 +144,8 @@ Optionen
 
 Vordefinierte Macros
 --------------------
+
+[width="80%",options="header"]
 |====================================
 |$CL_USERNAME  | Der Name des Users, der check_logfiles ausführt
 |$CL_HOSTNAME$  | Der Hostname ohne Domain
@@ -484,6 +487,7 @@ Mit diesen Einstellungen wird beim Auslesen des Events dessen Message so umgesch
 ----
 
 Der Formatstring kennt folgende Platzhalter:
+[width="80%",cols="1,9",options="header"]
 |===================
 |%t | EventType
 |%i | EventID
