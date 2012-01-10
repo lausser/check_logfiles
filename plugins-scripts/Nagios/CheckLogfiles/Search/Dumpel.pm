@@ -73,7 +73,7 @@ sub init {
     exclude => $params->{eventlog}->{exclude} || {},
   };
   $self->resolve_macros(\$self->{eventlog}->{eventlog});
-  $self->resolve_macros(\$self->{eventlog}->{computer});
+  $self->resolve_macros(\$self->{eventlog}->{computer}) if $self->{eventlog}->{computer};
   $self->resolve_macros(\$self->{eventlog}->{username}) if $self->{eventlog}->{username};
   $self->resolve_macros(\$self->{eventlog}->{password}) if $self->{eventlog}->{password};
   # keys fuer include/exclude: source,category,type,eventid
