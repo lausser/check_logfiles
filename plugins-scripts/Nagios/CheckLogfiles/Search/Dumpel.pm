@@ -337,8 +337,11 @@ sub READLINE {
   # s - strings
   # 04.01.12,15:37:21,4,0,11707,MsiInstaller,N/A,LAUSSER6,Product: ActivePerl 5.14.2 Build 1402 -- Installation operation completed successfully.  
   my $self = shift;
-  my $line = <$self>;
-  if (defined $line) {
+  while (! eof($self)) {
+    my $line = <$self>;
+    if (! defined $line) {
+      return undef;
+    }
     $line =~ s/\015?\012?$//; 
     $line =~ s/\s+$//; 
     my($edate, $etime, $etype, $ecategory, $eid, $esource, $euser, $ecomputer, $estring) = split(/,/, $line, 9);
@@ -396,17 +399,13 @@ sub READLINE {
           }
         }
         return format_message($options->{eventlogformat}, $tmp_event);
-      } else {
-        return;
       }
-    } else {
-      return;
     }
-  } else {
-    return undef;
+    # no return yet = all lines missed time/include/exclude filter
+    # continue whth the while-loop and read the next line
   }
-
-
+  # no more lines
+  return undef;
 }   
 
 sub AUTOLOAD {
