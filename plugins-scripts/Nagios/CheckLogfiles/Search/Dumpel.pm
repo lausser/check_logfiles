@@ -218,7 +218,8 @@ sub rewind {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }
   $self->addevent(0, "reset");
-  $self->{eventlog}->{thisminute} = 1;
+  # 1 geht nicht weil NT sonst eine Minute vor 1970 landet beim loadstate
+  $self->{eventlog}->{thisminute} = time - 3600 * 24 * 10;
   $self->savestate();
   return $self;
 }
