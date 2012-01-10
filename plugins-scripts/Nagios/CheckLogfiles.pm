@@ -2956,7 +2956,7 @@ sub collectfiles {
       $fh->open($self->{logfile}, "r");
       $self->trace("opened logfile %s", $self->{logfile});
       push(@rotatedfiles, 
-          { filename => $self->{logfile}, fh => $fh, seekable => 1 });
+          { filename => $self->{logfile}, fh => $fh, seekable => 1, statable => 1 });
       $self->trace("logfile %s (modified %s / accessed %s / inode %d / inode changed %s)",
           $self->{logfile},
           scalar localtime((stat $self->{logfile})[9]),
@@ -3206,7 +3206,7 @@ sub collectfiles {
                 $archive);
             if ($fh->open('gzip -dc < '.$archive.'|')) {
               ({ filename => $archive,
-                  fh => $fh, seekable => 0,
+                  fh => $fh, seekable => 0, statable => 0,
                   modtime => (stat $archive)[9],
                   fingerprint => $self->getfilefingerprint($archive).':'.$self->getfilesize($archive) });
             } else {
@@ -3218,7 +3218,7 @@ sub collectfiles {
                 $archive);
             if ($fh->open('bzip2 -d < '.$archive.'|')) {
               ({ filename => $archive,
-                  fh => $fh, seekable => 0,
+                  fh => $fh, seekable => 0, statable => 0,
                   modtime => (stat $archive)[9],
                   fingerprint => $self->getfilefingerprint($archive).':'.$self->getfilesize($archive) });
             } else {
@@ -3228,7 +3228,7 @@ sub collectfiles {
           } else {
             if ($fh->open($archive, "r")) {
               ({ filename => $archive,
-                  fh => $fh, seekable => 1,
+                  fh => $fh, seekable => 1, statable => 1,
                   size => $self->getfilesize($fh),
                   modtime => (stat $archive)[9],
                   fingerprint => $self->getfilefingerprint($archive).':'.$self->getfilesize($archive) });
@@ -3267,7 +3267,7 @@ sub collectfiles {
       $fh->open($self->{logfile}, "r");
       $self->trace("opened logfile %s", $self->{logfile});
       push(@rotatedfiles, 
-          { filename => $self->{logfile}, fh => $fh, seekable => 1,
+          { filename => $self->{logfile}, fh => $fh, seekable => 1, statable => 1,
           size => $self->getfilesize($self->{logfile}),
           fingerprint => $self->getfilefingerprint($self->{logfile}).':'.$self->getfilesize($self->{logfile}) });
       $self->trace("logfile %s (modified %s / accessed %s / inode %d / inode changed %s)",
@@ -3555,7 +3555,7 @@ sub collectfiles {
     $fh->open($self->{logfile}, "r");
     $self->trace("opened logfile %s", $self->{logfile});
     push(@rotatedfiles,
-        { filename => $self->{logfile}, fh => $fh, seekable => 1 });
+        { filename => $self->{logfile}, fh => $fh, seekable => 1, statable => 1 });
   } else {
     if (-e $self->{logfile}) {
       #  permission problem
