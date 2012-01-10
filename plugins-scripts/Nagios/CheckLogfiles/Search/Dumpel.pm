@@ -178,9 +178,9 @@ use vars qw(@ISA);
 @ISA = qw(Tie::Handle Nagios::CheckLogfiles::Search::Dumpel);
 our $AUTOLOAD;
 our $tracefile;
-my $thenminute = 0;
-my $thisminute = 0;
-my $options = {};
+our $thenminute = 0;
+our $thisminute = 0;
+our $options = {};
 
 use constant EVENTLOG_SUCCESS => 0x0000;
 use constant EVENTLOG_ERROR_TYPE => 0x0001;
@@ -195,10 +195,6 @@ sub TIEHANDLE {
   $thenminute = shift;
   $thisminute = shift;
   $options = shift;
-  #my $winwarncrit = shift;
-  #my $eventlogformat = shift;
-  #my $logfilenocry = shift;
-  #my $language = shift;
   my $tivoli = shift;
   $tracefile = shift;
 
@@ -221,7 +217,6 @@ sub TIEHANDLE {
       'Data' => undef,
       'User' => undef,
   };
-  @events = ();
   $self = new IO::File;
   if (open $self, $command) {
     return bless $self, $class;    # $self is a glob ref

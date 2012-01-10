@@ -229,7 +229,7 @@ use vars qw(@ISA);
 our $AUTOLOAD;
 our $tracefile;
 $Win32::EventLog::GetMessageText = 1;
-my @events = ();
+our @events = ();
 
 
 sub TIEHANDLE {
