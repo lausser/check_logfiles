@@ -4,6 +4,7 @@
 
 3.4.7 - 2012-01-10
 - add new type dumpel (customer's request
+- bugfix in errpt's unstick method (Thanks Jim Winkle)
 
 3.4.6.1 - 2012-01-05
 - make rotatewait a global option
