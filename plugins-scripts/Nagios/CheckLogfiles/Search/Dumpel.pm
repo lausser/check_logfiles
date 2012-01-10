@@ -27,6 +27,35 @@ sub init {
   $self->default_options({ winwarncrit => 0, eventlogformat => '%g %i %m',
       language => 'en', randominode => 1 });
   $self->SUPER::init($params);
+  if ($self->get_option('lookback')) {
+    if ($self->get_option('lookback') =~ /^(\d+)(s|m|h|d)$/) {
+      if ($2 eq 's') {
+        $self->set_option('lookback', $1);
+      } elsif ($2 eq 'm') {
+        $self->set_option('lookback', $1 * 60);
+      } elsif ($2 eq 'h') {
+        $self->set_option('lookback', $1 * 60 * 60);
+      } elsif ($2 eq 'd') {
+        $self->set_option('lookback', $1 * 60 * 60 * 24);
+      }
+    } else {
+      printf STDERR "illegal time interval (must be <number>[s|m|h|d]\n";
+      $self = undef;
+      return undef;
+    }
+  }
+  if ($self->get_option('winwarncrit')) {
+    push(@{$self->{patterns}->{WARNING}}, "EE_WW_TT");
+    push(@{$self->{patterns}->{CRITICAL}}, "EE_EE_TT");
+    push(@{$self->{patternfuncs}->{WARNING}},
+        eval "sub { local \$_ = shift; return m/EE_WW_TT/o; }");
+    push(@{$self->{patternfuncs}->{CRITICAL}},
+        eval "sub { local \$_ = shift; return m/EE_EE_TT/o; }");
+  
+  }
+  push(@{$self->{patterns}->{UNKNOWN}}, "EE_UU_TT");
+  push(@{$self->{patternfuncs}->{UNKNOWN}},
+      eval "sub { local \$_ = shift; return m/EE_UU_TT/o; }");
   if (-f 'C:\Programme') {
     $self->set_option('language', 'de');
   }
@@ -40,7 +69,38 @@ sub init {
     password => $params->{dumpel}->{password},
     source => $params->{dumpel}->{source},
     days => $params->{dumpel}->{days},
+    include => $params->{eventlog}->{include} || {},
+    exclude => $params->{eventlog}->{exclude} || {},
   };
+  $self->resolve_macros(\$self->{eventlog}->{eventlog});
+  $self->resolve_macros(\$self->{eventlog}->{computer});
+  $self->resolve_macros(\$self->{eventlog}->{username}) if $self->{eventlog}->{username};
+  $self->resolve_macros(\$self->{eventlog}->{password}) if $self->{eventlog}->{password};
+  # keys fuer include/exclude: source,category,type,eventid
+  foreach my $item (qw(Source Category EventType EventID)) {
+    foreach (keys %{$self->{eventlog}->{include}}) {
+      if (lc $_ eq lc $item) {
+        $self->{eventlog}->{include}->{$item} =
+            lc $self->{eventlog}->{include}->{$_};
+        delete $self->{eventlog}->{include}->{$_} if $_ ne $item;
+      }
+    }
+    foreach (keys %{$self->{eventlog}->{exclude}}) {
+      if (lc $_ eq lc $item) {
+        $self->{eventlog}->{exclude}->{$item} =
+            lc $self->{eventlog}->{exclude}->{$_};
+        delete $self->{eventlog}->{exclude}->{$_} if $_ ne $item;
+      }
+    }
+  }
+  if (! exists $self->{eventlog}->{include}->{operation} ||
+      $self->{eventlog}->{include}->{operation} ne 'or') {
+    $self->{eventlog}->{include}->{operation} = 'and'
+  }
+  if (! exists $self->{eventlog}->{exclude}->{operation} ||
+      $self->{eventlog}->{exclude}->{operation} ne 'and') {
+    $self->{eventlog}->{exclude}->{operation} = 'or'
+  }
 }
     
 sub prepare {
@@ -111,8 +171,7 @@ sub collectfiles {
     $self->trace("calling %s", $command);
     tie *{$fh}, 'Nagios::CheckLogfiles::Search::Dumpel::Handle',
         $command,
-        $self->{eventlog}->{thenminute},
-        $self->{eventlog}->{thisminute},
+        $self->{eventlog},
         $self->{options},
         $self->{tivoli},
         $self->{tracefile};
@@ -178,8 +237,7 @@ use vars qw(@ISA);
 @ISA = qw(Tie::Handle Nagios::CheckLogfiles::Search::Dumpel);
 our $AUTOLOAD;
 our $tracefile;
-our $thenminute = 0;
-our $thisminute = 0;
+our $eventlog = {};
 our $options = {};
 
 use constant EVENTLOG_SUCCESS => 0x0000;
@@ -192,16 +250,12 @@ use constant EVENTLOG_AUDIT_SUCCESS => 0x0008;
 sub TIEHANDLE {
   my $class = shift;
   my $command = shift;
-  $thenminute = shift;
-  $thisminute = shift;
+  $eventlog = shift;
   $options = shift;
   my $tivoli = shift;
   $tracefile = shift;
 
-  my $self = {
-    thenminute => $thenminute,
-    thisminute => $thisminute,
-  };
+  my $self = {};
   my $event = {
       'Length' => undef,
       'RecordNumber' => undef,
@@ -321,24 +375,29 @@ sub READLINE {
       'Data' => "",
       'User' => $euser,
     };
-    if ($tmp_event->{TimeGenerated} >= $thenminute &&
-        $tmp_event->{TimeGenerated} < $thisminute) {
-      if (! $tmp_event->{Message}) {
-        $tmp_event->{Message} = $tmp_event->{Strings};
-        $tmp_event->{Message} =~ s/\0/ /g;
-        $tmp_event->{Message} =~ s/\s*$//g;
-      }
-      $tmp_event->{Message} = 'unknown message' if ! $tmp_event->{Message};
-      $tmp_event->{Message} =~ tr/\r\n/ /d;
-
-      if ($options->{winwarncrit}) {
-        if ($tmp_event->{EventType} == EVENTLOG_WARNING_TYPE) {
-          $tmp_event->{Message} = "EE_WW_TT".$tmp_event->{Message};
-        } elsif ($tmp_event->{EventType} == EVENTLOG_ERROR_TYPE) {
-          $tmp_event->{Message} = "EE_EE_TT".$tmp_event->{Message};
+    if ($tmp_event->{TimeGenerated} >= $eventlog->{thenminute} &&
+        $tmp_event->{TimeGenerated} < $eventlog->{thisminute}) {
+      if (included($tmp_event, $eventlog->{include}) &&
+          ! excluded($tmp_event, $eventlog->{exclude})) {
+        #printf STDERR "passed filter %s\n", Data::Dumper::Dumper($tmp_event);
+        if (! $tmp_event->{Message}) {
+          $tmp_event->{Message} = $tmp_event->{Strings};
+          $tmp_event->{Message} =~ s/\0/ /g;
+          $tmp_event->{Message} =~ s/\s*$//g;
         }
+        $tmp_event->{Message} = 'unknown message' if ! $tmp_event->{Message};
+        $tmp_event->{Message} =~ tr/\r\n/ /d;
+        if ($options->{winwarncrit}) {
+          if ($tmp_event->{EventType} == EVENTLOG_WARNING_TYPE) {
+            $tmp_event->{Message} = "EE_WW_TT".$tmp_event->{Message};
+          } elsif ($tmp_event->{EventType} == EVENTLOG_ERROR_TYPE) {
+            $tmp_event->{Message} = "EE_EE_TT".$tmp_event->{Message};
+          }
+        }
+        return format_message($options->{eventlogformat}, $tmp_event);
+      } else {
+        return;
       }
-      return format_message($options->{eventlogformat}, $tmp_event);
     } else {
       return;
     }
@@ -402,5 +461,152 @@ sub format_message {
   $event->{Message} = $message;
 }
 
+sub included {
+  my $event = shift;
+  my $filter = shift;
+  my $filters = 0;
+  my $matches = {};
+  # EventCategory ist ein INTEGER!!! 
+  # und ausserdem ist pro Source ein eigener Satz von Kategorien moeglich
+  # man muesste deren Bezeichnungen aus der Registry lesen.
+  # in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Eventlog\Application
+  # stehen die Sources, die eigene Kategorien definiert haben.
+  # Im Key CategoryMessageFile ist die Datei hinterlegt, der die Kategorien
+  # entnommen werden koennen. In CategoryCount steht die Anzahl der
+  # selbstdefinierten Kategorien.
+  foreach my $attr (qw(Source Category)) {
+    $matches->{$attr} = 0;
+    if (exists $filter->{$attr}) { 
+      foreach my $item (split(',', $filter->{$attr})) {
+        #printf "items: %s ? %s\n", $item, $event->{$attr};
+        if (lc $item eq lc $event->{$attr}) {
+          #printf "-> %s eq %s\n", lc $item, lc $event->{$attr};
+          $matches->{$attr}++;
+        }
+      }
+    } else {
+      #printf "no filter for %s\n", $attr;
+      $matches->{$attr}++;
+    }
+  }
+  foreach my $attr (qw(EventID)) {
+    $matches->{$attr} = 0;
+    if (exists $filter->{$attr}) { 
+      foreach my $item (split(',', $filter->{$attr})) {
+        #printf "items: %s ? %s\n", $item, $event->{$attr};
+        #if (lc $item eq lc ($event->{$attr} & 0xffff)) {
+        if ($item == ($event->{$attr} & 0xffff)) {
+          #printf "-> %s eq %s\n", lc $item, lc ($event->{$attr} & 0xffff);
+          $matches->{$attr}++;
+        }
+      }
+    } else {
+      #printf "no filter for %s\n", $attr;
+      $matches->{$attr}++;
+    }
+  }
+  foreach my $attr (qw(EventType)) {
+    $matches->{$attr} = 0;
+    if (exists $filter->{$attr}) { 
+      foreach my $item (split(',', $filter->{$attr})) {
+        if ((lc $item =~ /^succ/ && $event->{$attr} == EVENTLOG_SUCCESS) ||
+            (lc $item =~ /warn/ && $event->{$attr} == EVENTLOG_WARNING_TYPE) ||
+            (lc $item =~ /err/ && $event->{$attr} == EVENTLOG_ERROR_TYPE) ||
+            (lc $item =~ /info/ && $event->{$attr} == EVENTLOG_INFORMATION_TYPE) ||
+            (lc $item =~ /audit.*succ/ && $event->{$attr} == EVENTLOG_AUDIT_SUCCESS) ||
+            (lc $item =~ /fail/ && $event->{$attr} == EVENTLOG_AUDIT_FAILURE)) {
+          #printf "type %s matched\n", $item;
+          $matches->{$attr}++;
+        }
+      }
+    } else {
+      #printf "no filter for %s\n", $attr;
+      $matches->{$attr}++;
+    }
+  }
+  if ($filter->{operation} eq 'and') {
+    return (scalar(grep { $matches->{$_} } keys %{$matches}) == 4) ? 1 : 0;
+  } else {
+    return (scalar(grep { $matches->{$_} } keys %{$matches}) == 0) ? 0 : 1;
+  }
+}
+
+sub excluded {
+  my $event = shift;
+  my $filter = shift;
+  my $filters = 0;
+  my $matches = {};
+  # EventCategory ist ein INTEGER!!!
+  foreach my $attr (qw(Source Category)) {
+    $matches->{$attr} = 0;
+    if (exists $filter->{$attr}) {
+      foreach my $item (split(',', $filter->{$attr})) {
+        #printf "items: %s ? %s\n", $item, $event->{$attr};
+        if (lc $item eq lc $event->{$attr}) {
+          #printf "-> %s eq %s\n", lc $item, lc $event->{$attr};
+          $matches->{$attr}++;
+        }
+      }
+    } else {
+      #printf "no filter for %s\n", $attr;
+      #$matches->{$attr}++;
+    }
+  }
+  foreach my $attr (qw(EventID)) {
+    $matches->{$attr} = 0;
+    if (exists $filter->{$attr}) {
+      foreach my $item (split(',', $filter->{$attr})) {
+        #printf "items: %s ? %s\n", $item, $event->{$attr};
+        #if (lc $item eq lc ($event->{$attr} & 0xffff)) {
+        if ($item == ($event->{$attr} & 0xffff)) {
+          #printf "-> %s eq %s\n", lc $item, lc ($event->{$attr} & 0xffff);
+          $matches->{$attr}++;
+        }
+      }
+    } else {
+      #printf "no filter for %s\n", $attr;
+      #$matches->{$attr}++;
+    }
+  }
+  foreach my $attr (qw(EventType)) {
+    $matches->{$attr} = 0;
+    if (exists $filter->{$attr}) {
+      foreach my $item (split(',', $filter->{$attr})) {
+        if ((lc $item =~ /^succ/ && $event->{$attr} == EVENTLOG_SUCCESS) ||
+            (lc $item =~ /warn/ && $event->{$attr} == EVENTLOG_WARNING_TYPE) ||
+            (lc $item =~ /err/ && $event->{$attr} == EVENTLOG_ERROR_TYPE) ||
+            (lc $item =~ /info/ && $event->{$attr} == EVENTLOG_INFORMATION_TYPE) ||
+            (lc $item =~ /audit.*succ/ && $event->{$attr} == EVENTLOG_AUDIT_SUCCESS) ||
+            (lc $item =~ /fail/ && $event->{$attr} == EVENTLOG_AUDIT_FAILURE)) {
+          #printf "type %s matched\n", $item;
+          $matches->{$attr}++;
+        }
+      }
+    } else {
+      #printf "no filter for %s\n", $attr;
+      #$matches->{$attr}++;
+    }
+  }
+  #printf "%s\n", Data::Dumper::Dumper($matches);
+  if ($filter->{operation} eq 'and') {
+    return (scalar(grep { $matches->{$_} } keys %{$matches}) == 4) ? 1 : 0;
+  } else {
+    return (scalar(grep { $matches->{$_} } keys %{$matches}) == 0) ? 0 : 1;
+  }
+}
+
+sub trace {
+  my $format = shift;
+  if (-f $tracefile) {
+    my $logfh = new IO::File;
+    $logfh->autoflush(1);
+    if ($logfh->open($tracefile, "a")) {
+      $logfh->printf("%s: ", scalar localtime);
+      $logfh->printf($format, @_);
+      $logfh->printf("\n");
+      $logfh->close();
+    }
+  }
+}
 
 1;
