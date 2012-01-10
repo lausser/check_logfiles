@@ -1,0 +1,415 @@
+package Nagios::CheckLogfiles::Search::Dumpel;
+
+use strict;
+use Exporter;
+use File::Basename;
+use Time::Local;
+use IO::File;
+use vars qw(@ISA);
+
+use constant OK => 0;
+use constant WARNING => 1;
+use constant CRITICAL => 2;
+use constant UNKNOWN => 3;
+
+@ISA = qw(Nagios::CheckLogfiles::Search);
+
+
+sub new {
+  my $self = bless {}, shift;
+  return $self->init(shift);
+}
+
+sub init {
+  my $self = shift;
+  my $params = shift;
+  $self->{logfile} = '/dumpel/is/cool';
+  $self->default_options({ winwarncrit => 0, eventlogformat => '%g %i %m',
+      language => 'en', randominode => 1 });
+  $self->SUPER::init($params);
+  if (-f 'C:\Programme') {
+    $self->set_option('language', 'de');
+  }
+  $self->{clo} = {
+  	path => $params->{dumpel}->{path} ? $params->{dumpel}->{path} : (
+            -f "C:/Programme" ? "C:/Programme/Resource Kit/dumpel" :
+                    "C:/Program Files/Resource Kit/dumpel" ),
+    eventlog => $params->{dumpel}->{eventlog} || "system",
+    computer => $params->{dumpel}->{computer},
+    username => $params->{dumpel}->{username},
+    password => $params->{dumpel}->{password},
+    source => $params->{dumpel}->{source},
+    days => $params->{dumpel}->{days},
+  };
+}
+    
+sub prepare {
+  my $self = shift;
+  $self->{options}->{nologfilenocry} = 1;
+  # the last minute is the end time. in-progess minutes are not 
+  # interesting yet.
+  my($sec, $min, $hour, $mday, $mon, $year) = 
+      (localtime time)[0, 1, 2, 3, 4, 5];
+  $self->{eventlog}->{thisminute} = 
+      timelocal(0, $min, $hour, $mday, $mon, $year);
+  $self->trace(sprintf "i will discard messages newer or equal than %s", 
+      scalar localtime $self->{eventlog}->{thisminute});
+}
+
+sub loadstate {
+  my $self = shift;
+  $self->SUPER::loadstate();
+  # always scan the whole output. thst's what starttime is for.
+  $self->{laststate}->{logoffset} = 0;
+  # if this is the very first run, look back 5 mintes in the past.
+  $self->{laststate}->{logtime} = $self->{laststate}->{logtime} ?
+      $self->{laststate}->{logtime} : $self->{eventlog}->{thisminute} - 600;
+}
+
+sub savestate {
+  my $self = shift;
+  foreach (keys %{$self->{laststate}}) {
+    $self->{newstate}->{$_} = $self->{laststate}->{$_};
+  }
+  # remember the last minute scanned.
+  $self->{newstate}->{logtime} = $self->{eventlog}->{thisminute};
+  $self->SUPER::savestate();
+}
+
+sub analyze_situation {
+  my $self = shift;
+  $self->trace("last scanned until %s", 
+      scalar localtime $self->{laststate}->{logtime});
+  $self->{eventlog}->{distance} = 
+      1 + int ((time - $self->{laststate}->{logtime}) / 60);
+  $self->trace("analyze events from the last %d minutes", 
+      $self->{eventlog}->{distance});
+  $self->trace(sprintf "from %s to %s",
+      scalar localtime (time - 60 * $self->{eventlog}->{distance}),
+      scalar localtime time);
+  if ((time - $self->{laststate}->{logtime}) > 60) {
+    $self->{logmodified} = 1; 
+    $self->{eventlog}->{thenminute} =  $self->{laststate}->{logtime};
+    $self->trace(sprintf "i will discard messages older than %s", 
+        scalar localtime $self->{eventlog}->{thenminute});
+  } else {
+    # this happens if you call the plugin in too short intervals.
+    $self->trace("please wait for a minute"); 
+  }
+}
+
+sub collectfiles {
+  my $self = shift;
+  my $fh = new IO::File;
+  if ($self->{logmodified}) {
+    my $command = sprintf "%s %s -l %s %s %s",
+        $self->{clo}->{path},
+        $self->{clo}->{days} ? '-d '.$self->{clo}->{days} : "",
+        $self->{clo}->{eventlog},
+        $self->{clo}->{computer} ? '\\\\'.$self->{clo}->{computer} : "",
+        ($^O eq "cygwin") ? '2>/dev/null |' : '2>NUL |';
+    $self->trace("calling %s", $command);
+    tie *{$fh}, 'Nagios::CheckLogfiles::Search::Dumpel::Handle',
+        $command,
+        $self->{eventlog}->{thenminute},
+        $self->{eventlog}->{thisminute},
+        $self->{options},
+        $self->{tivoli},
+        $self->{tracefile};
+    if ($fh->open($command)) {
+      push(@{$self->{relevantfiles}},
+        { filename => "eventlog|",
+          fh => $fh, seekable => 0, statable => 0,
+          modtime => $self->{eventlog}->{nowminute},
+          fingerprint => "0:0" });
+    } else {
+      $self->trace("cannot execute dumpel");
+      $self->addevent('UNKNOWN', "cannot execute dumpel");
+    }
+  }
+} 
+
+
+sub getfilefingerprint {
+  return 1;
+}
+
+sub finish {
+  my $self = shift;
+  foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
+    if (scalar(@{$self->{matchlines}->{$level}})) {
+      foreach my $match (@{$self->{matchlines}->{$level}}) {
+        $match =~ s/EE_WW_TT//;
+        $match =~ s/EE_EE_TT//;
+        $match =~ s/EE_UU_TT//;
+      }
+    }
+    if (exists $self->{lastmsg} && exists $self->{lastmsg}->{$level}) {
+      $self->{lastmsg}->{$level} =~ s/EE_WW_TT//;
+      $self->{lastmsg}->{$level} =~ s/EE_EE_TT//;
+      $self->{lastmsg}->{$level} =~ s/EE_UU_TT//;
+    }
+  }
+}
+
+sub rewind {
+  my $self = shift;
+  $self->loadstate();
+  foreach (keys %{$self->{laststate}}) {
+    $self->{newstate}->{$_} = $self->{laststate}->{$_};
+  }
+  $self->addevent(0, "reset");
+  $self->{eventlog}->{thisminute} = 1;
+  $self->savestate();
+  return $self;
+}
+
+
+package Nagios::CheckLogfiles::Search::Dumpel::Handle;
+
+use strict;
+use Exporter;
+use Time::Local;
+use POSIX qw(strftime);
+require Tie::Handle;
+eval 'require Win32::EventLog;';
+eval 'require Win32::TieRegistry (Delimiter => "/");';
+eval 'require Win32::WinError;';
+use Carp;
+use IO::File;
+use vars qw(@ISA);
+@ISA = qw(Tie::Handle Nagios::CheckLogfiles::Search::Dumpel);
+our $AUTOLOAD;
+our $tracefile;
+my @events = ();
+my $thenminute = 0;
+my $thisminute = 0;
+my $options = {};
+
+use constant EVENTLOG_SUCCESS => 0x0000;
+use constant EVENTLOG_ERROR_TYPE => 0x0001;
+use constant EVENTLOG_INFORMATION_TYPE => 0x0004;
+use constant EVENTLOG_WARNING_TYPE => 0x0002;
+use constant EVENTLOG_AUDIT_FAILURE => 0x0010;
+use constant EVENTLOG_AUDIT_SUCCESS => 0x0008;
+
+sub TIEHANDLE {
+  my $class = shift;
+  my $command = shift;
+  $thenminute = shift;
+  $thisminute = shift;
+  $options = shift;
+  #my $winwarncrit = shift;
+  #my $eventlogformat = shift;
+  #my $logfilenocry = shift;
+  #my $language = shift;
+  my $tivoli = shift;
+  $tracefile = shift;
+
+  my $self = {
+    thenminute => $thenminute,
+    thisminute => $thisminute,
+  };
+  my $event = {
+      'Length' => undef,
+      'RecordNumber' => undef,
+      'TimeGenerated' => undef,
+      'Timewritten' => undef,
+      'EventID' => undef,
+      'EventType' => undef,
+      'Category' => undef,
+      'ClosingRecordNumber' => undef,
+      'Source' => undef,
+      'Computer' => undef,
+      'Strings' => undef,
+      'Data' => undef,
+      'User' => undef,
+  };
+  @events = ();
+  $self = new IO::File;
+  if (open $self, $command) {
+    return bless $self, $class;    # $self is a glob ref
+  } else {
+    return undef;
+  }
+}
+
+sub SEEK {
+  printf STDERR "i am SEEK\n";
+}
+
+sub FETCH {
+  printf STDERR "i am FETCH\n";
+}
+
+sub STAT {
+  printf STDERR "i am STAT\n";
+  my $self = shift;
+  return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+sub OPEN {
+  my $self = shift;
+  my $filename = shift;
+  $self->CLOSE;
+  open($self, $filename)      or croak "can't reopen $filename: $!";
+  return 1;
+}
+
+sub CLOSE {
+  my $self = shift;
+  return close $self;
+}
+
+sub GETC {
+  printf STDERR "i am GETC\n";
+}
+
+sub READ {
+  printf STDERR "i am READ\n";
+}
+
+sub DESTROY {
+}
+
+sub EOF {
+  my $self = shift;
+  return eof $self;
+}
+
+
+sub READLINE {
+  # default output dtTCISucs
+  # t - time
+  # d - date
+  # T - event type
+  # C - event category
+  # I event ID
+  # S event source
+  # u - user
+  # c - computer
+  # s - strings
+  # 04.01.12,15:37:21,4,0,11707,MsiInstaller,N/A,LAUSSER6,Product: ActivePerl 5.14.2 Build 1402 -- Installation operation completed successfully.  
+  my $self = shift;
+  my $line = <$self>;
+  if (defined $line) {
+    $line =~ s/\015?\012?$//; 
+    $line =~ s/\s+$//; 
+    my($edate, $etime, $etype, $ecategory, $eid, $esource, $euser, $ecomputer, $estring) = split(/,/, $line, 9);
+    my $timestamp = time;
+    my $datetime = $edate.'#'.$etime;
+    #if ($self->get_option('language') eq 'de') {
+    if ($edate =~ /\d+\/\d+\/\d+/) {
+      # 12/14/2005,10:08:41 AM,4,.....
+      $datetime =~ /(\d+)\/(\d+)\/(\d+)#(\d+):(\d+):(\d+) (\w+)/;
+      my ($month, $day, $year, $hour, $minute, $second, $pm) = ($1, $2, $3, $4, $5, $6, $7);
+      $year += 2000 if $year < 100;
+      $timestamp = timelocal($second, $minute, $hour, $day, $month - 1, $year);
+      if ($pm eq 'PM') {
+        $timestamp += 12 * 3600;
+      }
+    } else {
+      # 04.01.12,15:30:11,1,0,....
+      $datetime =~ /(\d+)\.(\d+)\.(\d+)#(\d+):(\d+):(\d+)/;
+      my ($day, $month, $year, $hour, $minute, $second) = ($1, $2, $3, $4, $5, $6);
+      $year += 2000 if $year < 100;
+      $timestamp = timelocal($second, $minute, $hour, $day, $month - 1, $year);
+    }
+    my $tmp_event = {
+      'Length' => 0,
+      'RecordNumber' => 0,
+      'TimeGenerated' => $timestamp,
+      'Timewritten' => $timestamp,
+      'EventID' => $eid,
+      'EventType' => $etype,
+      'Category' => $ecategory,
+      'ClosingRecordNumber' => 0,
+      'Source' => $esource,
+      'Computer' => $ecomputer,
+      'Strings' => $estring,
+      'Data' => "",
+      'User' => $euser,
+    };
+    if ($tmp_event->{TimeGenerated} >= $thenminute &&
+        $tmp_event->{TimeGenerated} < $thisminute) {
+      if (! $tmp_event->{Message}) {
+        $tmp_event->{Message} = $tmp_event->{Strings};
+        $tmp_event->{Message} =~ s/\0/ /g;
+        $tmp_event->{Message} =~ s/\s*$//g;
+      }
+      $tmp_event->{Message} = 'unknown message' if ! $tmp_event->{Message};
+      $tmp_event->{Message} =~ tr/\r\n/ /d;
+
+      if ($options->{winwarncrit}) {
+        if ($tmp_event->{EventType} == EVENTLOG_WARNING_TYPE) {
+          $tmp_event->{Message} = "EE_WW_TT".$tmp_event->{Message};
+        } elsif ($tmp_event->{EventType} == EVENTLOG_ERROR_TYPE) {
+          $tmp_event->{Message} = "EE_EE_TT".$tmp_event->{Message};
+        }
+      }
+      return format_message($options->{eventlogformat}, $tmp_event);
+    } else {
+      return;
+    }
+  } else {
+    return undef;
+  }
+
+
+}   
+
+sub AUTOLOAD {
+ printf "uarghh %s\n", $AUTOLOAD;
+}
+
+sub format_message {
+  my $eventlogformat = shift;
+  my $event = shift;
+  # formatstring:
+  # %t EventType
+  # %c Category
+  # %s Source
+  # %i EventID
+  # %m Message
+  # %w Timewritten
+  # %g Timegenerated
+  # %d Date/Time
+  # %u User # not documented @ cpan
+  my $tz = '';
+  my $format = {};
+  $format->{'%t'} =
+      ($event->{EventType} == -1) ?
+          'Internal' :
+      ($event->{EventType} == EVENTLOG_WARNING_TYPE) ?
+          'Warning' :
+      ($event->{EventType} == EVENTLOG_ERROR_TYPE) ?
+          'Error' :
+      ($event->{EventType} == EVENTLOG_INFORMATION_TYPE) ?
+          'Information' :
+      ($event->{EventType} == EVENTLOG_AUDIT_SUCCESS) ?
+          'AuditSuccess' :
+      ($event->{EventType} == EVENTLOG_AUDIT_FAILURE) ?
+          'AuditFailure' :
+      ($event->{EventType} == EVENTLOG_SUCCESS) ?
+          'Success' : 'UnknType';
+  $format->{'%c'} = ! $event->{Category} ? 'None' :
+      join('_', split(" ", $event->{Category}));
+  $format->{'%s'} = join('_', split(" ", $event->{Source}));
+  $format->{'%i'} = sprintf '%04d', $event->{EventID} & 0xffff;
+  $format->{'%m'} = $event->{Message};
+  $format->{'%w'} = strftime("%Y-%m-%dT%H:%M:%S",
+      localtime($event->{Timewritten})).$tz;
+  $format->{'%g'} = strftime("%Y-%m-%dT%H:%M:%S",
+      localtime($event->{TimeGenerated})).$tz;
+  $format->{'%W'} = $event->{Timewritten};
+  $format->{'%G'} = $event->{TimeGenerated};
+  $format->{'%u'} = $event->{User} || 'undef';
+  my $message = $eventlogformat;
+  foreach (keys %{$format}) {
+    $message =~ s/$_/$format->{$_}/g;
+  }
+  $event->{Message} = $message;
+}
+
+
+1;
