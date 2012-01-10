@@ -102,9 +102,9 @@ sub collectfiles {
   my $self = shift;
   my $fh = new IO::File;
   if ($self->{logmodified}) {
-    my $command = sprintf "%s -c %s -l %s %s %s",
+    my $command = sprintf "%s -c -d %d -l %s %s %s",
         $self->{clo}->{path},
-        $self->{clo}->{days} ? '-d '.$self->{clo}->{days} : "",
+        $self->{clo}->{days} ? $self->{clo}->{days} : 1,
         $self->{clo}->{eventlog},
         $self->{clo}->{computer} ? '\\\\'.$self->{clo}->{computer} : "",
         ($^O eq "cygwin") ? '2>/dev/null |' : '2>NUL |';
