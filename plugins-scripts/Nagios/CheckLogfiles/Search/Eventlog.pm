@@ -169,7 +169,7 @@ sub collectfiles {
         $self->{tracefile};
     push(@{$self->{relevantfiles}},
       { filename => "eventlog|",
-        fh => *FH, seekable => 0,
+        fh => *FH, seekable => 0, statable => 1,
         modtime => $self->{eventlog}->{thissecond},
         fingerprint => "0:0" });
   }
@@ -219,9 +219,9 @@ use strict;
 use Exporter;
 use POSIX qw(strftime);
 require Tie::Handle;
-use Win32::EventLog;
-use Win32::TieRegistry (Delimiter => "/");
-use Win32::WinError;
+eval 'require Win32::EventLog;';
+eval 'require Win32::TieRegistry (Delimiter => "/");';
+eval 'require Win32::WinError;';
 use Carp;
 use IO::File;
 use vars qw(@ISA);

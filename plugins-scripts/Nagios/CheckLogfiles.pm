@@ -2692,7 +2692,7 @@ sub scan {
     $self->{laststate}->{logoffset} = 0;
     $self->{newstate}->{logoffset} = $logfile->{seekable} ?
         $logfile->{fh}->tell() : $logfile->{offset};
-    $self->{newstate}->{logtime} = (stat $logfile->{fh})[9];
+    $self->{newstate}->{logtime} = (stat $logfile->{fh})[9] if $logfile->{statable};
     $self->{newstate}->{devino} = $self->getfilefingerprint($logfile->{fh});
     $self->trace("stopped reading at position %u",
         $self->{newstate}->{logoffset});

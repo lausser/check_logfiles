@@ -43,7 +43,7 @@ sub collectfiles {
     $self->trace("opened command %s", $cmdline);
     push(@{$self->{relevantfiles}},
       { filename => $self->{logfile}, 
-        fh => $fh, seekable => 0,
+        fh => $fh, seekable => 0, statable => 1,
         modtime => time,
         fingerprint => "0:0" });
   } else {

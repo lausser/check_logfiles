@@ -127,7 +127,7 @@ sub collectfiles {
         $self->trace(sprintf "reopen logfile");
         push(@{$self->{relevantfiles}},
           { filename => "eventlog|",
-            fh => $fh, seekable => 0,
+            fh => $fh, seekable => 0, statable => 1,
             modtime => time, # not relevant because already analyzed
             fingerprint => "0:0" });
       }

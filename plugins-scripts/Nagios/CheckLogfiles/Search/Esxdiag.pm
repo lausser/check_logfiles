@@ -172,7 +172,7 @@ sub collectfiles {
         $self->trace(sprintf "reopen logfile");
         push(@{$self->{relevantfiles}},
           { filename => "esxdiag",
-            fh => $fh, seekable => 1,
+            fh => $fh, seekable => 1, statable => 1,
             modtime => time,
             fingerprint => "0:0" });
       }

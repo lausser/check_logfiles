@@ -119,7 +119,7 @@ sub collectfiles {
       }
       push(@{$self->{relevantfiles}},
         { filename => "eventlog|",
-          fh => $fh, seekable => 0,
+          fh => $fh, seekable => 0, statable => 1,
           modtime => $self->{eventlog}->{nowminute},
           fingerprint => "0:0" });
     } else {

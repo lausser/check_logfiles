@@ -106,7 +106,7 @@ sub collectfiles {
     if ($fh->open($errpt)) {
       push(@{$self->{relevantfiles}},
         { filename => "errpt|",
-          fh => $fh, seekable => 0,
+          fh => $fh, seekable => 0, statable => 1,
           modtime => $self->{errpt}->{endtime},
           fingerprint => "0:0" });
     } else {

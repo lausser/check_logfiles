@@ -79,7 +79,7 @@ Format der Konfigurationsdatei
 
 Die Variablendefinitionen in dieser Datei werden in Perl-Syntax geschrieben. Es wird unterschieden zwischen globalen Variablen, die den gesamten Lauf von check_logfiles betreffen und solchen Variablen, die einen sogenannten "search" betreffen, derer es mehrere geben kann. Ein "search" fasst zusammen, wo gesucht wird, wonach gesucht wird, welche Relevanz ein Treffer hat, welche Aktion ggf. bei einem Treffer ausgelöst wird, usw.
 
-[width="80%",options="header"]
+[width="80%"]
 |====================================
 |$seekfilesdir | Ein Verzeichnis, in dem Statusdateien nach einem Lauf von check_logfiles geschrieben werden. Diese Dateien enthalten Informationen darüber, bis zu welcher Zeile eine Logdatei gelesen und untersucht wurde. Beim nächsten Lauf von check_logfiles sorgen diese Informationen dafür, dass nur die neu hinzugekommenen Zeilen in der Logdatei analysiert werden. | Die Defaulteinstellung ist /tmp oder das Verzeichnis, welches bei ./configure mit with-seekfiles-dir angegeben wurde.
 |$protocolsdir | Ein Verzeichnis, in dem check_logfiles bei jedem Lauf die gefundenen Zeilen in eine Protokolldatei schreibt (sofern dieses gewünscht ist). | Die Defaulteinstellung ist /tmp oder das Verzeichnis, welches bei ./configure mit with-protocol-dir angegeben wurde.
@@ -93,6 +93,7 @@ Die Variablendefinitionen in dieser Datei werden in Perl-Syntax geschrieben. Es 
 |====================================
 
 Searches werden durch die folgenden Einstellungen genauer spezifiziert:
+[width="80%"]
 |====================================
 |tag | Ein eindeutiger Bezeichner.
 |logfile | Der Name der Logdatei, die durchsucht werden soll.
@@ -116,6 +117,7 @@ Searches werden durch die folgenden Einstellungen genauer spezifiziert:
 Optionen
 --------
 
+[width="80%"]
 |====================================
 |[no]script  | Steuert, ob der script-Befehl ausgeführt wird.  | default: aus
 |[no]smartscript  | Steuert, ob Exitcode und Ausgabe des Scripts in die Trefferliste einfliessen sollen.  | default: aus
@@ -145,7 +147,7 @@ Optionen
 Vordefinierte Macros
 --------------------
 
-[width="80%",options="header"]
+[width="80%"]
 |====================================
 |$CL_USERNAME  | Der Name des Users, der check_logfiles ausführt
 |$CL_HOSTNAME$  | Der Hostname ohne Domain
@@ -487,7 +489,7 @@ Mit diesen Einstellungen wird beim Auslesen des Events dessen Message so umgesch
 ----
 
 Der Formatstring kennt folgende Platzhalter:
-[width="80%",cols="1,9",options="header"]
+[width="80%",cols="1,9"]
 |===================
 |%t | EventType
 |%i | EventID
