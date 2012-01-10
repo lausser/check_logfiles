@@ -102,7 +102,7 @@ sub collectfiles {
   my $self = shift;
   my $fh = new IO::File;
   if ($self->{logmodified}) {
-    my $command = sprintf "%s %s -l %s %s %s",
+    my $command = sprintf "%s -c %s -l %s %s %s",
         $self->{clo}->{path},
         $self->{clo}->{days} ? '-d '.$self->{clo}->{days} : "",
         $self->{clo}->{eventlog},
