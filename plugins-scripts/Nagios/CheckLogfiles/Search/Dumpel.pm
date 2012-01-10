@@ -59,7 +59,7 @@ sub init {
   if (-f 'C:\Programme') {
     $self->set_option('language', 'de');
   }
-  $self->{clo} = {
+  $self->{eventlog} = {
   	path => $params->{dumpel}->{path} ? $params->{dumpel}->{path} : (
             -f "C:/Programme" ? "C:/Programme/Resource Kit/dumpel" :
                     "C:/Program Files/Resource Kit/dumpel" ),
@@ -163,10 +163,10 @@ sub collectfiles {
   my $fh = new IO::File;
   if ($self->{logmodified}) {
     my $command = sprintf "%s -c -d %d -l %s %s %s",
-        $self->{clo}->{path},
-        $self->{clo}->{days} ? $self->{clo}->{days} : 1,
-        $self->{clo}->{eventlog},
-        $self->{clo}->{computer} ? '\\\\'.$self->{clo}->{computer} : "",
+        $self->{eventlog}->{path},
+        $self->{eventlog}->{days} ? $self->{eventlog}->{days} : 1,
+        $self->{eventlog}->{eventlog},
+        $self->{eventlog}->{computer} ? '\\\\'.$self->{eventlog}->{computer} : "",
         ($^O eq "cygwin") ? '2>/dev/null |' : '2>NUL |';
     $self->trace("calling %s", $command);
     tie *{$fh}, 'Nagios::CheckLogfiles::Search::Dumpel::Handle',
