@@ -1537,6 +1537,11 @@ sub set_memory_limit {
     $self->trace("I won't run with at least 200MB memory");
     printf STDERR "I won't run with at least 200MB memory\n";
     exit 3;
+  } elsif ($^O eq "solaris" && ! defined(&SYS_setrlimit)) {
+      # From /usr/include/sys/syscall.h and /usr/include/sys/resource.h
+      eval 'sub SYS_setrlimit () {128;}';
+      eval 'sub SYS_getrlimit () {129;}';
+      eval 'sub RLIMIT_AS () {6;}';
   } elsif (! defined(&SYS_setrlimit)) {
     $self->trace("I dont't know how to set resource limits");
     printf STDERR "I dont't know how to set resource limits\n";
