@@ -543,6 +543,7 @@ sub formulate_long_result {
   my $line = "";
    
   foreach my $search (@{$self->{searches}}) {
+    next if $search->{tag} eq 'postscript';
     if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
         scalar(@{$search->{matchlines}->{WARNING}}) ||
         scalar(@{$search->{matchlines}->{UNKNOWN}})) {
@@ -597,6 +598,16 @@ sub formulate_long_result {
 sub reset_result {
   my $self = shift;
   $self->{allerrors} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
+  foreach my $search (@{$self->{searches}}) {
+    next if $search->{tag} eq 'postscript';
+    next if $search->{tag} eq 'prescript';
+    $search->{matchlines} = {
+        OK => [],
+        WARNING => [],
+        CRITICAL => [],
+        UNKNOWN => [],
+    }
+  }
 }
 
 sub reset {

@@ -4,6 +4,7 @@
 
 3.4.7.1 - 2012-01-16
 - fix a bug in maxmemsize and solaris
+- fix a bug where a supersmartpostscript's output was overwritten by longoutput
 
 3.4.7 - 2012-01-10
 - add new type dumpel (customer's request
