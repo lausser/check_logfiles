@@ -453,7 +453,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
     rununique => $commandline{rununique} ? $commandline{rununique} : undef,
   })) {
   $cl->{verbose} = $commandline{verbose} ? 1 : 0;
-  $cl->{timeout} = $commandline{timeout} ? $commandline{timeout} : 60;
+  $cl->{timeout} = $commandline{timeout} ? $commandline{timeout} : 360000;
   if ($commandline{install}) {
     $cl->install_windows_service($commandline{service}, $commandline{config},
         $commandline{username}, $commandline{password});

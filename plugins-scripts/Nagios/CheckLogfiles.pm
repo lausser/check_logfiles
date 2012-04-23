@@ -423,6 +423,7 @@ sub run {
           $self->reset_result();        
         }       
       }      
+      $search->{timeout} = $self->{timeout};
       $search->run();
       if (($search->{tag} eq "prescript") && 
           ($search->{options}->{supersmartscript}) &&
@@ -1282,6 +1283,17 @@ sub construct_pidfile {
   $self->{pidfilebase} =~ s/:/_/g;
   $self->{pidfilebase} =~ s/\s/_/g;
   $self->{pidfilebase} =~ s/\.cfg$//g;
+  if (scalar(keys %{$self->{cmdlinemacros}})) {
+    my $macrostring = "macros_";
+    foreach my $key (sort keys %{$self->{cmdlinemacros}}) {
+      $macrostring .= $key."=".$self->{cmdlinemacros}->{$key}."_";
+    }
+    $macrostring =~ s/\//_/g;
+    $macrostring =~ s/\\/_/g; 
+    $macrostring =~ s/:/_/g;
+    $macrostring =~ s/\s/_/g;
+    $self->{pidfilebase} .= "_".$macrostring;
+  }
   return sprintf "%s/%s.pid", $self->{seekfilesdir},
       $self->{pidfilebase};
 }
@@ -2476,6 +2488,32 @@ sub scan {
   my $self = shift;
   my $actionfailed = 0;
   my $resetted = 0;
+  $self->{timedout} = 0;
+
+  if ($self->{timeout} != 360000) {
+    # 360000 is the default, meaning there was no --timeout
+    use POSIX ':signal_h';
+    if ($^O =~ /MSWin/) {
+      local $SIG{'ALRM'} = sub {
+        $self->trace(sprintf "timeout after %d seconds in search %s",
+            $self->{timeout} - 1, $self->{tag});
+        $self->{timedout} = 1;
+        die "alarm\n";
+      };
+    } else {
+      my $mask = POSIX::SigSet->new( SIGALRM );
+      my $action = POSIX::SigAction->new(sub {
+        $self->trace(sprintf "timeout after %d seconds in search %s",
+            $self->{timeout} - 1, $self->{tag});
+        $self->{timedout} = 1;
+        die "alarm\n" ;
+      }, $mask);
+      my $oldaction = POSIX::SigAction->new();
+      sigaction(SIGALRM ,$action ,$oldaction );
+    }
+    alarm($self->{timeout} - 1); # 1 second before the global unknown timeout
+  }
+
   my $needfilter = scalar(@{$self->{preliminaryfilter}->{NEED}});
   my $skipfilter = scalar(@{$self->{preliminaryfilter}->{SKIP}});
   foreach my $logfile (@{$self->{relevantfiles}}) {
@@ -2523,7 +2561,13 @@ sub scan {
       }
       $self->trace("fake seek positioned at offset %u", $logfile->{offset});
     }
+
     while (my $line = $logfile->{fh}->getline()) {
+      if ($self->{timedout}) {
+        $self->trace(sprintf "leaving the scan loop after %d lines",
+            $self->{linesread});
+        last;
+      }
       my $filteredout = 0;
       $self->{linesread}++;
       if (! $logfile->{seekable}) { $logfile->{offset} += length($line) }

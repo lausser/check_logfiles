@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.5 - 2012-04-23
+- --timeout aborts searches in a controlled manner
+
 3.4.7.1 - 2012-01-16
 - fix a bug in maxmemsize and solaris
 - fix a bug where a supersmartpostscript's output was overwritten by longoutput
