@@ -71,9 +71,7 @@ This plugin looks for patterns in logfiles, even in those who were rotated
 since the last run of this plugin.
 
 You can find the complete documentation at 
-http://www.consol.com/opensource/nagios/check-logfiles
-or
-http://www.consol.de/opensource/nagios/check-logfiles
+http://labs.consol.de/nagios/check_logfiles/
 
 Usage: check_logfiles [-t timeout] -f <configfile>
 
