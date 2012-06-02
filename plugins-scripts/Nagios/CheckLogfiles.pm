@@ -3597,13 +3597,27 @@ sub new {
   my $self = bless {}, shift;
   return $self->init(shift);
 }
-    
+
+sub init {
+  my $self = shift;
+  my $params = shift;
+  $self->default_options({ savestate => 0, });
+  $self->SUPER::init($params);
+}
+
 sub loadstate {
   my $self = shift;
+  if ($self->get_option('savestate')) {
+    $self->SUPER::loadstate();
+  }
   $self->{laststate}->{logoffset} = 0;
 }
 
 sub savestate {
+  my $self = shift;
+  if ($self->get_option('savestate')) {
+    $self->SUPER::savestate();
+  }
 }
 
 sub analyze_situation {

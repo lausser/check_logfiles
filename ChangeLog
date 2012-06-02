@@ -2,8 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
-3.5.1 -
+3.5.1 - 2012-06-02
 - add parameters --warning and --critical (they become CL_WARNING/CL_CRITICAL)
+- add option "savestate" for type "virtual"
 
 3.5 - 2012-04-23
 - --timeout aborts searches in a controlled manner
