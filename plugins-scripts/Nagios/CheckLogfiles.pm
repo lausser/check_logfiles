@@ -58,7 +58,7 @@ sub init {
   $self->{scriptpath} = $params->{scriptpath} || '#TRUSTED_PATH#';
   $self->{protocolretention} = ($params->{protocolretention} || 7) * 24 * 3600;
   $self->{macros} = $params->{macros};
-  $self->{timeout} = $params->{timeout};
+  $self->{timeout} = $params->{timeout} || 360000;
   $self->{pidfile} = $params->{pidfile};
   $self->{perfdata} = "";
   $self->{searches} = [];
@@ -310,7 +310,7 @@ sub init_from_file {
   $self->{postscriptstdin} = $postscriptstdin if $postscriptstdin;
   $self->{postscriptdelay} = $postscriptdelay if $postscriptdelay;
   $self->{macros} = $MACROS if $MACROS;
-  $self->{timeout} = $timeout if $timeout;
+  $self->{timeout} = $timeout || 360000;
   $self->{pidfile} = $pidfile if $pidfile;
   $self->{privatestate} = {};
   $self->init_macros;
