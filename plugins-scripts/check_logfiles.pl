@@ -171,6 +171,11 @@ my @params = (
     "macro=s%",
     "seekfileerror=s",
     #
+    # thresholds
+    #
+    "warning=s",
+    "critical=s",
+    #
     # search
     #
     "template=s",
@@ -449,6 +454,8 @@ if (my $cl = Nagios::CheckLogfiles->new({
     reset => $commandline{reset} ? $commandline{reset} : undef,
     unstick => $commandline{unstick} ? $commandline{unstick} : undef,
     rununique => $commandline{rununique} ? $commandline{rununique} : undef,
+    warning => $commandline{warning} ? $commandline{warning} : undef,
+    critical => $commandline{critical} ? $commandline{critical} : undef,
   })) {
   $cl->{verbose} = $commandline{verbose} ? 1 : 0;
   $cl->{timeout} = $commandline{timeout} ? $commandline{timeout} : 360000;

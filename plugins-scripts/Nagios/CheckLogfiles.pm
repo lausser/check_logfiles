@@ -68,6 +68,8 @@ sub init {
   $self->{reset} = $params->{reset} || 0;
   $self->{unstick} = $params->{unstick} || 0;
   $self->{rununique} = $params->{rununique} || 0;
+  $self->{warning} = $params->{warning} || 0;
+  $self->{critical} = $params->{critical} || 0;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
@@ -665,6 +667,8 @@ sub init_macros {
       CL_NSCA_PORT => 5667,
       CL_NSCA_TO_SEC => 10,
       CL_NSCA_CONFIG_FILE => "/usr/local/nagios/etc/send_nsca.cfg",
+      CL_WARNING => $self->{warning},
+      CL_CRITICAL => $self->{critical},
   };
   if (defined(&Win32::LoginName)) {
     $DEFAULTMACROS->{CL_USERNAME} = &Win32::LoginName();

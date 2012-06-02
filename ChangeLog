@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.5.1 -
+- add parameters --warning and --critical (they become CL_WARNING/CL_CRITICAL)
+
 3.5 - 2012-04-23
 - --timeout aborts searches in a controlled manner
 
