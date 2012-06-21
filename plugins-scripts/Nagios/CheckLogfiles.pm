@@ -1892,7 +1892,7 @@ sub init {
             if (ref($filepatterns->{$level.'patterns'}) eq 'HASH') {
               map {
                 my $value = $filepatterns->{$level.'patterns'}->{$_};
-                $self->{patternkeys}->{$level}->{$value} = $_;
+                $self->{patternkeys}->{uc $level}->{$value} = $_;
               } keys %{$filepatterns->{$level.'patterns'}};
               my $tmphash = $filepatterns->{$level.'patterns'};
               $filepatterns->{$level.'patterns'} = [];
@@ -1907,7 +1907,7 @@ sub init {
             if (ref($filepatterns->{$level.'exceptions'}) eq 'HASH') {
               map {
                 my $value = $filepatterns->{$level.'exceptions'}->{$_};
-                $self->{patternkeys}->{$level}->{$value} = $_;
+                $self->{patternkeys}->{uc $level}->{$value} = $_;
               } keys %{$filepatterns->{$level.'exceptions'}};
               my $tmphash = $filepatterns->{$level.'exceptions'};
               $filepatterns->{$level.'exceptions'} = [];

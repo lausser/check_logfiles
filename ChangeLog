@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.5.2 - 2012-06-21
+- fix a bug in CL_PATTERN_KEY (Thanks Frank Rothaupt)
+
 3.5.1 - 2012-06-02
 - add parameters --warning and --critical (they become CL_WARNING/CL_CRITICAL)
 - add option "savestate" for type "virtual"
