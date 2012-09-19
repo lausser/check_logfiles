@@ -1179,6 +1179,83 @@ sub getfilefingerprint {
       # google for "tunneling"
       return sprintf "0:%d", (stat $file)[10];
       #return "0:0";
+    } elsif ($^O eq "linux") {
+      open(MTAB, "/etc/mtab");
+      my @mtab = <MTAB>;
+      close MTAB;
+      my @mountpoints = sort {
+        $b->[1] <=> $a->[1]
+      } grep {
+        substr($file, 0, $_->[1]) eq $_->[0];
+      } map {
+        my ($dev, $mountpoint, $fstype, $rest) = split(/\s+/, $_);
+        #  printf "line: %s,%s,%s\n", $dev, $mountpoint, $fstype;
+        [$mountpoint, length($mountpoint), $fstype];
+      } @mtab;
+      if (grep {substr($_->[2], 0, 3) eq "nfs"} @mtab) {
+        # we have nfs mounts
+        if (-l $file) {
+          # Maybe the logfile is a symlink pointing to a file residing
+          # in an nfs-mounted directory. we need to resolve the link.
+          # The following find-routine was copied from
+          # http://www.stonehenge.com/merlyn/UnixReview/col27.html
+          # The author was Randal L. Schwartz, a renowned expert
+          # on the Perl programming language. Thanks Randal!
+          my $dir = cwd;
+          find(sub {
+            my @right = split /\//, $File::Find::name;
+            my @left = do {
+              @right && ($right[0] eq "") ?
+                shift @right :            # quick way
+                  split /\//, $dir;
+            };    # first element always null
+            while (@right) {
+              my $item = shift @right;
+              next if $item eq "." or $item eq "";
+              if ($item eq "..") {
+                pop @left if @left > 1;
+                next;
+              }
+              my $link = readlink (join "/", @left, $item);
+              if (defined $link) {
+                my @parts = split /\//, $link;
+                if (@parts && ($parts[0] eq "")) { # absolute
+                  @left = shift @parts;   # quick way
+                }
+                unshift @right, @parts;
+                next;
+              } else {
+                push @left, $item;
+                next;
+              }
+            }
+            $self->trace("%s is a symlink pointing to %s",
+                $file, join("/", @left));
+            $file = join("/", @left);
+          }, ($file));
+        }
+        my @mountpoints = sort {
+            $b->[1] <=> $a->[1]
+        } grep {
+            substr($file, 0, $_->[1]) eq $_->[0];
+        } map {
+            my ($dev, $mountpoint, $fstype, $rest) = split(/\s+/, $_);
+            #  printf "line: %s,%s,%s\n", $dev, $mountpoint, $fstype;
+            [$mountpoint, length($mountpoint), $fstype];
+        } @mtab;
+        if (substr($mountpoints[0][2], 0, 3) eq "nfs") {
+          # At least under RedHat 5 we saw a strange phenomenon:
+          # The device number of an nfs-mounted volume changed from time 
+          # to time, and so did the logfile fingerprint.
+          # That's the reason, why we only use the inode for rotation detection
+          # in such an environment.
+          return sprintf "%d", (stat $file)[1];
+        } else {
+          return sprintf "%d:%d", (stat $file)[0], (stat $file)[1];
+        }
+      } else {
+        return sprintf "%d:%d", (stat $file)[0], (stat $file)[1];
+      }
     } else {
       return sprintf "%d:%d", (stat $file)[0], (stat $file)[1];
     }
