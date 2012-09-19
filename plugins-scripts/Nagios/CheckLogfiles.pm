@@ -4,6 +4,7 @@ use strict;
 use IO::File;
 use File::Basename;
 use File::Spec;
+use File::Find;
 use Cwd;
 use Data::Dumper;
 #use Net::Domain qw(hostname hostdomain hostfqdn);
@@ -1183,16 +1184,13 @@ sub getfilefingerprint {
       open(MTAB, "/etc/mtab");
       my @mtab = <MTAB>;
       close MTAB;
-      my @mountpoints = sort {
-        $b->[1] <=> $a->[1]
-      } grep {
-        substr($file, 0, $_->[1]) eq $_->[0];
+      my @nfsmounts = grep {
+        substr($_->[2], 0, 3) eq "nfs"
       } map {
         my ($dev, $mountpoint, $fstype, $rest) = split(/\s+/, $_);
-        #  printf "line: %s,%s,%s\n", $dev, $mountpoint, $fstype;
         [$mountpoint, length($mountpoint), $fstype];
       } @mtab;
-      if (grep {substr($_->[2], 0, 3) eq "nfs"} @mtab) {
+      if (@nfsmounts) {
         # we have nfs mounts
         if (-l $file) {
           # Maybe the logfile is a symlink pointing to a file residing
@@ -1234,13 +1232,15 @@ sub getfilefingerprint {
             $file = join("/", @left);
           }, ($file));
         }
+        $file = File::Spec->rel2abs($file)
+            unless File::Spec->file_name_is_absolute($file);
         my @mountpoints = sort {
             $b->[1] <=> $a->[1]
         } grep {
             substr($file, 0, $_->[1]) eq $_->[0];
         } map {
             my ($dev, $mountpoint, $fstype, $rest) = split(/\s+/, $_);
-            #  printf "line: %s,%s,%s\n", $dev, $mountpoint, $fstype;
+            # printf STDERR "line: %s,%s,%s\n", $dev, $mountpoint, $fstype;
             [$mountpoint, length($mountpoint), $fstype];
         } @mtab;
         if (substr($mountpoints[0][2], 0, 3) eq "nfs") {
@@ -2834,7 +2834,8 @@ sub scan {
     $self->{newstate}->{logoffset} = $logfile->{seekable} ?
         $logfile->{fh}->tell() : $logfile->{offset};
     $self->{newstate}->{logtime} = (stat $logfile->{fh})[9] if $logfile->{statable};
-    $self->{newstate}->{devino} = $self->getfilefingerprint($logfile->{fh});
+    #$self->{newstate}->{devino} = $self->getfilefingerprint($logfile->{fh});
+    $self->{newstate}->{devino} = $self->getfilefingerprint($logfile->{filename});
     $self->trace("stopped reading at position %u",
         $self->{newstate}->{logoffset});
   }
