@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.5.2.1 - 2012-09-19
+- fix a bug related to nfs-mounted logfiles under linux
+
 3.5.2 - 2012-06-21
 - fix a bug in CL_PATTERN_KEY (Thanks Frank Rothaupt)
 
