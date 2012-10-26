@@ -212,6 +212,7 @@ my @params = (
     "logfileerror=s",
     "rotatewait",
     "rununique",
+    "htmlencode",
 );
 if (! GetOptions(\%commandline, @params)) {
   print_help();
@@ -431,6 +432,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
             $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,
             defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef,
             $commandline{preferredlevel} ? "preferredlevel=".$commandline{preferredlevel} : undef,
+            $commandline{htmlencode} ? "htmlencode" : undef,
         ),
         archivedir =>
             $commandline{archivedir} ?

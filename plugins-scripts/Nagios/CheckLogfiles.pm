@@ -1845,7 +1845,7 @@ sub init {
       lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
       preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
-      report => 'short',
+      report => 'short', htmlencode => 0,
       seekfileerror => 'critical', logfileerror => 'critical', 
       archivedirregexp => 0,
   });
@@ -2529,6 +2529,9 @@ sub addevent {
   if (! defined $errormessage || $errormessage eq '') {
     $errormessage = '_(null)_';
   }
+  if ($self->get_option('htmlencode')) {
+    $self->htmlencode(\$errormessage);
+  }
   if ($self->{options}->{maxlength}) {
     $errormessage = substr $errormessage, 0, $self->{options}->{maxlength};
   }
@@ -2553,12 +2556,25 @@ sub addfirstevent {
   my $self = shift;
   my $level = shift;
   my $errormessage = shift;
+  if ($self->get_option('htmlencode')) {
+    $self->htmlencode(\$errormessage);
+  }
   if ($level =~ /^\d/) {
     $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
   }
   unshift(@{$self->{matchlines}->{$level}}, $errormessage);
   $self->{lastmsg}->{$level} = 
       ${$self->{matchlines}->{$level}}[$#{$self->{matchlines}->{$level}}];
+}
+
+sub htmlencode {
+  my $self = shift;
+  my $pstring = shift;
+  $$pstring =~ s/&/&#38;/g;
+  $$pstring =~ s/</&#60;/g;
+  $$pstring =~ s/>/&#62;/g;
+  $$pstring =~ s/"/&#34;/g;
+  $$pstring =~ s/'/&#39;/g;
 }
 
 #

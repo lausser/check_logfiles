@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.5.3 - 2012-10-26
+- add option htmlencode (Thanks Sven Nierlein)
+
 3.5.2.1 - 2012-09-19
 - fix a bug related to nfs-mounted logfiles under linux
 
