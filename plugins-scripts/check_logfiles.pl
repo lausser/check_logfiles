@@ -128,6 +128,15 @@ Usage: check_logfiles [-t timeout] -f <configfile> [--searches=tag1,tag2,...]
 EOTXT
 }
 
+sub htmlencode {
+  my $self = shift;
+  my $pstring = shift;
+  $$pstring =~ s/&/&amp/g;
+  $$pstring =~ s/</&lt/g;
+  $$pstring =~ s/>/&gt/g;
+  $$pstring =~ s/"/&quot/g;
+}
+
 %commandline = ();
 my @params = (
     "timeout|t=i",
@@ -471,9 +480,15 @@ if (my $cl = Nagios::CheckLogfiles->new({
   } else {
     $cl->run();
   }
-  printf "%s%s\n%s", $cl->{exitmessage},
+  my $exitmessage      = $cl->{exitmessage};
+  my $long_exitmessage = $cl->{long_exitmessage} ? $cl->{long_exitmessage}."\n" : "";
+  if ($commandline{htmlencode}) {
+    htmlencode(\$exitmessage);
+    htmlencode(\$long_exitmessage);
+  }
+  printf "%s%s\n%s", $exitmessage,
       $cl->{perfdata} ? "|".$cl->{perfdata} : "",
-      $cl->{long_exitmessage} ? $cl->{long_exitmessage}."\n" : "";
+      $long_exitmessage;
   exit $cl->{exitcode};
 } else {
   printf "%s\n", $Nagios::CheckLogfiles::ExitMsg;
