@@ -4,6 +4,7 @@
 
 3.5.3.1 - 2012-11-29
 - --verbose finally works on the commandline
+- htmlencode can also be an option inside a config file
 
 3.5.3 - 2012-10-26
 - add option htmlencode (Thanks Sven Nierlein)

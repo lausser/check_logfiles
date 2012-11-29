@@ -12,57 +12,92 @@ use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
+my $configfile = <<EOCFG;
+\$seekfilesdir = "./var/tmp";
+\@searches = ({
+      tag => "html",
+      logfile => "./var/adm/messages",
+      criticalpatterns => ["head.*body"],
+});
+EOCFG
+
+open CCC, ">./etc/check_html.cfg";
+print CCC $configfile;
+close CCC;
 
 my $cl = Nagios::CheckLogfiles::Test->new({
-	seekfilesdir => TESTDIR."/var/tmp",
-	searches => [
-	    {
-	      tag => "html",
-	      logfile => TESTDIR."/var/adm/messages",
-	      criticalpatterns => ["head.*body"],
-	    }
-	]    });
+        seekfilesdir => "./var/tmp",
+        searches => [
+            {
+              tag => "html",
+              logfile => "./var/adm/messages",
+              criticalpatterns => ["head.*body"],
+            }
+        ]    });
 my $html = $cl->get_search_by_tag("html");
-$html->delete_logfile();
-$html->delete_seekfile();
-$html->trace("deleted logfile and seekfile");
 
-# 1 logfile will be created. there is no seekfile. position at the end of file
-# and remember this as starting point for the next run.
-$html->trace(sprintf "+----------------------- test %d ------------------", 1);
-sleep 2;
-$html->loggercrap(undef, undef, 100);
-sleep 1;
-$html->trace("initial run");
-$cl->run();
-diag($cl->has_result());
-diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 0, 0, 0));
+
+my $perlpath = `which perl`;
+chomp $perlpath;
+if ($^O =~ /MSWin/) {
+ if (-f 'C:\strawberry\perl\bin\perl.exe') {
+  $perlpath = 'C:\strawberry\perl\bin\perl';
+ } else {
+  $perlpath = 'C:\Perl\bin\perl';
+ }
+  $html->{logfile} =~ s/\//\\/g;
+}
+
+$cl->delete_file("./var/adm/messages");
+$cl->delete_file("./var/tmp/check_html.._var_adm_messages.html");
+$html->trace("deleted logfile and seekfile");
+$html->logger(undef, undef, 1, "<head title=\"bled\">A&B</head><body title='bb'>");
+my $command = sprintf $perlpath.' ../plugins-scripts/check_logfiles --config=etc/check_html.cfg ';
+my $output = `$command`;
+diag($output);
+ok(($output =~ /OK - no errors or warnings/) && (($? >> 8) == 0));
 
 # 1 critical
 $html->trace(sprintf "+----------------------- test %d ------------------", 2);
-$cl->reset();
 $html->logger(undef, undef, 1, "<head title=\"bled\">A&B</head><body title='bb'>");
 sleep 1;
-$cl->run();
-diag($cl->has_result());
-diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2));
-
-# set the new preferredlevel option
-$html->set_option('htmlencode', 1);
-#
-# 3 now find the two criticals 
-# do not match the warningpatterns, prefer critical
-$html->trace(sprintf "+----------------------- test %d ------------------", 3);
-$cl->reset();
+$output = `$command`;
+diag($output);
+ok(($output =~ /<head title="bled">A&B<\/head><body title='bb'>/) && (($? >> 8) == 2));
+sleep 1;
+printf STDERR "now i add --htmlencode\n";
+diag($command." --htmlencode");
+$html->trace(sprintf "+----------------------- test %d ------------------", 2);
 $html->logger(undef, undef, 1, "<head title=\"bled\">A&B</head><body title='bb'>");
 sleep 1;
-$cl->run();
-diag($cl->has_result());
-diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2));
-ok($cl->{exitmessage} =~ /&#60;head title=&#34;bled&#34;&#62;A&#38;B&#60;\/head&#62;&#60;body title=&#39;bb&#39;&#62;/);
-                          #&#60;head title=&#34;bled&#34;&#62;A&#38;B&#60;/head&#62;&#60;body title=&#39;bb&#39;&#62;'
 
-printf "%s\n", Data::Dumper::Dumper($html->{matchlines});
+### zuletzt und command neu aufbauen ohne cfgfile nur options
+$output = `$command --htmlencode`;
+diag($output);
+ok(($output =~ /<head title="bled">A&B<\/head><body title='bb'>/) && (($? >> 8) == 2));
+
+
+printf STDERR "now i add options/htmlencode\n";
+$configfile = <<EOCFG;
+\$seekfilesdir = "./var/tmp";
+\@searches = ({
+      tag => "html",
+      logfile => "./var/adm/messages",
+      criticalpatterns => ["head.*body"],
+});
+\$options = "htmlencode";
+EOCFG
+
+open CCC, ">./etc/check_html.cfg";
+print CCC $configfile;
+close CCC;
+
+# 1 critical
+$html->trace(sprintf "+----------------------- test %d ------------------", 2);
+$html->logger(undef, undef, 1, "<head title=\"bled\">A&B</head><body title='bb'>");
+sleep 1;
+diag($command);
+$output = `$command`;
+diag($output);
+ok(($output =~ /&lthead title=&quotbled&quot&gtA&ampB&lt\/head&gt&ltbody title='bb'&gt/) && (($? >> 8) == 2));
+

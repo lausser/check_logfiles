@@ -55,6 +55,7 @@ sub init {
   $self->{tracefile} = $self->system_tempdir().'/check_logfiles.trace';
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
   $self->{verbose} = $params->{verbose} || 0;
+  $self->{htmlencode} = $params->{htmlencode} || 0;
   $self->{seekfilesdir} = $params->{seekfilesdir} || '#SEEKFILES_DIR#';
   $self->{protocolsdir} = $params->{protocolsdir} || '#PROTOCOLS_DIR#';
   $self->{scriptpath} = $params->{scriptpath} || '#TRUSTED_PATH#';
@@ -76,7 +77,7 @@ sub init {
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
       seekfileerror => 'critical', logfileerror => 'critical', 
-      maxmemsize => 0, rotatewait => 0,
+      maxmemsize => 0, rotatewait => 0, htmlencode => 0,
   });
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
@@ -486,8 +487,23 @@ sub run {
     }
   }
   $self->cleanup_protocols();
+  if ($self->get_option("htmlencode")) {
+    $self->htmlencode(\$self->{exitmessage});
+    $self->htmlencode(\$self->{long_exitmessage});
+  }
   return $self;
 }
+
+sub htmlencode {
+  my $self = shift;
+  my $pstring = shift;
+  return if ! $$pstring;
+  $$pstring =~ s/&/&amp/g;
+  $$pstring =~ s/</&lt/g;
+  $$pstring =~ s/>/&gt/g;
+  $$pstring =~ s/"/&quot/g;
+}
+
 
 sub await_while_rotate {
   my $self = shift;
@@ -1847,7 +1863,7 @@ sub init {
       lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
       preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
-      report => 'short', htmlencode => 0,
+      report => 'short',
       seekfileerror => 'critical', logfileerror => 'critical', 
       archivedirregexp => 0,
   });
