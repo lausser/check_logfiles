@@ -54,6 +54,7 @@ sub init {
   $year += 1900; $mon += 1;
   $self->{tracefile} = $self->system_tempdir().'/check_logfiles.trace';
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
+  $self->{verbose} = $params->{verbose} || 0;
   $self->{seekfilesdir} = $params->{seekfilesdir} || '#SEEKFILES_DIR#';
   $self->{protocolsdir} = $params->{protocolsdir} || '#PROTOCOLS_DIR#';
   $self->{scriptpath} = $params->{scriptpath} || '#TRUSTED_PATH#';
@@ -426,6 +427,7 @@ sub run {
           $self->reset_result();        
         }       
       }      
+      $search->{verbose} = $self->{verbose};
       $search->{timeout} = $self->{timeout};
       $search->run();
       if (($search->{tag} eq "prescript") && 
@@ -923,7 +925,7 @@ sub trace {
   push(@{$self->{tracebuffer}}, @_);
   if ($self->{verbose}) {
     printf("%s: ", scalar localtime);
-    printf($format, @_);
+    printf($format."\n", @_);
   }
   if ($self->{trace}) {
     my $logfh = new IO::File;
@@ -3311,7 +3313,6 @@ sub collectfiles {
     $self->trace("looking for rotated files in %s with pattern %s",
         $self->{archivedir}, $self->{filenamepattern});
 
-
     if ($self->get_option('archivedirregexp')) {
       my $volume = undef;
       my @catdirs = ();
@@ -3332,7 +3333,6 @@ sub collectfiles {
       } grep /^$self->{filenamepattern}/, readdir(DIR);
       closedir(DIR);
     }
-
 
     #opendir(DIR, $self->{archivedir});
     #@rotatedfiles = map { 
