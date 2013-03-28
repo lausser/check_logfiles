@@ -2327,7 +2327,9 @@ sub loadstate {
       $self->{laststate} = {
           logoffset => ($self->{options}->{allyoucaneat} ?
               0 : $self->getfilesize($self->{logfile})),
-          logtime => (stat $self->{logfile})[10],
+          #logtime => (stat $self->{logfile})[10] - ($self->{options}->{allyoucaneat} ? 1 : 0), # force a check
+          #logtime => (stat $self->{logfile})[10],
+          logtime => 0,
           devino => $self->getfilefingerprint($self->{logfile}),
           logfile => $self->{logfile},
           servicestateid => 0,
@@ -3058,27 +3060,7 @@ sub analyze_situation {
     #  rotated/recreated and grown very fast.
     $self->trace(sprintf "the logfile grew to %d",
         $self->getfilesize($self->{logfile}));
-    if ($self->{likeavirgin}) {
-      # if the logfile grew because we initialized the plugin with an offset of 0, position
-      # at the end of the file and skip this search. otherwise lots of outdated messages could
-      # match and raise alerts.
-      if ($self->{options}->{allyoucaneat}) {
-        $self->trace("allyoucaneat the virgin");
-        $self->{laststate}->{logoffset} = 0;
-        $self->{logmodified} = 1; # normally, virgins are not scanned. force it.
-      } else {
-        $self->{laststate}->{logoffset} = $self->getfilesize($self->{logfile});
-      }
-    } else {
-      $self->{logmodified} = 1;
-      # this is only relevant if
-      # 1.a new logfile is created using the same inode as the deleted logfile
-      # 2.the new logfile grew beyond the size of the last logfile before check_logfile ran
-      #if ($self->{firstline} ne $self->{laststate}->{firstline}) {
-      #  $self->trace(sprintf "a new logfile grew beyond the end of the last logfile");
-      #  $self->{laststate}->{logoffset} = 0;
-      #}
-    }
+    $self->{logmodified} = 1;
   } elsif ($self->getfilesize($self->{logfile}) == 0) {
     #
     #  the logfile was either truncated or deleted and touched.
@@ -3280,6 +3262,9 @@ sub analyze_situation {
       #       and is more than previous:
       #       - Modified = true
       #       - Rotated = true (we can't actually tell, so need to play safe)
+    } elsif ($self->{likeavirgin}) {
+      $self->trace(sprintf "likevirgin, either eat it all or position at the end");
+      $self->{logmodified} = 1;
     } elsif ($filetime == $lastfiletime) {
       $self->trace(sprintf "Log file has the same modified time: %s ",
           scalar localtime($filetime));
