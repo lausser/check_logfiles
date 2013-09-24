@@ -1032,7 +1032,7 @@ sub action {
   } else {
     my $pathsep = ($^O =~ /MSWin/) ? ';' : ':';
     foreach my $dir (split(/$pathsep/, $self->{scriptpath})) {
-      if ( -x $dir.'/'.$script ) {
+      if ( -x $dir.'/'.$script || ( -f $dir.'/'.$script && $script =~ /\.exe$/i )) {
         $self->trace(sprintf "found script in %s/%s", $dir, $script);
         $cmd = sprintf "%s/%s", $dir, $script;
         if ($^O =~ /MSWin/) {
