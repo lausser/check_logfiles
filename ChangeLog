@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.5.3.3 - 2013-09-24
+- exe files without x-bit can now run in a cygwin environment (Thanks Michael Glaser)
+
 3.5.3.2 - 2013-03-28
 - fixed a bug in allyoucaneat (if used with rotations)
 
