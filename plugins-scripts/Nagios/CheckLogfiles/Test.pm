@@ -29,7 +29,7 @@ sub new {
 sub reset {
   my $self = shift;
   $self->{allerrors} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
-  foreach my $level qw(OK CRITICAL WARNING UNKNOWN) {
+  foreach my $level (qw(OK CRITICAL WARNING UNKNOWN)) {
     $self->{lastmsg}->{$level} = "";
   }  
   foreach my $search (@{$self->{searches}}) {	
@@ -151,7 +151,7 @@ sub reset {
   $self->{thresholdcnt} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
   #$self->{preliminaryfilter} = { SKIP => [], NEED => [] };
   $self->{perfdata} = "";
-  foreach my $level qw(CRITICAL WARNING UNKNOWN) {
+  foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
     foreach my $pat (@{$self->{negpatterns}->{$level}}) {
       push(@{$self->{negpatterncnt}->{$level}}, 0);
     }
