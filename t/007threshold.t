@@ -16,25 +16,24 @@ use constant TESTDIR => ".";
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
-	seekfilesdir => TESTDIR."/var/tmp",
-	searches => [
-	    {
-	      tag => "nmap",
-	      logfile => TESTDIR."/var/adm/messages",
-	      criticalpatterns => [ 
-              'connection refused', 
-              'connection on port\s+\d+',
-              'session aborted'
-          ], 
-          criticalexceptions => 'connection on port\s+80[^\d]*',
-          criticalthreshold => 10,
-          warningpatterns => [ 
-              '.*total size is 0 .*', 
-              'connection on port\s+80[^\d]*', 
-          ],
-          warningthreshold => 3
-	    }
-	]    });
+  seekfilesdir => TESTDIR."/var/tmp",
+  searches => [{
+    tag => "nmap",
+    logfile => TESTDIR."/var/adm/messages",
+    criticalpatterns => [ 
+        'connection refused', 
+        'connection on port\s+\d+',
+        'session aborted'
+    ], 
+    criticalexceptions => 'connection on port\s+80[^\d]*',
+    criticalthreshold => 10,
+    warningpatterns => [ 
+        '.*total size is 0 .*', 
+        'connection on port\s+80[^\d]*', 
+    ],
+    warningthreshold => 3
+  }]
+});
 my $nmap = $cl->get_search_by_tag("nmap");
 $cl->reset();
 $nmap->delete_logfile();
@@ -118,26 +117,25 @@ $cl = undef;
 $nmap = undef;
 
 $cl = Nagios::CheckLogfiles::Test->new({
-	seekfilesdir => TESTDIR."/var/tmp",
-	searches => [
-	    {
-	      tag => "nmap",
-	      logfile => TESTDIR."/var/adm/messages",
-	      criticalpatterns => [ 
-              'connection refused', 
-              'connection on port\s+\d+',
-              'session aborted'
-          ], 
-          criticalexceptions => 'connection on port\s+80[^\d]*',
-          criticalthreshold => 10,
-          warningpatterns => [ 
-              '.*total size is 0 .*', 
-              'connection on port\s+80[^\d]*', 
-          ],
-          warningthreshold => 3,
-          options => "nosavethresholdcount",
-	    }
-	]    });
+  seekfilesdir => TESTDIR."/var/tmp",
+  searches => [{
+    tag => "nmap",
+    logfile => TESTDIR."/var/adm/messages",
+    criticalpatterns => [ 
+        'connection refused', 
+        'connection on port\s+\d+',
+        'session aborted'
+    ], 
+    criticalexceptions => 'connection on port\s+80[^\d]*',
+    criticalthreshold => 10,
+    warningpatterns => [ 
+        '.*total size is 0 .*', 
+        'connection on port\s+80[^\d]*', 
+    ],
+    warningthreshold => 3,
+    options => "nosavethresholdcount",
+  }]
+});
 $nmap = $cl->get_search_by_tag("nmap");
 $cl->reset();
 $nmap->delete_logfile();
@@ -230,24 +228,26 @@ ok($nmap->{thresholdcnt}->{CRITICAL} == 5);
 ####################################################################
 # now the same but with the new method
 # options => 'criticalthreshold=x,warningthreshold=y
-
 $cl = Nagios::CheckLogfiles::Test->new({
-	seekfilesdir => TESTDIR."/var/tmp",
-	searches => [ {
-	      tag => "nmap",
-	      logfile => TESTDIR."/var/adm/messages",
-	      criticalpatterns => [ 
-              'connection refused', 
-              'connection on port\s+\d+',
-              'session aborted'
-          ], 
-          criticalexceptions => 'connection on port\s+80[^\d]*',
-          warningpatterns => [ 
-              '.*total size is 0 .*', 
-              'connection on port\s+80[^\d]*', 
-          ],
-          options => 'criticalthreshold=10,warningthreshold=3',
-    } ]    });
+  seekfilesdir => TESTDIR."/var/tmp",
+  searches => [{
+    tag => "nmap",
+    logfile => TESTDIR."/var/adm/messages",
+    criticalpatterns => [ 
+        'connection refused', 
+        'connection on port\s+\d+',
+        'session aborted'
+    ], 
+    criticalexceptions => 'connection on port\s+80[^\d]*',
+    criticalthreshold => 10,
+    warningpatterns => [ 
+        '.*total size is 0 .*', 
+        'connection on port\s+80[^\d]*', 
+    ],
+    warningthreshold => 3,
+    options => 'criticalthreshold=10,warningthreshold=3',
+  }]
+});
 $nmap = $cl->get_search_by_tag("nmap");
 $cl->reset();
 $nmap->delete_logfile();
@@ -331,24 +331,25 @@ $cl = undef;
 $nmap = undef;
 
 $cl = Nagios::CheckLogfiles::Test->new({
-	seekfilesdir => TESTDIR."/var/tmp",
-	searches => [
-	    {
-	      tag => "nmap",
-	      logfile => TESTDIR."/var/adm/messages",
-	      criticalpatterns => [ 
-              'connection refused', 
-              'connection on port\s+\d+',
-              'session aborted'
-          ], 
-          criticalexceptions => 'connection on port\s+80[^\d]*',
-          warningpatterns => [ 
-              '.*total size is 0 .*', 
-              'connection on port\s+80[^\d]*', 
-          ],
-          options => 'criticalthreshold=10,warningthreshold=3,nosavethresholdcount',
-	    }
-	]    });
+  seekfilesdir => TESTDIR."/var/tmp",
+  searches => [{
+    tag => "nmap",
+    logfile => TESTDIR."/var/adm/messages",
+    criticalpatterns => [ 
+        'connection refused', 
+        'connection on port\s+\d+',
+        'session aborted'
+    ], 
+    criticalexceptions => 'connection on port\s+80[^\d]*',
+    criticalthreshold => 10,
+    warningpatterns => [ 
+        '.*total size is 0 .*', 
+        'connection on port\s+80[^\d]*', 
+    ],
+    warningthreshold => 3,
+    options => 'criticalthreshold=10,warningthreshold=3,nosavethresholdcount',
+  }]
+});
 $nmap = $cl->get_search_by_tag("nmap");
 $cl->reset();
 $nmap->delete_logfile();
@@ -443,24 +444,25 @@ ok($nmap->{thresholdcnt}->{CRITICAL} == 5);
 
 
 $cl = Nagios::CheckLogfiles::Test->new({
-        seekfilesdir => TESTDIR."/var/tmp",
-        searches => [
-            {
-              tag => "nmap",
-              logfile => TESTDIR."/var/adm/messages",
-              criticalpatterns => [
-              'connection refused',
-              'connection on port\s+\d+',
-              'session aborted'
-          ],
-          criticalexceptions => 'connection on port\s+80[^\d]*',
-          warningpatterns => [
-              '.*total size is 0 .*',
-              'connection on port\s+80[^\d]*',
-          ],
-          options => 'criticalthreshold=10,warningthreshold=3,nosavethresholdcount',
-            }
-        ]    });
+  seekfilesdir => TESTDIR."/var/tmp",
+  searches => [{
+    tag => "nmap",
+    logfile => TESTDIR."/var/adm/messages",
+    criticalpatterns => [ 
+        'connection refused', 
+        'connection on port\s+\d+',
+        'session aborted'
+    ], 
+    criticalexceptions => 'connection on port\s+80[^\d]*',
+    criticalthreshold => 10,
+    warningpatterns => [ 
+        '.*total size is 0 .*', 
+        'connection on port\s+80[^\d]*', 
+    ],
+    warningthreshold => 3,
+    options => 'criticalthreshold=10,warningthreshold=3,nosavethresholdcount',
+  }]
+});
 $nmap = $cl->get_search_by_tag("nmap");
 $cl->reset();
 $nmap->delete_logfile();
@@ -505,6 +507,4 @@ diag("now run the real commandline which expects 17 criticals");
 $output = `$command`;
 diag($output);
 ok(($output =~ /CRITICAL - \(17 errors/) && (($? >> 8) == 2));
-
-
 

@@ -2768,6 +2768,7 @@ sub scan {
                 next;
               } else {
                 $self->{thresholdcnt}->{$level} = 0;
+                $self->trace("count this match");
               }
             }
             if ($self->{tivoli}->{object}) {
@@ -2836,11 +2837,16 @@ sub scan {
         if ($line =~ /$pattern/) {
           $self->trace("remedy pattern %s wipes out previous errors",
               $pattern);
+          $self->trace("remedy pattern %s in line %s", $pattern,$line);
           $self->{options}->{sticky}++ if $self->{options}->{sticky};
           # such a remedypattern neutralizes previous error
           $self->{matchlines}->{WARNING} = [];
           $self->{matchlines}->{CRITICAL} = [];
           $self->{matchlines}->{UNKNOWN} = [];
+          # and also intermediate results which did not hit a threshold so far
+          $self->{thresholdcnt}->{WARNING} = 0;
+          $self->{thresholdcnt}->{CRITICAL} = 0;
+          $self->{thresholdcnt}->{UNKNOWN} = 0;
           last;
         }
       }   
