@@ -1837,6 +1837,7 @@ sub init {
   $self->{exceptions} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{threshold} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
   $self->{thresholdcnt} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
+  $self->{thresholdtimes} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{patternkeys} = { OK => {}, WARNING => {}, CRITICAL => {}, UNKNOWN => {} };
   $self->{filepatterns} = {};
   $self->{hasinversepat} = 0;
@@ -1859,7 +1860,7 @@ sub init {
   $self->default_options({ script => 0, smartscript => 0, supersmartscript => 0,
       protocol => 1, count => 1, syslogserver => 0, logfilenocry => 1,
       perfdata => 1, case => 1, sticky => 0, syslogclient => 0,
-      savethresholdcount => 1, encoding => 0, maxlength => 0, 
+      savethresholdcount => 1, thresholdexpiry => 0, encoding => 0, maxlength => 0, 
       lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
       preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
@@ -2083,8 +2084,8 @@ sub init {
       #
       #  ignore the match unless a minimum of threshold occurrances were found
       #
-      if ((! $self->{options}->{(lc $level).'threshold'}) &&
-          ($params->{(lc $level).'threshold'})) {
+      if (! $self->{options}->{(lc $level).'threshold'} &&
+          $params->{(lc $level).'threshold'}) {
         $self->{options}->{(lc $level).'threshold'} =
             $params->{(lc $level).'threshold'};
       }
@@ -2131,6 +2132,12 @@ sub init {
           # oder SysLogD
       LABEL => $self->{macros}->{CL_HOSTNAME}, # NON-TME
     );
+  }
+  #
+  # expiry time of hits
+  #
+  if (! $self->{options}->{thresholdexpiry} && $params->{thresholdexpiry}) {
+    $self->{options}->{thresholdexpiry} = $params->{thresholdexpiry};
   }
   $self->construct_seekfile();
   $self->{NH_detection} = ($^O =~ /MSWin/) ? 0 : 1;
@@ -2287,10 +2294,28 @@ sub loadstate {
       $self->{laststate}->{serviceoutput} = "OK";
     }
     foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
-      if (exists $self->{laststate}->{thresholdcnt}->{$level}) {
-        $self->{thresholdcnt}->{$level} =
-            $self->{laststate}->{thresholdcnt}->{$level};
-      } 
+      if ($self->{thresholdexpiry}) {
+        if (exists $self->{laststate}->{thresholdcnt}->{$level}) {
+          $self->{thresholdtimes}->{$level} = $self->{laststate}->{thresholdtimes}->{$level} || [];
+          # expire
+          $self->trace(sprintf "found %d counted %s hits",
+              scalar(@{$self->{thresholdtimes}->{$level}}), $level);
+          @{$self->{thresholdtimes}->{$level}} = grep {
+              time - $_ > $self->{laststate}->{thresholdcnt}->{$level}
+          } @{$self->{thresholdtimes}->{$level}};
+          $self->trace(sprintf "after expiring %d %s counts are left",
+              scalar(@{$self->{thresholdtimes}->{$level}}), $level);
+          $self->{thresholdcnt}->{$level} = scalar(@{$self->{thresholdtimes}->{$level}});
+        } else {
+          $self->{thresholdcnt}->{$level} = 0;
+          $self->{thresholdtimes}->{$level} = [];
+        }
+      } else {
+        if (exists $self->{laststate}->{thresholdcnt}->{$level}) {
+          $self->{thresholdcnt}->{$level} =
+              $self->{laststate}->{thresholdcnt}->{$level};
+        } 
+      }
     }
     $self->trace("LS lastlogfile = %s", $self->{laststate}->{logfile});
     $self->trace("LS lastoffset = %u / lasttime = %d (%s) / inode = %s",
@@ -2487,6 +2512,8 @@ sub savestate {
       if ($self->{threshold}->{$level}) {
         $self->{newstate}->{thresholdcnt}->{$level} =
             $self->{thresholdcnt}->{$level};
+        $self->{newstate}->{thresholdtimes}->{$level} =
+            $self->{thresholdtimes}->{$level};
       }
     } 
   }
