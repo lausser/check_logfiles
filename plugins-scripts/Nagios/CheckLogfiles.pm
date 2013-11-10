@@ -2792,10 +2792,16 @@ sub scan {
                     $self->{threshold}->{$level} - 
                     $self->{thresholdcnt}->{$level});
                 $self->{thresholdcnt}->{$level}++;
+                if ($self->{options}->{thresholdexpiry}) {
+                  push(@{$self->{thresholdtimes}->{$level}}, time);
+                }
                 next;
               } else {
                 $self->{thresholdcnt}->{$level} = 0;
                 $self->trace("count this match");
+                if ($self->{options}->{thresholdexpiry}) {
+                  $self->{thresholdtimes}->{$level} = [];
+                }
               }
             }
             if ($self->{tivoli}->{object}) {

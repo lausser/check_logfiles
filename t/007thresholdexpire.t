@@ -17,15 +17,19 @@ use constant TESTDIR => ".";
 
 #
 # Count the hits, but reset the counter to 0 if an okpattern was found
+# Hit counts have a lifetime of 5s
 #
 # Case 1: nosavethresholdcount
 #         reset
 #         9 criticals, 2 warnings
 #         run: OK
-#         19 criticals, 12 warnings, 1 ok
-#         run: OK
+#         sleep 2
+#         19 criticals, 12 warnings
+#         run: CRITICAL
+#         sleep 2
 #         19 criticals, ok, 9 criticals
 #         run: OK
+#         sleep 2
 #         19 criticals, ok, 19 criticals
 #         run: CRITICAL (19)
 # 
@@ -49,7 +53,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
     okpatterns => [
         'sshd restarted',
     ],
-    options => 'criticalthreshold=10,warningthreshold=3,nosavethresholdcount',
+    options => 'criticalthreshold=10,warningthreshold=3,thresholdexpiry=5',
   }]
 });
 my $nmap = $cl->get_search_by_tag("nmap");
@@ -66,17 +70,26 @@ diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0)); ## reset run
 
-$cl->reset();
-$nmap->loggercrap(undef, undef, 100);
-$nmap->logger(undef, undef, 9, "connection refused");  # skip 9 -> 0
-$nmap->logger(undef, undef, 2, "connection on port 80"); # skip 2 -> 0
-$cl->run();
-diag(Data::Dumper::Dumper($nmap->{thresholdcnt}));
-diag($cl->has_result());
-diag($cl->{exitmessage});
-diag("not enough errors/warnings");
-ok($cl->expect_result(0, 0, 0, 0, 0));
+foreach my $cnt (1..9) {
+  $cl->reset();
+  $nmap->loggercrap(undef, undef, 100);
+  $nmap->logger(undef, undef, 1, "connection refused");  # skip 9 -> 0
+  $nmap->logger(undef, undef, 1, "connection on port 80"); # skip 2 -> 0
+  sleep 1;
+  $cl->run();
+  diag(Data::Dumper::Dumper($nmap->{thresholdcnt}));
+printf "cnt is %d, c %d, w %d\n", $cnt, $cnt % 10, $cnt % 3;
+  diag($cl->has_result());
+  diag($cl->{exitmessage});
+  #diag("not enough errors/warnings");
+  #ok($cl->expect_result(0, 0, 0, 0, 0));
+  ok(($nmap->{newstate}->{thresholdcnt}->{CRITICAL} == $cnt % 10) &&
+      ($nmap->{newstate}->{thresholdcnt}->{WARNING} == $cnt % 3));
+}
+diag(Data::Dumper::Dumper($nmap->{newstate}->{thresholdtimes}));
+exit;
 
+sleep 2;
 $cl->reset();
 $nmap->loggercrap(undef, undef, 100);
 $nmap->logger(undef, undef, 19, "connection refused");  # skip 9, 1, skip 9 -> 1
