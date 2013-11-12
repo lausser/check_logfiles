@@ -78,6 +78,7 @@ foreach my $cnt (1..9) {
   sleep 1;
   $cl->run();
   diag(Data::Dumper::Dumper($nmap->{thresholdcnt}));
+diag(Data::Dumper::Dumper($nmap->{newstate}->{thresholdtimes}));
 printf "cnt is %d, c %d, w %d\n", $cnt, $cnt % 10, $cnt % 3;
   diag($cl->has_result());
   diag($cl->{exitmessage});
@@ -85,8 +86,30 @@ printf "cnt is %d, c %d, w %d\n", $cnt, $cnt % 10, $cnt % 3;
   #ok($cl->expect_result(0, 0, 0, 0, 0));
   ok(($nmap->{newstate}->{thresholdcnt}->{CRITICAL} == $cnt % 10) &&
       ($nmap->{newstate}->{thresholdcnt}->{WARNING} == $cnt % 3));
+diag("");
 }
 diag(Data::Dumper::Dumper($nmap->{newstate}->{thresholdtimes}));
+
+diag("--------------------------------------------------");
+$nmap->delete_seekfile();
+$cl->reset();
+$cl->run();
+diag(Data::Dumper::Dumper($nmap->{thresholdcnt}));
+diag(Data::Dumper::Dumper($nmap->{newstate}->{thresholdtimes}));
+
+foreach my $cnt (1..3) {
+  $cl->reset();
+  $nmap->logger(undef, undef, 2, "connection refused");  # skip 9 -> 0
+  sleep 1;
+  $cl->run();
+}
+diag("now another critical");
+$cl->reset();
+$nmap->logger(undef, undef, 1, "connection refused");  # skip 9 -> 0
+$cl->run();
+diag("must have 7c");
+diag(Data::Dumper::Dumper($nmap->{thresholdcnt}));
+
 exit;
 
 sleep 2;

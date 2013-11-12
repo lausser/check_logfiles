@@ -2294,16 +2294,21 @@ sub loadstate {
       $self->{laststate}->{serviceoutput} = "OK";
     }
     foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
-      if ($self->{thresholdexpiry}) {
+      if ($self->get_option('thresholdexpiry')) {
         if (exists $self->{laststate}->{thresholdcnt}->{$level}) {
           $self->{thresholdtimes}->{$level} = $self->{laststate}->{thresholdtimes}->{$level} || [];
           # expire
-          $self->trace(sprintf "found %d counted %s hits",
+printf STDERR "found %d counted %s hits\n",
+              scalar(@{$self->{thresholdtimes}->{$level}}), $level;
+          $self->trace(sprintf "!!!!!!!!!!found %d counted %s hits",
               scalar(@{$self->{thresholdtimes}->{$level}}), $level);
           @{$self->{thresholdtimes}->{$level}} = grep {
-              time - $_ > $self->{laststate}->{thresholdcnt}->{$level}
+printf STDERR "delta %d > %d?\n", time - $_, $self->get_option('thresholdexpiry');
+              time - $_ <= $self->get_option('thresholdexpiry')
           } @{$self->{thresholdtimes}->{$level}};
-          $self->trace(sprintf "after expiring %d %s counts are left",
+printf STDERR "after expiring %d %s counts are left\n",
+              scalar(@{$self->{thresholdtimes}->{$level}}), $level;
+          $self->trace(sprintf "!!!!!!!!!!!!after expiring %d %s counts are left",
               scalar(@{$self->{thresholdtimes}->{$level}}), $level);
           $self->{thresholdcnt}->{$level} = scalar(@{$self->{thresholdtimes}->{$level}});
         } else {
@@ -2792,14 +2797,14 @@ sub scan {
                     $self->{threshold}->{$level} - 
                     $self->{thresholdcnt}->{$level});
                 $self->{thresholdcnt}->{$level}++;
-                if ($self->{options}->{thresholdexpiry}) {
+                if ($self->get_option('thresholdexpiry')) {
                   push(@{$self->{thresholdtimes}->{$level}}, time);
                 }
                 next;
               } else {
                 $self->{thresholdcnt}->{$level} = 0;
                 $self->trace("count this match");
-                if ($self->{options}->{thresholdexpiry}) {
+                if ($self->get_option('thresholdexpiry')) {
                   $self->{thresholdtimes}->{$level} = [];
                 }
               }
@@ -3009,6 +3014,7 @@ sub reset {
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
   $self->{negpatterncnt} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{thresholdcnt} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
+  $self->{thresholdtimes} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   #$self->{preliminaryfilter} = { SKIP => [], NEED => [] };
   $self->{perfdata} = "";
   foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
