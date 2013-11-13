@@ -7,7 +7,7 @@
 #
 
 use strict;
-use Test::More tests => 36;
+use Test::More tests => 10;
 use Cwd;
 use Data::Dumper;
 use lib "../plugins-scripts";
