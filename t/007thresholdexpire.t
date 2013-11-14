@@ -7,7 +7,7 @@
 #
 
 use strict;
-use Test::More tests => 10;
+use Test::More tests => 21;
 use Cwd;
 use Data::Dumper;
 use lib "../plugins-scripts";
@@ -57,40 +57,6 @@ my $cl = Nagios::CheckLogfiles::Test->new({
   }]
 });
 my $nmap = $cl->get_search_by_tag("nmap");
-$cl->reset();
-$nmap->delete_logfile();
-$nmap->delete_seekfile();
-diag("deleted logfile and seekfile");
-$nmap->trace("deleted logfile and seekfile");
-$nmap->logger(undef, undef, 100, "connection refused");
-diag("wrote 100 messages");
-sleep 1;
-$cl->run();
-diag($cl->has_result());
-diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 0, 0, 0)); ## reset run
-
-foreach my $cnt (1..9) {
-  $cl->reset();
-  $nmap->loggercrap(undef, undef, 100);
-  $nmap->logger(undef, undef, 1, "connection refused");  # skip 9 -> 0
-  $nmap->logger(undef, undef, 1, "connection on port 80"); # skip 2 -> 0
-  sleep 1;
-  $cl->run();
-  diag(Data::Dumper::Dumper($nmap->{thresholdcnt}));
-diag(Data::Dumper::Dumper($nmap->{newstate}->{thresholdtimes}));
-printf "cnt is %d, c %d, w %d\n", $cnt, $cnt % 10, $cnt % 3;
-  diag($cl->has_result());
-  diag($cl->{exitmessage});
-  #diag("not enough errors/warnings");
-  #ok($cl->expect_result(0, 0, 0, 0, 0));
-  ok(($nmap->{newstate}->{thresholdcnt}->{CRITICAL} == $cnt % 10) &&
-      ($nmap->{newstate}->{thresholdcnt}->{WARNING} == $cnt % 3));
-diag("");
-}
-diag(Data::Dumper::Dumper($nmap->{newstate}->{thresholdtimes}));
-
-diag("--------------------------------------------------");
 $nmap->delete_seekfile();
 $cl->reset();
 $cl->run();
@@ -198,68 +164,3 @@ $cl->run();
 ok(($nmap->{newstate}->{thresholdcnt}->{CRITICAL} == 0) &&
     ($nmap->{newstate}->{thresholdcnt}->{WARNING} == 0));
 ok($cl->expect_result(0, 0, 0, 0, 0));
-exit;
-
-sleep 2;
-$cl->reset();
-$nmap->loggercrap(undef, undef, 100);
-$nmap->logger(undef, undef, 19, "connection refused");  # skip 9, 1, skip 9 -> 1
-$nmap->logger(undef, undef, 12, "connection on port 80"); # skip 2 -> 4
-$nmap->loggercrap(undef, undef, 100);
-$nmap->logger(undef, undef, 2, "sshd restarted");  # 0WC
-$cl->run();
-diag(Data::Dumper::Dumper($nmap->{thresholdcnt}));
-diag($cl->has_result());
-diag($cl->{exitmessage});
-diag("no errors/warnings. have been resetted");
-ok($cl->expect_result(0, 0, 0, 0, 0));
-
-$cl->reset();
-$nmap->loggercrap(undef, undef, 100);
-$nmap->logger(undef, undef, 19, "connection refused");  # skip 9, 1, skip 9 -> 1
-$nmap->logger(undef, undef, 2, "sshd restarted");  # 0WC
-$nmap->loggercrap(undef, undef, 100);
-$nmap->logger(undef, undef, 9, "connection refused");  # skip 9 -> 0
-$cl->run();
-diag($cl->has_result());
-diag($cl->{exitmessage});
-diag("no errors/warnings. have been resetted");
-ok($cl->expect_result(0, 0, 0, 0, 0));
-
-$cl->reset();
-$nmap->loggercrap(undef, undef, 100);
-$nmap->logger(undef, undef, 19, "connection refused");  # skip 9, 1, skip 9 -> 1
-$nmap->logger(undef, undef, 2, "sshd restarted");  # 0WC
-$nmap->loggercrap(undef, undef, 100);
-$nmap->logger(undef, undef, 19, "connection refused");  # 
-$cl->run();
-diag($cl->has_result());
-diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2));
-
-exit;
-#
-# Case 2: savethresholdcount
-#         reset
-#         9 criticals, 2 warnings
-#         run: OK
-#         19 criticals, 12 warnings, 1 ok
-#         run: OK
-#         19 criticals, ok, 9 criticals
-#         run: OK
-#         19 criticals, ok, 9 criticals
-#         run: OK
-#         19 criticals
-#         run: CRITICAL (18)
-# 
-
-
-#
-# threshold counters can expire
-#
-# options="criticalthreshold=10,thresholdexpiry=3600"
-# a hit is not only counted, it gets a timestamp
-
-# old counts are expired during load of the seekfile
-
-

@@ -78,6 +78,7 @@ sub init {
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
       seekfileerror => 'critical', logfileerror => 'critical', 
       maxmemsize => 0, rotatewait => 0, htmlencode => 0,
+      outputhitcount => 1,
   });
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
@@ -536,7 +537,8 @@ sub formulate_result {
   foreach my $level (qw(CRITICAL WARNING UNKNOWN OK)) {
     $self->{exitcode} = $ERRORS{$level};
     if (($level ne "OK") && ($self->{allerrors}->{$level})) {
-      $self->{exitmessage} = sprintf "%s - %s - %s %s", $level, $self->{hint},
+      $self->{exitmessage} = sprintf "%s%s - %s %s", $level, 
+          $self->get_option("outputhitcount") ? " - ".$self->{hint} : "",
           $self->{lastmsg}->{$level}, 
           ($self->{allerrors}->{$level} == 1 ? "" : "...");
       last;
@@ -2298,16 +2300,11 @@ sub loadstate {
         if (exists $self->{laststate}->{thresholdcnt}->{$level}) {
           $self->{thresholdtimes}->{$level} = $self->{laststate}->{thresholdtimes}->{$level} || [];
           # expire
-printf STDERR "found %d counted %s hits\n",
-              scalar(@{$self->{thresholdtimes}->{$level}}), $level;
           $self->trace(sprintf "!!!!!!!!!!found %d counted %s hits",
               scalar(@{$self->{thresholdtimes}->{$level}}), $level);
           @{$self->{thresholdtimes}->{$level}} = grep {
-printf STDERR "delta %d > %d?\n", time - $_, $self->get_option('thresholdexpiry');
               time - $_ <= $self->get_option('thresholdexpiry')
           } @{$self->{thresholdtimes}->{$level}};
-printf STDERR "after expiring %d %s counts are left\n",
-              scalar(@{$self->{thresholdtimes}->{$level}}), $level;
           $self->trace(sprintf "!!!!!!!!!!!!after expiring %d %s counts are left",
               scalar(@{$self->{thresholdtimes}->{$level}}), $level);
           $self->{thresholdcnt}->{$level} = scalar(@{$self->{thresholdtimes}->{$level}});

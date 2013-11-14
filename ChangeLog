@@ -2,6 +2,11 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.6 - 2013-11-14
+- added global option "nooutputhitcount"
+- added search-option "thresholdexpiry="
+- okpattern resets threshold counters
+
 3.5.3.3 - 2013-09-24
 - exe files without x-bit can now run in a cygwin environment (Thanks Michael Glaser)
 
