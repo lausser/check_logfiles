@@ -100,12 +100,7 @@ AC_ARG_WITH(gzip,
 AC_SUBST(GZIP, $with_gzip)
 
 
-AC_OUTPUT(
-  Makefile 
-  plugins-scripts/Makefile 
-  plugins-scripts/subst 
-  t/Makefile
-)
+AC_OUTPUT(Makefile plugins-scripts/Makefile plugins-scripts/subst t/Makefile)
 
 ACX_FEATURE([with],[perl])
 ACX_FEATURE([with],[gzip])
