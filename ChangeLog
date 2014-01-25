@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.6.1 - 2014-01-25
+- added search-option "capturegroups"
+
 3.6 - 2013-11-14
 - added global option "nooutputhitcount"
 - added search-option "thresholdexpiry="

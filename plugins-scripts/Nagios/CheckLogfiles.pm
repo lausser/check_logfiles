@@ -1868,7 +1868,8 @@ sub init {
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
       report => 'short',
       seekfileerror => 'critical', logfileerror => 'critical', 
-      archivedirregexp => 0,
+      archivedirregexp => 0, 
+      capturegroups => 0,
   });
   $self->refresh_options($params->{options});
   #
@@ -2828,6 +2829,14 @@ sub scan {
                     $self->{patternkeys}->{$level}->{$pattern}
               } else {
                 $self->{macros}->{CL_PATTERN_KEY} = "unknown_pattern";
+              }
+              if ($self->{options}->{capturegroups}) {
+                $line =~ /$pattern/;
+                no strict 'refs';
+                foreach (1..10) {
+                  $self->{macros}->{CL_CAPTURE_GROUPS} = $_ if (defined ${$_});
+                  $self->{macros}->{'CL_CAPTURE_GROUP'.$_} = ${$_} if (defined ${$_});
+                }
               }
               my ($actionsuccess, $actionrc, $actionoutput) =
                   $self->action($self->{script}, $self->{scriptparams},
