@@ -204,6 +204,7 @@ my @params = (
     "noperfdata",
     "winwarncrit",
     "lookback=s",
+    "allyoucaneat",
     "context=i",
     "criticalthreshold=i",
     "warningthreshold=i",

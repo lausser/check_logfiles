@@ -4,6 +4,7 @@
 
 3.6.1 - 2014-01-25
 - added search-option "capturegroups"
+- add forgotten --allyoucaneat
 
 3.6 - 2013-11-14
 - added global option "nooutputhitcount"
