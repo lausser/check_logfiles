@@ -1552,6 +1552,7 @@ sub run_as_daemon {
     chdir '/';
     exit if (fork());
     exit if (fork());
+    $self->write_pidfile();
     open STDIN, '+>/dev/null';
     open STDOUT, '+>&STDIN';
     open STDERR, '+>&STDIN';
@@ -1566,7 +1567,6 @@ sub run_as_daemon {
     $self->trace("Entering main loop");
     do {
       $self->run();
-      $self->write_pidfile();
       $self->trace(sprintf "%s%s\n%s", $self->{exitmessage},
           $self->{perfdata} ? "|".$self->{perfdata} : "",
           $self->{long_exitmessage} ? $self->{long_exitmessage}."\n" : "");
