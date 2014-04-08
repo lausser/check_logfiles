@@ -270,6 +270,9 @@ sub TIEHANDLE {
   my $handle = undef;
   my $must_close_ipc = 0;
 
+  if ($tivoli->{object}) {
+    $eventlogformat = "_tecad_win_";
+  }
   # 
   # Schritt 1
   #
@@ -491,46 +494,8 @@ sub TIEHANDLE {
             #printf STDERR "passed filter %s\n", Data::Dumper::Dumper($event);
             my $tmp_event = {};
             %{$tmp_event} = %{$event};
-            if ($tivoli->{object}) {
-              if (! $tmp_event->{Message}) {
-                $tmp_event->{Message} = $event->{Strings};
-                $tmp_event->{Message} =~ s/\0/ /g;
-                $tmp_event->{Message} =~ s/\s*$//g;
-              }
-              $tmp_event->{Message} = sprintf "%s %s %s %s %s %s %s",
-                  join(" ", (split(/\s+/, 
-                      scalar localtime $tmp_event->{TimeGenerated}))[1,2,3,4]),
-                      # month day time and year => %t %s
-                  $tmp_event->{Category},
-                  ($tmp_event->{EventType} == 
-                      EVENTLOG_ERROR_TYPE) ? 'Error' :
-                  ($tmp_event->{EventType} ==
-                      EVENTLOG_WARNING_TYPE) ? 'Warning' :
-                  ($tmp_event->{EventType} ==  
-                      EVENTLOG_INFORMATION_TYPE) ? 'Information':
-                  ($tmp_event->{EventType} ==
-                      EVENTLOG_AUDIT_SUCCESS) ? 'AuditSuccess':
-                  ($tmp_event->{EventType} ==
-                      EVENTLOG_AUDIT_FAILURE) ? 'AuditFailure':
-                  ($tmp_event->{EventType} ==
-                      EVENTLOG_SUCCESS) ? 'Success': 'Unknown',
-                  'N/A',
-                  join('_', split(" ", $tmp_event->{Source})),
-                  $tmp_event->{EventID} & 0xffff,
-                  $tmp_event->{Message} ? 
-                      $tmp_event->{Message} : "unknown message";
-            } else {
-              Win32::EventLog::GetMessageText($tmp_event);
-              if (! $tmp_event->{Message}) {
-                $tmp_event->{Message} = $tmp_event->{Strings};
-                $tmp_event->{Message} =~ s/\0/ /g;
-                $tmp_event->{Message} =~ s/\s*$//g;
-              }
-              $tmp_event->{Message} = 'unknown message' 
-                  if ! $tmp_event->{Message};
-              $tmp_event->{Message} =~ tr/\r\n/ /d;
-              format_message($eventlogformat, $tmp_event);
-            }
+            Win32::EventLog::GetMessageText($tmp_event);
+            format_message($eventlogformat, $tmp_event);
             if ($winwarncrit) {
               if ($tmp_event->{EventType} == EVENTLOG_WARNING_TYPE) {
                 $tmp_event->{Message} = "EE_WW_TT".$tmp_event->{Message};
@@ -625,6 +590,16 @@ sub format_message {
   # %g Timegenerated
   # %d Date/Time
   # %u User # not documented @ cpan
+  if ($eventlogformat eq "_tecad_win_") {
+    $eventlogformat = "%__TiVoLi__g %C %t N/A %s %i %m";
+  }
+  if (! $tmp_event->{Message}) {
+      $tmp_event->{Message} = $event->{Strings};
+      $tmp_event->{Message} =~ s/\0/ /g;
+      $tmp_event->{Message} =~ s/\s*$//g;
+  }
+  $tmp_event->{Message} = 'unknown message' if ! $tmp_event->{Message};
+  $tmp_event->{Message} =~ tr/\r\n/ /d;
   my $tz = '';
   my $format = {};
   $format->{'%t'} =
@@ -644,6 +619,7 @@ sub format_message {
           'Success' : 'UnknType';
   $format->{'%c'} = ! $event->{Category} ? 'None' :
       join('_', split(" ", $event->{Category}));
+  $format->{'%C'} = ! $event->{Category} ? 'None' : $event->{Category};
   $format->{'%s'} = join('_', split(" ", $event->{Source}));
   $format->{'%i'} = sprintf '%04d', $event->{EventID} & 0xffff;
   $format->{'%m'} = $event->{Message};
@@ -654,6 +630,9 @@ sub format_message {
   $format->{'%W'} = $event->{Timewritten};
   $format->{'%G'} = $event->{TimeGenerated};
   $format->{'%u'} = $event->{User} || 'undef';
+  $format->{'%__TiVoLi__g'} = join(" ", (split(/\s+/,
+      scalar localtime $tmp_event->{TimeGenerated}))[1,2,3,4]);
+      # month day time and year => %t %s
   my $message = $eventlogformat;
   foreach (keys %{$format}) {
     $message =~ s/$_/$format->{$_}/g;
