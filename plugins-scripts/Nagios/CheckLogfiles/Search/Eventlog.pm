@@ -593,13 +593,13 @@ sub format_message {
   if ($eventlogformat eq "_tecad_win_") {
     $eventlogformat = "%__TiVoLi__g %C %t N/A %s %i %m";
   }
-  if (! $tmp_event->{Message}) {
-      $tmp_event->{Message} = $event->{Strings};
-      $tmp_event->{Message} =~ s/\0/ /g;
-      $tmp_event->{Message} =~ s/\s*$//g;
+  if (! $event->{Message}) {
+      $event->{Message} = $event->{Strings};
+      $event->{Message} =~ s/\0/ /g;
+      $event->{Message} =~ s/\s*$//g;
   }
-  $tmp_event->{Message} = 'unknown message' if ! $tmp_event->{Message};
-  $tmp_event->{Message} =~ tr/\r\n/ /d;
+  $event->{Message} = 'unknown message' if ! $event->{Message};
+  $event->{Message} =~ tr/\r\n/ /d;
   my $tz = '';
   my $format = {};
   $format->{'%t'} =
@@ -631,7 +631,7 @@ sub format_message {
   $format->{'%G'} = $event->{TimeGenerated};
   $format->{'%u'} = $event->{User} || 'undef';
   $format->{'%__TiVoLi__g'} = join(" ", (split(/\s+/,
-      scalar localtime $tmp_event->{TimeGenerated}))[1,2,3,4]);
+      scalar localtime $event->{TimeGenerated}))[1,2,3,4]);
       # month day time and year => %t %s
   my $message = $eventlogformat;
   foreach (keys %{$format}) {
