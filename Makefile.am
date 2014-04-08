@@ -8,8 +8,7 @@ EXTRA_DIST = winconfig.pl README.exe
 dist-hook:
 	rm -f t/var/tmp/*
 	rm -f t/var/adm/*
-	find $(distdir) -depth -name .svn -exec rm -rf {} \;
-	find $(distdir) -type f -exec fromdos -v {} \;
+	find $(distdir) -type f -exec dos2unix {} \;
 	make
 
 exe:
