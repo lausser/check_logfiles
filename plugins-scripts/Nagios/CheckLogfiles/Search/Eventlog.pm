@@ -591,7 +591,7 @@ sub format_message {
   # %d Date/Time
   # %u User # not documented @ cpan
   if ($eventlogformat eq "_tecad_win_") {
-    $eventlogformat = "%__TiVoLi__g %C %t N/A %s %i %m";
+    $eventlogformat = "%__TiVoLi__g %C %t N/A %s %__TiVoLi__i %m";
   }
   if (! $event->{Message}) {
       $event->{Message} = $event->{Strings};
@@ -622,6 +622,7 @@ sub format_message {
   $format->{'%C'} = ! $event->{Category} ? 'None' : $event->{Category};
   $format->{'%s'} = join('_', split(" ", $event->{Source}));
   $format->{'%i'} = sprintf '%04d', $event->{EventID} & 0xffff;
+  $format->{'%__TiVoLi__i'} = sprintf '%s', $event->{EventID} & 0xffff;
   $format->{'%m'} = $event->{Message};
   $format->{'%w'} = strftime("%Y-%m-%dT%H:%M:%S",
       localtime($event->{Timewritten})).$tz;
