@@ -73,6 +73,7 @@ sub init {
   $self->{rununique} = $params->{rununique} || 0;
   $self->{warning} = $params->{warning} || 0;
   $self->{critical} = $params->{critical} || 0;
+  $self->init_macros;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
@@ -157,7 +158,6 @@ sub init {
     $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
     # first the global options (from the commandline in this case)
     $self->refresh_options($params->{options});
-    $self->init_macros;
     foreach (@{$params->{searches}}) {
       $_->{seekfilesdir} = $self->{seekfilesdir};
       $_->{scriptpath} = $self->{scriptpath};
@@ -231,6 +231,8 @@ sub init_from_file {
       $ExitMsg = sprintf "UNKNOWN - syntax error %s", (split(/\n/, $@))[0];
       return undef;
     }
+    # We might need this for a pidfile
+    $self->{abscfgfile} = (unpack("H*", $self->{cfgfile}));
   } else {
     if (-f $self->{cfgfile}) {
       $abscfgfile = $self->{cfgfile};
@@ -258,46 +260,52 @@ sub init_from_file {
     }
     # We might need this for a pidfile
     $self->{abscfgfile} = $abscfgfile;
-    # autodetect a good place for a seekfilesdir
-    # abscfgfile usially is in path/etc
-    # 1. path/var/tmp
-    # 2. path/tmp
-    if ($seekfilesdir && $seekfilesdir eq "autodetect") {
-      my $basedir = dirname(dirname($abscfgfile));
-      if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
-        $seekfilesdir = $basedir.'/var/tmp/check_logfiles';
-        mkdir($seekfilesdir);
-      } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
-        $seekfilesdir = $basedir.'/tmp/check_logfiles';
-        mkdir($seekfilesdir);
-      } else {
-        $ExitCode = $ERROR_UNKNOWN;
-        $ExitMsg = sprintf "UNKNOWN - unable to autodetect an adequate seekfilesdir";
-        return undef;
-      }
+  }
+  # autodetect a good place for a seekfilesdir
+  # abscfgfile usially is in path/etc
+  # 1. path/var/tmp
+  # 2. path/tmp
+  if ($seekfilesdir && $seekfilesdir eq "autodetect") {
+    my $basedir = dirname(dirname($abscfgfile));
+    if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
+      $seekfilesdir = $basedir.'/var/tmp/check_logfiles';
+      mkdir($seekfilesdir);
+    } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
+      $seekfilesdir = $basedir.'/tmp/check_logfiles';
+      mkdir($seekfilesdir);
+    } else {
+      $ExitCode = $ERROR_UNKNOWN;
+      $ExitMsg = sprintf "UNKNOWN - unable to autodetect an adequate seekfilesdir";
+      return undef;
     }
-    if ($protocolsdir && $protocolsdir eq "autodetect") {
-      my $basedir = dirname(dirname($abscfgfile));
-      if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
-        $protocolsdir = $basedir.'/var/tmp';
-      } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
-        $protocolsdir = $basedir.'/tmp';
-      } else {
-        $protocolsdir = $self->system_tempdir();
-      }
+  } elsif ($seekfilesdir) {
+    $self->resolve_macros(\$seekfilesdir);
+  }
+  if ($protocolsdir && $protocolsdir eq "autodetect") {
+    my $basedir = dirname(dirname($abscfgfile));
+    if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
+      $protocolsdir = $basedir.'/var/tmp';
+    } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
+      $protocolsdir = $basedir.'/tmp';
+    } else {
+      $protocolsdir = $self->system_tempdir();
     }
-    if ($scriptpath && $scriptpath eq "autodetect") {
-      my @path = ();
-      my $basedir = dirname(dirname($abscfgfile));
-      if (-d $basedir.'/local/lib/nagios/plugins') {
-        push(@path, $basedir.'/local/lib/nagios/plugins');
-      }
-      if (-d $basedir.'/lib/nagios/plugins') {
-        push(@path, $basedir.'/lib/nagios/plugins');
-      }
-      $scriptpath = join(($^O =~ /MSWin/) ? ';' : ':', @path);
+  } elsif ($protocolsdir) {
+    $self->resolve_macros(\$protocolsdir);
+  }
+  if ($scriptpath && $scriptpath eq "autodetect") {
+    my @path = ();
+    my $basedir = dirname(dirname($abscfgfile));
+    if (-d $basedir.'/local/lib/nagios/plugins') {
+      push(@path, $basedir.'/local/lib/nagios/plugins');
     }
-  } 
+    if (-d $basedir.'/lib/nagios/plugins') {
+      push(@path, $basedir.'/lib/nagios/plugins');
+    }
+    $scriptpath = join(($^O =~ /MSWin/) ? ';' : ':', @path);
+  } elsif ($scriptpath) {
+    $self->resolve_macros(\$scriptpath);
+  }
   $self->{tracefile} = $tracefile if $tracefile;
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
   # already done one level above $self->{cfgbase} = (split /\./, basename($self->{cfgfile}))[0];
@@ -317,7 +325,6 @@ sub init_from_file {
   $self->{timeout} = $timeout || 360000;
   $self->{pidfile} = $pidfile if $pidfile;
   $self->{privatestate} = {};
-  $self->init_macros;
   $self->refresh_options($options);
   if (@logs) {
     #
