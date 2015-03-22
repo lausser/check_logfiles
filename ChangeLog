@@ -5,6 +5,9 @@
 3.6.3 - 2014-12-21
 - resolve macros in seekfilesdir
 
+3.6.2.1 - 2014-04-09
+- fix eventid-format for _tecad_win_
+
 3.6.2 - 2014-04-08
 - eventlogformat _tecad_win_
 

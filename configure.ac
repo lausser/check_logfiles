@@ -1,4 +1,3 @@
-dnl Process this file with autoconf to produce a configure script.
 AC_REVISION ($Revision: 1.150 $)
 AC_PREREQ(2.58)
 AC_INIT(check_logfiles,3.6.3)
