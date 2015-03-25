@@ -433,7 +433,7 @@ sub logger {
   my $raw = shift || 0;
   my $details = shift || {};
   $| = 1;
-  if (($self->{type} eq "psloglist") || ($self->{type} eq "eventlog")) {
+  if (($self->{type} eq "psloglist") || ($self->{type} eq "eventlog") || ($self->{type} eq "wevtutil")) {
     my $cmd;
     my $type = exists $details->{EventType} ? uc $details->{EventType} : "INFORMATION";
     my $source = exists $details->{Source} ? $details->{Source} : "check_logfiles";
@@ -446,6 +446,7 @@ sub logger {
         $cmd = sprintf 'C:\WINDOWS\system32\eventcreate /L Application /SO %s /T %s /ID %s /D "%s" 1>NUL 2>&1',
             $source, $type, $id, $message;
       }
+printf "exec %s\n", $cmd;
       system($cmd);
     }
   } else {

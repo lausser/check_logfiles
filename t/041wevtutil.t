@@ -49,7 +49,6 @@ $ssh->trace("initial run");
 $cl->run(); # cleanup
 $cl->reset();
 diag("cleanup");
-exit;
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});

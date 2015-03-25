@@ -19,6 +19,23 @@ sub new {
   return $self->init(shift);
 }
 
+sub startofmin {
+  my $self = shift;
+  my $timestamp = shift;
+  my($sec, $min, $hour, $mday, $mon, $year) =
+      (localtime $timestamp)[0, 1, 2, 3, 4, 5];
+  return timelocal(0, $min, $hour, $mday, $mon, $year);
+}
+
+sub iso {
+  my $self = shift;
+  my $timestamp = shift;
+  my($sec, $min, $hour, $mday, $mon, $year) =
+      (localtime $timestamp)[0, 1, 2, 3, 4, 5];
+  return sprintf "%02d-%02d-%02dT%02d:%02d:%02d",
+      $year + 1900, $mon + 1, $mday, $hour, $min, $sec;
+}
+
 sub init {
   my $self = shift;
   my $params = shift;
@@ -41,11 +58,10 @@ sub prepare {
   # 2015-03-25T16:08:12.000000000Z
   my($sec, $min, $hour, $mday, $mon, $year) =
       (localtime time)[0, 1, 2, 3, 4, 5];
-  $self->{eventlog}->{thisminute} = 
-      timelocal(0, $min, $hour, $mday, $mon, $year);
-  $self->{eventlog}->{thisminuteiso} = sprintf "%02d-%02d-%02dT%02d:%02d:00Z",
-      $year + 1900, $mday, $mon + 1, $hour, $min;
-  $self->trace(sprintf "i will search until %s",
+  $self->{eventlog}->{thisminute} = $self->startofmin(time);
+  $self->{eventlog}->{thisminuteiso} = $self->iso(
+      $self->{eventlog}->{thisminute});
+  $self->trace(sprintf "i will search until < %s",
       $self->{eventlog}->{thisminuteiso});
 }
 
@@ -80,8 +96,11 @@ sub analyze_situation {
     $self->{logmodified} = 1;
     my($sec, $min, $hour, $mday, $mon, $year) =
         (localtime ($self->{laststate}->{logtime} - 60))[0, 1, 2, 3, 4, 5];
-    $self->{eventlog}->{thenminuteiso} = sprintf "%02d-%02d-%02dT%02d:%02d:00Z",
-        $year + 1900, $mday, $mon + 1, $hour, $min;
+    $self->{eventlog}->{thenminuteiso} = $self->iso(
+        $self->{laststate}->{logtime});
+  $self->trace(sprintf "from %s to %s",
+    $self->{eventlog}->{thenminuteiso},
+    $self->{eventlog}->{thisminuteiso});
   } else {
     # this happens if you call the plugin in too short intervals.
     $self->trace("please wait for a minute");
@@ -94,7 +113,7 @@ sub collectfiles {
   if ($self->{logmodified}) {
     # thisminute in xpath-format, query < 
     # $self->{laststate}->{logtime}, query >=
-    my $eventlog = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\"", $self->{clo}->{path},
+    my $eventlog = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" %s", $self->{clo}->{path},
         $self->{clo}->{eventlog},
         $self->{eventlog}->{thenminuteiso},
         $self->{eventlog}->{thisminuteiso},
