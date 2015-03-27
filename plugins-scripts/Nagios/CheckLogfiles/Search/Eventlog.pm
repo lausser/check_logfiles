@@ -222,7 +222,6 @@ require Tie::Handle;
 use Win32::EventLog;
 use Win32::TieRegistry (Delimiter => "/");
 use Win32::WinError;
-use Carp;
 use IO::File;
 use vars qw(@ISA);
 @ISA = qw(Tie::Handle Nagios::CheckLogfiles::Search::Eventlog);
