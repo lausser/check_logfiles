@@ -36,6 +36,7 @@ sub collectfiles {
   $self->trace(sprintf "get everything %d <= event < %d",
       $self->{eventlog}->{lastsecond},
       $self->{eventlog}->{thissecond});
+printf STDERR "logmod %s\n", $self->{relevant};
 printf STDERR "logmod %s\n", $self->{logmodified};
   if ($self->{logmodified}) {
     open(*FH, ">$self->{orschlorschknorsch}");
@@ -56,21 +57,6 @@ printf STDERR "logmod %s\n", $self->{logmodified};
   }
 }
 
-<<<<<<< HEAD
-=======
-sub prepare {
-  my $self = shift;
-  $self->{options}->{nologfilenocry} = 1;
-  # the last minute is the end time. in-progess minutes are not
-  # interesting yet.
-  # 2015-03-25T16:08:12.000000000Z
-  $self->{eventlog}->{thisminute} = $self->startofmin(time);
-  $self->{eventlog}->{thisminuteiso} = $self->iso(
-      $self->{eventlog}->{thisminute});
-  $self->trace(sprintf "i will search until < %s",
-      $self->{eventlog}->{thisminuteiso});
-}
->>>>>>> c096a07f80fcad213f2b20d3f79781850eb7ed1f
 
 package Nagios::CheckLogfiles::Search::Wevtutil::Handle;
 
@@ -128,7 +114,6 @@ sub TIEHANDLE {
   if ($tivoli->{object}) {
     $eventlogformat = "_tecad_win_";
   }
-<<<<<<< HEAD
   #
   # Schritt 3
   #
@@ -138,30 +123,6 @@ sub TIEHANDLE {
 # letzte sekunde lesen
 #      $mustabort = 1;
 #      $internal_error = "Eventlog permission denied";
-=======
-  # remember the last minute scanned.
-  $self->{newstate}->{logtime} = $self->{eventlog}->{thisminute};
-  $self->SUPER::savestate();
-}
-
-sub analyze_situation {
-  my $self = shift;
-  $self->trace("last scanned until %s",
-      scalar localtime $self->{laststate}->{logtime});
-  $self->trace(sprintf "from %s to %s",
-      scalar localtime ($self->{laststate}->{logtime}),
-      scalar localtime $self->{eventlog}->{thisminute});
-  if ((time - $self->{laststate}->{logtime}) > 60) {
-    $self->{logmodified} = 1;
-    $self->{eventlog}->{thenminuteiso} = $self->iso(
-        $self->{laststate}->{logtime});
-  $self->trace(sprintf "from %s to %s",
-    $self->{eventlog}->{thenminuteiso},
-    $self->{eventlog}->{thisminuteiso});
-  } else {
-    # this happens if you call the plugin in too short intervals.
-    $self->trace("please wait for a minute");
->>>>>>> c096a07f80fcad213f2b20d3f79781850eb7ed1f
   }
   #
   # Schritt 5
@@ -171,31 +132,25 @@ sub analyze_situation {
   if (! $mustabort) {
 printf STDERR "eventlog %s\n", Data::Dumper::Dumper($eventlog);
     my $exec = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" %s", $wevtutil,
-        $self->{eventlog}->{eventlog},
+        $eventlog->{eventlog},
         iso($eventlog->{lastsecond}),
         iso($eventlog->{thissecond}),
         ($^O eq "cygwin") ? '2>/dev/null |' : '2>NUL |';
-<<<<<<< HEAD
 printf STDERR "exec %s\n", $exec;
-    $self->trace("calling %s", $exec);
+    trace("calling %s", $exec);
     my $fh = new IO::File;
     if ($fh->open($exec)) {
+printf STDERR "iofile open\n";
+      trace("calling %s", $exec);
       while (my $line = $fh->getline()) {
-        $self->trace(sprintf "skipping header %s", $line);
-        last if $line =~ /^\w+ log on/;
+printf STDERR "getline %s\n", $line;
+        push(@events, $line);
       }
-=======
-    $self->trace("calling %s", $eventlog);
-    if ($fh->open($eventlog)) {
->>>>>>> c096a07f80fcad213f2b20d3f79781850eb7ed1f
-      push(@{$self->{relevantfiles}},
-        { filename => "eventlog|",
-          fh => $fh, seekable => 0, statable => 1,
-          modtime => $self->{eventlog}->{thisminute},
-          fingerprint => "0:0" });
+      $fh->close();
     } else {
+printf STDERR "iofile failed\n";
       # haette in schritt 3 gefunden werden muessen
-      $self->trace("cannot execute wevtutil");
+      trace("cannot execute wevtutil");
     }
 
   } else {
@@ -225,7 +180,7 @@ sub iso {
   my $timestamp = shift;
 printf STDERR "isififi %s\n", $timestamp;
   my($sec, $min, $hour, $mday, $mon, $year) =
-      (localtime $timestamp)[0, 1, 2, 3, 4, 5];
+      (gmtime $timestamp)[0, 1, 2, 3, 4, 5];
   return sprintf "%02d-%02d-%02dT%02d:%02d:%02d",
       $year + 1900, $mon + 1, $mday, $hour, $min, $sec;
 }

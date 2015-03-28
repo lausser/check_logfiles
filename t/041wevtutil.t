@@ -33,12 +33,6 @@ my $cl = Nagios::CheckLogfiles::Test->new({
 	    }
 	]    });
 my $ssh = $cl->get_search_by_tag("ssh");
-#if (! -x $ssh->{clo}->{path}.($^O =~ /MSWin/ ? ".exe" : "")) {
-if (! -f $ssh->{clo}->{path}.($^O =~ /MSWin/ ? ".exe" : "")) {
-  diag(sprintf "!!! skipping tests. %s not installed!!!", $ssh->{clo}->{path});
-  foreach (1..5) {ok(1)};
-#  exit 0;
-}
 $ssh->delete_seekfile();
 $ssh->trace("deleted seekfile");
 
