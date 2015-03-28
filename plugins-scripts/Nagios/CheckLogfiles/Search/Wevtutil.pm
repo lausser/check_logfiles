@@ -36,7 +36,6 @@ sub collectfiles {
   $self->trace(sprintf "get everything %d <= event < %d",
       $self->{eventlog}->{lastsecond},
       $self->{eventlog}->{thissecond});
-printf STDERR "logmod %s\n", $self->{relevant};
 printf STDERR "logmod %s\n", $self->{logmodified};
   if ($self->{logmodified}) {
     open(*FH, ">$self->{orschlorschknorsch}");
@@ -178,7 +177,6 @@ sub AUTOLOAD {
 
 sub iso {
   my $timestamp = shift;
-printf STDERR "isififi %s\n", $timestamp;
   my($sec, $min, $hour, $mday, $mon, $year) =
       (gmtime $timestamp)[0, 1, 2, 3, 4, 5];
   return sprintf "%02d-%02d-%02dT%02d:%02d:%02d",
