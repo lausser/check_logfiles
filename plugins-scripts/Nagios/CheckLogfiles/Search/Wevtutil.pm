@@ -14,6 +14,14 @@ use constant UNKNOWN => 3;
 
 @ISA = qw(Nagios::CheckLogfiles::Search::Eventlog);
 
+sub init {
+  my $self = shift;
+  my $params = shift;
+  # can be called with type=wevtutil:eventlog= or type=wevtutil:wevtutil=
+  %{$params->{eventlog}} = %{$params->{wevtutil}} if $params->{wevtutil};
+  $self->SUPER::init($params);
+}
+
 sub startofmin {
   my $self = shift;
   my $timestamp = shift;
@@ -178,9 +186,11 @@ sub AUTOLOAD {
 sub iso {
   my $timestamp = shift;
   my($sec, $min, $hour, $mday, $mon, $year) =
-      (gmtime $timestamp)[0, 1, 2, 3, 4, 5];
-  return sprintf "%02d-%02d-%02dT%02d:%02d:%02d",
+      (localtime $timestamp)[0, 1, 2, 3, 4, 5];
+  my $iso = sprintf "%02d-%02d-%02dT%02d:%02d:%02d",
       $year + 1900, $mon + 1, $mday, $hour, $min, $sec;
+printf STDERR "iso %s -> %s\n", scalar localtime $timestamp, $iso;
+ return $iso;
 }
 
 
