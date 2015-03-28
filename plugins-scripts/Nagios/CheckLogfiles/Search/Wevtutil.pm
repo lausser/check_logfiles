@@ -186,7 +186,7 @@ sub AUTOLOAD {
 sub iso {
   my $timestamp = shift;
   my($sec, $min, $hour, $mday, $mon, $year) =
-      (localtime $timestamp)[0, 1, 2, 3, 4, 5];
+      ($^O =~ "MSWin" ? gmtime $timestamp : localtime $timestamp)[0, 1, 2, 3, 4, 5];
   my $iso = sprintf "%02d-%02d-%02dT%02d:%02d:%02d",
       $year + 1900, $mon + 1, $mday, $hour, $min, $sec;
 printf STDERR "iso %s -> %s\n", scalar localtime $timestamp, $iso;
