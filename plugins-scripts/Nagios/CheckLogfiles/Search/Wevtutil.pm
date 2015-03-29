@@ -35,7 +35,6 @@ sub collectfiles {
   $self->trace(sprintf "get everything %d <= event < %d",
       $self->{eventlog}->{lastsecond},
       $self->{eventlog}->{thissecond});
-printf STDERR "logmod %s\n", $self->{logmodified};
   if ($self->{logmodified}) {
     open(*FH, ">$self->{orschlorschknorsch}");
     tie *FH, 'Nagios::CheckLogfiles::Search::Wevtutil::Handle',
@@ -52,7 +51,6 @@ printf STDERR "logmod %s\n", $self->{logmodified};
         fh => *FH, seekable => 0, statable => 1,
         modtime => $self->{eventlog}->{thissecond},
         fingerprint => "0:0" });
-printf STDERR "relevantfiles  %s\n", scalar(@{$self->{relevantfiles}});
   }
 }
 
@@ -74,6 +72,22 @@ use vars qw(@ISA);
 our $AUTOLOAD;
 our $tracefile;
 our @events = ();
+
+*Nagios::CheckLogfiles::Search::Wevtutil::Handle::events =
+    *Nagios::CheckLogfiles::Search::Eventlog::Handle::events;
+*Nagios::CheckLogfiles::Search::Wevtutil::Handle::READLINE =
+    \&Nagios::CheckLogfiles::Search::Eventlog::Handle::READLINE;
+*Nagios::CheckLogfiles::Search::Wevtutil::Handle::format_message =
+    \&Nagios::CheckLogfiles::Search::Eventlog::Handle::format_message;
+*Nagios::CheckLogfiles::Search::Wevtutil::Handle::included =
+    \&Nagios::CheckLogfiles::Search::Eventlog::Handle::included;
+*Nagios::CheckLogfiles::Search::Wevtutil::Handle::excluded =
+    \&Nagios::CheckLogfiles::Search::Eventlog::Handle::excluded;
+*Nagios::CheckLogfiles::Search::Wevtutil::Handle::trace =
+    \&Nagios::CheckLogfiles::Search::Eventlog::Handle::trace;
+# Eventlog::trace erwartet tracefile im eigenen Namespace
+*Nagios::CheckLogfiles::Search::Wevtutil::Handle::tracefile =
+    *Nagios::CheckLogfiles::Search::Eventlog::Handle::tracefile;
 
 sub TIEHANDLE {
   my $class = shift;
@@ -133,7 +147,6 @@ sub TIEHANDLE {
   # Jetzt beginnt das eigentliche Auslesen des Eventlogs
   #
   if (! $mustabort) {
-printf STDERR "eventlog %s\n", Data::Dumper::Dumper($eventlog);
     my $exec = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" %s", $wevtutil,
         $eventlog->{eventlog},
         iso($eventlog->{lastsecond}),
@@ -143,59 +156,34 @@ printf STDERR "exec %s\n", $exec;
     trace("calling %s", $exec);
     my $fh = new IO::File;
     if ($fh->open($exec)) {
-printf STDERR "iofile open\n";
       trace("calling %s", $exec);
       while (my $line = $fh->getline()) {
-printf STDERR "getline-> %s\n", $line;
+printf STDERR "inner line %s\n", $line;
         my $event = transform($line);
-
-            printf STDERR "passed filter %s\n", Data::Dumper::Dumper($event);
-
-
-
-          if (included($event, $eventlog->{include}) &&
-              ! excluded($event, $eventlog->{exclude})) {
-            printf STDERR "really passed filter %s\n", Data::Dumper::Dumper($event);
-            my $tmp_event = {};
-            %{$tmp_event} = %{$event};
-            #Win32::EventLog::GetMessageText($tmp_event);
-            format_message($eventlogformat, $tmp_event);
-            if ($winwarncrit) {
-              if ($tmp_event->{EventType} == EVENTLOG_WARNING_TYPE) {
-                $tmp_event->{Message} = "EE_WW_TT".$tmp_event->{Message};
-              } elsif ($tmp_event->{EventType} == EVENTLOG_ERROR_TYPE) {
-                $tmp_event->{Message} = "EE_EE_TT".$tmp_event->{Message};
-              }
+        if (included($event, $eventlog->{include}) &&
+            ! excluded($event, $eventlog->{exclude})) {
+printf STDERR "rang\n";
+          my $tmp_event = {};
+          %{$tmp_event} = %{$event};
+          #Win32::EventLog::GetMessageText($tmp_event);
+          format_message($eventlogformat, $tmp_event);
+          if ($winwarncrit) {
+            if ($tmp_event->{EventType} == EVENTLOG_WARNING_TYPE) {
+              $tmp_event->{Message} = "EE_WW_TT".$tmp_event->{Message};
+            } elsif ($tmp_event->{EventType} == EVENTLOG_ERROR_TYPE) {
+              $tmp_event->{Message} = "EE_EE_TT".$tmp_event->{Message};
             }
-            push(@events, $tmp_event);
-          } else {
-            printf STDERR "blocked by filter %s\n", Data::Dumper::Dumper($event);
           }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          push(@events, $tmp_event);
+        } else {
+           printf STDERR "blocked by filter %s\n", Data::Dumper::Dumper($event);
+        }
       }
-printf STDERR "now close\n";
       $fh->close();
     } else {
-printf STDERR "iofile failed\n";
       # haette in schritt 3 gefunden werden muessen
       trace("cannot execute wevtutil");
     }
-
   } else {
     my $now = time;
     my $tmp_event = {};
@@ -212,37 +200,19 @@ printf STDERR "iofile failed\n";
     push(@events, $tmp_event) if $internal_error;
   }
   bless $self, $class;
-printf STDERR "%s tied with %d events\n", ref($self), scalar(@events);
+printf STDERR "rasang %d events\n", scalar(@events);
   return $self;
-}
-
-sub READLINE {
-  if (my $event = shift @events) {
-printf STDERR "readline: %s\n", Data::Dumper::Dumper($event);
-    return $event->{Message};
-  } else {
-printf STDERR "readline: empt\n";
-    return undef;
-  }
 }
 
 sub AUTOLOAD {
  # sonst mault perl wegen inherited autoload deprecated blabla
+printf STDERR "bampf %s\n", $AUTOLOAD;
 }
 
 sub iso {
   my $timestamp = shift;
-  #my $t = $^O =~ "MSWin" ? gmtime $timestamp : localtime $timestamp;
-  my $t = localtime $timestamp;
-printf "isoize %s to %s\n", scalar localtime $timestamp, $t->datetime();
-  return $t->datetime;
-  my($sec, $min, $hour, $mday, $mon, $year) =
-      #($^O =~ "MSWin" ? gmtime $timestamp : localtime $timestamp)[0, 1, 2, 3, 4, 5];
-      (gmtime $timestamp)[0, 1, 2, 3, 4, 5];
-  my $iso = sprintf "%02d-%02d-%02dT%02d:%02d:%02d",
-      $year + 1900, $mon + 1, $mday, $hour, $min, $sec;
-printf STDERR "iso %s -> %s\n", scalar localtime $timestamp, $iso;
- return $iso;
+  my $t = Time::Piece::gmtime $timestamp;
+  return $t->datetime."Z";
 }
 
 sub transform {
@@ -256,11 +226,14 @@ sub transform {
   $xml =~ /<Data>(.+)<\/Data>/; $event->{Message} = $1;
   $xml =~ /<Security UserID='(.*?)'\/>/; $event->{User} = $1;
   $xml =~ /<TimeCreated SystemTime='(.+?)'\/>/;
-printf STDERR "transform %s\n", $1;
+#printf STDERR "transform %s\n", $1;
   my $t = ParseDate($1);
   $event->{TimeCreated} = UnixDate($t, "%s");
-printf STDERR "to %s\n", $event->{TimeCreated};
-  $event->{TimeWritten} = $event->{TimeCreated};
+#printf STDERR "to %s\n", $event->{TimeCreated};
+#printf STDERR "ch is %s\n", scalar localtime $event->{TimeCreated};
+  $event->{Timewritten} = $event->{TimeCreated};
+  $event->{TimeGenerated} = $event->{TimeCreated};
   return $event;
 }
+
 1;

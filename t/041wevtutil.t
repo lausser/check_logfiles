@@ -17,7 +17,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   diag("this is not a windows machine");
   plan skip_all => 'Test only relevant on Windows';
 } else {
-  plan tests => 5;
+  plan tests => 6;
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({
@@ -27,6 +27,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
 	      tag => "ssh",
 	      type => "wevtutil",
               criticalpatterns => ["Adobe", "Firewall" ],
+              warningpatterns => ["Battery low" ],
               wevtutil => {
               	eventlog => "application",
               }
@@ -98,6 +99,16 @@ sleep 65;
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
+if ($found == 6) {
+ok($cl->expect_result(0, 0, 0, 0, 0));
+} else {
 ok($cl->expect_result(0, 0, 6 - $found, 0, 2));
+}
+$ssh->logger(undef, undef, 2, "Alert: Battery low");
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 2, 0, 0, 1));
 
 

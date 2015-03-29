@@ -569,7 +569,6 @@ sub READ {
   
 sub READLINE {
   if (my $event = shift @events) {
-printf STDERR "readline: %s\n", $event->{Message};
     return $event->{Message};
   } else {
     return undef;

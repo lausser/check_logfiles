@@ -2624,7 +2624,6 @@ sub addfirstevent {
 #
 sub scan {
   my $self = shift;
-printf STDERR "i am scan\n";
   my $actionfailed = 0;
   my $resetted = 0;
   $self->{timedout} = 0;
@@ -2655,9 +2654,7 @@ printf STDERR "i am scan\n";
 
   my $needfilter = scalar(@{$self->{preliminaryfilter}->{NEED}});
   my $skipfilter = scalar(@{$self->{preliminaryfilter}->{SKIP}});
-printf STDERR "i am scan iopenreleant\n";
   foreach my $logfile (@{$self->{relevantfiles}}) {
-printf STDERR "i open scan file %s\n", Data::Dumper::Dumper($logfile);
     $self->trace("moving to position %u in %s", $self->{laststate}->{logoffset},
         $logfile->{filename});
     if ($logfile->{seekable}) {
