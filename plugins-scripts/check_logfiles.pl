@@ -236,7 +236,7 @@ if (exists $commandline{config}) {
   $enough_info = 1;
 } elsif (exists $commandline{logfile}) {
   $enough_info = 1;
-} elsif (exists $commandline{type} && $commandline{type} =~ /^(eventlog|errpt|ipmitool)/) {
+} elsif (exists $commandline{type} && $commandline{type} =~ /^(eventlog|errpt|ipmitool|wevtutil|executable|dumpel)/) {
   $enough_info = 1;
 } elsif (exists $commandline{deinstall}) {
   $commandline{type} = 'dummy';

@@ -64,7 +64,7 @@ require Tie::Handle;
 use IO::File;
 use Time::Piece;
 use Date::Manip;
-use constant EVENTLOG_INFORMATION_TYPE => 0x0004;
+use constant EVENTLOG_INFORMATION_TYPE => 0x0000;
 use constant EVENTLOG_WARNING_TYPE => 0x0002;
 use constant EVENTLOG_ERROR_TYPE => 0x0001;
 use vars qw(@ISA);
@@ -147,7 +147,7 @@ sub TIEHANDLE {
   # Jetzt beginnt das eigentliche Auslesen des Eventlogs
   #
   if (! $mustabort) {
-    my $exec = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" %s", $wevtutil,
+    my $exec = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" \"/format:RenderedXml\" %s", $wevtutil,
         $eventlog->{eventlog},
         iso($eventlog->{lastsecond}),
         iso($eventlog->{thissecond}),
@@ -158,11 +158,9 @@ printf STDERR "exec %s\n", $exec;
     if ($fh->open($exec)) {
       trace("calling %s", $exec);
       while (my $line = $fh->getline()) {
-printf STDERR "inner line %s\n", $line;
         my $event = transform($line);
         if (included($event, $eventlog->{include}) &&
             ! excluded($event, $eventlog->{exclude})) {
-printf STDERR "rang\n";
           my $tmp_event = {};
           %{$tmp_event} = %{$event};
           #Win32::EventLog::GetMessageText($tmp_event);
@@ -200,13 +198,11 @@ printf STDERR "rang\n";
     push(@events, $tmp_event) if $internal_error;
   }
   bless $self, $class;
-printf STDERR "rasang %d events\n", scalar(@events);
   return $self;
 }
 
 sub AUTOLOAD {
  # sonst mault perl wegen inherited autoload deprecated blabla
-printf STDERR "bampf %s\n", $AUTOLOAD;
 }
 
 sub iso {
@@ -218,12 +214,14 @@ sub iso {
 sub transform {
   my $xml = shift;
 #<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='check_logfiles'/><EventID Qualifiers='0'>1</EventID><Level>4</Level><Task>0</Task><Keywords>0x80000000000000</Keywords><TimeCreated SystemTime='2015-03-28T23:00:44.000000000Z'/><EventRecordID>120492</EventRecordID><Channel>Application</Channel><Computer>it10</Computer><Security UserID='S-1-5-21-1938173854-155546141-2860328369-1000'/></System><EventData><Data>Firewall problem2</Data></EventData></Event>
+#<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='check_logfiles'/><EventID Qualifiers='0'>1</EventID><Level>4</Level><Task>0</Task><Keywords>0x80000000000000</Keywords><TimeCreated SystemTime='2015-03-30T11:29:01.000000000Z'/><EventRecordID>138895</EventRecordID><Channel>Application</Channel><Computer>HULSE.consol.lan</Computer><Security UserID='S-1-5-21-2368665722-2298231538-606384797-1001'/></System><EventData><Data>Firewall problem1</Data></EventData><RenderingInfo Culture='de-DE'><Message>Firewall problem1</Message><Level>Informationen</Level><Task></Task><Opcode>Info</Opcode><Channel></Channel><Provider></Provider><Keywords><Keyword>Klassisch</Keyword></Keywords></RenderingInfo></Event>
   my $event = {};
+printf "transform %s\n", $xml;
   $xml =~ /<Level>(\d+)<\/Level>/; $event->{EventType} = $1;
-  $xml =~ /<Channel>(.+)<\/Channel>/; $event->{Category} = $1;
+  $xml =~ /<Channel>(.+?)<\/Channel>/; $event->{Category} = $1;
   $xml =~ /<Provider Name='(.*?)'\/>/; $event->{Source} = $1;
-  $xml =~ /<EventID.*?>(\d+)<\/EventID>/; $event->{EventID} = sprintf "%04d", $1;
-  $xml =~ /<Data>(.+)<\/Data>/; $event->{Message} = $1;
+  $xml =~ /<EventID.*?>(\d+)<\/EventID>/; $event->{EventID} = $1;
+  $xml =~ /<Message>(.+)<\/Message>/; $event->{Message} = $1;
   $xml =~ /<Security UserID='(.*?)'\/>/; $event->{User} = $1;
   $xml =~ /<TimeCreated SystemTime='(.+?)'\/>/;
 #printf STDERR "transform %s\n", $1;
@@ -233,6 +231,11 @@ sub transform {
 #printf STDERR "ch is %s\n", scalar localtime $event->{TimeCreated};
   $event->{Timewritten} = $event->{TimeCreated};
   $event->{TimeGenerated} = $event->{TimeCreated};
+  if ($event->{EventType} == 2) { # map wevtutil levels to win32::eventlog defines
+    $event->{EventType} = 1;
+  } elsif ($event->{EventType} == 3) {
+    $event->{EventType} = 2;
+  }
   return $event;
 }
 

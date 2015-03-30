@@ -488,6 +488,7 @@ sub TIEHANDLE {
             $firstoffset, $event);
         if (($event->{Timewritten} >= $eventlog->{lastsecond}) &&
           ($event->{Timewritten} < $eventlog->{thissecond})) {
+printf STDERR "eventEventType is %s\n", Data::Dumper::Dumper($event);
           if (included($event, $eventlog->{include}) && 
               ! excluded($event, $eventlog->{exclude})) {
             #printf STDERR "passed filter %s\n", Data::Dumper::Dumper($event);
@@ -569,6 +570,7 @@ sub READ {
   
 sub READLINE {
   if (my $event = shift @events) {
+printf STDERR "event is %s\n", Data::Dumper::Dumper($event);
     return $event->{Message};
   } else {
     return undef;
@@ -686,6 +688,12 @@ sub included {
   foreach my $attr (qw(EventType)) {
     $matches->{$attr} = 0;
     if (exists $filter->{$attr}) {
+#printf "succ %s\n", EVENTLOG_SUCCESS;
+#printf "warn %s\n", EVENTLOG_WARNING_TYPE;
+#printf "err %s\n", EVENTLOG_ERROR_TYPE;
+#printf "info %s\n", EVENTLOG_INFORMATION_TYPE;
+#printf "audit %s\n", EVENTLOG_AUDIT_SUCCESS;
+#printf "fail %s\n", EVENTLOG_AUDIT_FAILURE;
       foreach my $item (split(',', $filter->{$attr})) {
         if ((lc $item =~ /^succ/ && $event->{$attr} == EVENTLOG_SUCCESS) ||
             (lc $item =~ /warn/ && $event->{$attr} == EVENTLOG_WARNING_TYPE) ||
@@ -693,8 +701,10 @@ sub included {
             (lc $item =~ /info/ && $event->{$attr} == EVENTLOG_INFORMATION_TYPE) ||
             (lc $item =~ /audit.*succ/ && $event->{$attr} == EVENTLOG_AUDIT_SUCCESS) ||
             (lc $item =~ /fail/ && $event->{$attr} == EVENTLOG_AUDIT_FAILURE)) {
-          #printf "type %s matched\n", $item;
+          printf STDERR "type %s matched\n", $item;
           $matches->{$attr}++;
+        } else {
+          printf STDERR "type %s nomatched\n", $item;
         }
       }
     } else {

@@ -85,6 +85,17 @@ if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
     }
     close CHECKLOGFILESPM;
   }
+  if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/CheckLogfiles/Search/Wevtutil.pm') {
+    while(<CHECKLOGFILESPM>) {
+      s/^1;//g;
+      s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
+      s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
+      s/#TRUSTED_PATH#/$opt_with_trusted_path/g;
+      s/#PACKAGE_VERSION#/$release/g;
+      printf CHECKLOGFILES "%s", $_;
+    }
+    close CHECKLOGFILESPM;
+  }
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/CheckLogfiles/Search/Dummy.pm') {
     while(<CHECKLOGFILESPM>) {
       s/^1;//g;
