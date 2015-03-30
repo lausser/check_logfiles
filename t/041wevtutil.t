@@ -113,6 +113,7 @@ ok($cl->expect_result(0, 2, 0, 0, 1));
 
 ######################################################
 # lem");
+$cl->reset();
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
