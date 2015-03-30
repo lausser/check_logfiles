@@ -321,7 +321,7 @@ sub init_from_file {
   $self->{postscriptparams} = $postscriptparams if $postscriptparams;
   $self->{postscriptstdin} = $postscriptstdin if $postscriptstdin;
   $self->{postscriptdelay} = $postscriptdelay if $postscriptdelay;
-  $self->{macros} = $MACROS if $MACROS;
+  $self->{macros} = { %{$self->{macros}}, %$MACROS } if %$MACROS;
   $self->{timeout} = $timeout || 360000;
   $self->{pidfile} = $pidfile if $pidfile;
   $self->{privatestate} = {};
