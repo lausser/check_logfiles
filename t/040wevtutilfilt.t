@@ -146,23 +146,24 @@ $ssh->logger(undef, undef, 1, "Firewall problem3", undef, {
   EventID => '23',   # block
 });
 # run commandline
+sleep 2;
 my $cmd = sprintf "perl ../plugins-scripts/check_logfiles --tag %s --seekfilesdir %s --criticalpattern \".*\" --type \"wevtutil:eventlog=application,include,EventType=Error,Source=check_logfiles,exclude,eventid=13,eventid=23\"",
   "ssh", TESTDIR."/var/tmp";
 diag($cmd);
-my $result = `$cmd`;
-diag($result);
-ok($result =~ /OK - no errors or warnings/);
-ok(($? >> 8) == 0);
+#my $result = `$cmd`;
+#diag($result);
+#ok($result =~ /OK - no errors or warnings/);
+#ok(($? >> 8) == 0);
 
 # 2 now find the two criticals 1xFWproblem1 1xFWproblem2
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 2);
 $cl->reset();
-sleep_until_next_minute();
+#sleep_until_next_minute();
 $ssh->logger(undef, undef, 1, "Fireball 2hihi");
 $ssh->logger(undef, undef, 1, "Fireball 3hihi");
 $ssh->logger(undef, undef, 1, "Firewall problem1");
 # run commandline
-$result = `$cmd`;
+my $result = `$cmd`;
 diag($result);
 ok($result =~ /CRITICAL - \(2 errors in/);
 ok(($? >> 8) == 2);

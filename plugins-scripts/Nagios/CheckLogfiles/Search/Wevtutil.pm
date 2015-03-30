@@ -216,7 +216,7 @@ sub transform {
 #<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='check_logfiles'/><EventID Qualifiers='0'>1</EventID><Level>4</Level><Task>0</Task><Keywords>0x80000000000000</Keywords><TimeCreated SystemTime='2015-03-28T23:00:44.000000000Z'/><EventRecordID>120492</EventRecordID><Channel>Application</Channel><Computer>it10</Computer><Security UserID='S-1-5-21-1938173854-155546141-2860328369-1000'/></System><EventData><Data>Firewall problem2</Data></EventData></Event>
 #<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='check_logfiles'/><EventID Qualifiers='0'>1</EventID><Level>4</Level><Task>0</Task><Keywords>0x80000000000000</Keywords><TimeCreated SystemTime='2015-03-30T11:29:01.000000000Z'/><EventRecordID>138895</EventRecordID><Channel>Application</Channel><Computer>HULSE.consol.lan</Computer><Security UserID='S-1-5-21-2368665722-2298231538-606384797-1001'/></System><EventData><Data>Firewall problem1</Data></EventData><RenderingInfo Culture='de-DE'><Message>Firewall problem1</Message><Level>Informationen</Level><Task></Task><Opcode>Info</Opcode><Channel></Channel><Provider></Provider><Keywords><Keyword>Klassisch</Keyword></Keywords></RenderingInfo></Event>
   my $event = {};
-printf "transform %s\n", $xml;
+#printf "transform %s\n", $xml;
   $xml =~ /<Level>(\d+)<\/Level>/; $event->{EventType} = $1;
   $xml =~ /<Channel>(.+?)<\/Channel>/; $event->{Category} = $1;
   $xml =~ /<Provider Name='(.*?)'\/>/; $event->{Source} = $1;
