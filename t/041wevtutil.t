@@ -17,7 +17,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   diag("this is not a windows machine");
   plan skip_all => 'Test only relevant on Windows';
 } else {
-  plan tests => 6;
+  plan tests => 13;
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({
@@ -43,35 +43,31 @@ $app->trace(sprintf "+----------------------- test %d ------------------", 1);
 sleep 2;
 $app->trace("initial run");
 $cl->run(); # cleanup
-$cl->reset();
 diag("cleanup");
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
 
 # 2 now find the two criticals
 $app->trace(sprintf "+----------------------- test %d ------------------", 2);
-$cl->reset();
 sleep 30;
 $app->logger(undef, undef, 1, "Photoshop problem");
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
 
 # 3 now find the two criticals and the two warnings
 $app->trace(sprintf "+----------------------- test %d ------------------", 3);
-$cl->reset();
 sleep 120;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 1, 0, 2));
 
 # 2 now find the two criticals
 $app->trace(sprintf "+----------------------- test %d ------------------", 4);
-$cl->reset();
 $app->logger(undef, undef, 1, "Photoshop problem");
 sleep 10;
 $app->logger(undef, undef, 1, "Photoshop problem");
@@ -83,7 +79,7 @@ sleep 10;
 $app->logger(undef, undef, 1, "Photoshop problem2");
 $app->logger(undef, undef, 1, "Photoshop problem");
 sleep 10;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 #ok($cl->expect_result(0, 0, 6, 0, 2));
@@ -94,9 +90,8 @@ ok($cl->{exitmessage} =~ /CRITICAL/);
 
 # 3 now find the two criticals and the two warnings
 $app->trace(sprintf "+----------------------- test %d ------------------", 5);
-$cl->reset();
 sleep 65;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 if ($found == 6) {
@@ -106,31 +101,28 @@ ok($cl->expect_result(0, 0, 6 - $found, 0, 2));
 }
 $app->logger(undef, undef, 2, "Alert: Battery low");
 sleep 1;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 2, 0, 0, 1));
 
 ######################################################
 # lem");
-$cl->reset();
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
 
 # 3 now find the two criticals and the two warnings
 $app->trace(sprintf "+----------------------- test %d ------------------", 3);
-$cl->reset();
 sleep 120;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 1, 0, 2));
 
 # 2 now find the two criticals
 $app->trace(sprintf "+----------------------- test %d ------------------", 4);
-$cl->reset();
 $app->logger(undef, undef, 1, "Photoshop problem");
 sleep 10;
 $app->logger(undef, undef, 1, "Photoshop problem");
@@ -142,7 +134,7 @@ sleep 10;
 $app->logger(undef, undef, 1, "Photoshop problem2");
 $app->logger(undef, undef, 1, "Photoshop problem");
 sleep 10;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 #ok($cl->expect_result(0, 0, 6, 0, 2));
@@ -153,9 +145,8 @@ ok($cl->{exitmessage} =~ /CRITICAL/);
 
 # 3 now find the two criticals and the two warnings
 $app->trace(sprintf "+----------------------- test %d ------------------", 5);
-$cl->reset();
 sleep 65;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 if ($found == 6) {
@@ -165,7 +156,7 @@ ok($cl->expect_result(0, 0, 6 - $found, 0, 2));
 }
 $app->logger(undef, undef, 2, "Alert: Battery low");
 sleep 1;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 2, 0, 0, 1));
@@ -186,8 +177,8 @@ $cl = Nagios::CheckLogfiles::Test->new({
             {
               tag => "msps",
               type => "wevtutil",
-              criticalpatterns => ["Microsoft", "Powershell.*(ready|bereit)" ],
-              warningpatterns => ["Powershell.*(started|gestartet)" ],
+              criticalpatterns => ["Microsoft", "PowerShell.*(ready|bereit)" ],
+              warningpatterns => ["PowerShell.*(started|gestartet)" ],
               wevtutil => {
                 eventlog => "Microsoft-Windows-PowerShell/Operational",
               }
@@ -197,21 +188,18 @@ my $msps = $cl->get_search_by_tag("msps");
 $msps->delete_seekfile();
 $msps->trace("deleted seekfile");
 $app->trace("initial run");
-$cl->run(); # cleanup
-$cl->reset();
 diag("cleanup");
-$cl->run();
+$cl->reset_run(); # cleanup
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
-# 2 now find the two criticals
+# 2 now find 1 w 1 c
 $app->trace(sprintf "+----------------------- test %d ------------------", 2);
 $cl->reset();
-sleep 30;
 system('powershell -Command "echo hihi"');
 sleep 5;
-$cl->run();
+$cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 1, 2, 0, 2));
+ok($cl->expect_result(0, 1, 1, 0, 2));
 

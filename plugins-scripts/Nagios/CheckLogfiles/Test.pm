@@ -37,6 +37,12 @@ sub reset {
   }
 }
 
+sub reset_run {
+  my $self = shift;
+  $self->reset();
+  $self->run();
+}
+
 sub get_search_by_tag {
   my $self = shift;
   my $tag = shift;

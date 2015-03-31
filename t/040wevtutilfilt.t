@@ -28,7 +28,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   diag("this is not a windows machine");
   plan skip_all => 'Test only relevant on Windows';
 } else {
-  plan tests => 6;
+  plan tests => 4;
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({

@@ -159,6 +159,7 @@ printf STDERR "exec %s\n", $exec;
       trace("calling %s", $exec);
       while (my $line = $fh->getline()) {
         my $event = transform($line);
+        next if ! defined $event->{EventType};
         if (included($event, $eventlog->{include}) &&
             ! excluded($event, $eventlog->{exclude})) {
           my $tmp_event = {};
@@ -231,6 +232,11 @@ sub transform {
 #printf STDERR "ch is %s\n", scalar localtime $event->{TimeCreated};
   $event->{Timewritten} = $event->{TimeCreated};
   $event->{TimeGenerated} = $event->{TimeCreated};
+if (! defined $event->{EventType}) {
+  # ignore broken events
+printf STDERR "drop schrott %s\n", $xml;
+return;
+}
   if ($event->{EventType} == 2) { # map wevtutil levels to win32::eventlog defines
     $event->{EventType} = 1;
   } elsif ($event->{EventType} == 3) {
