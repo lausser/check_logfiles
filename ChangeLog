@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.7 - 2015-04-01
+- add type wevtutil to support EVTX (Crimson) event logs.
+
 3.6.3 - 2014-12-21
 - resolve macros in seekfilesdir
 

@@ -2701,7 +2701,6 @@ sub scan {
     }
 
     while (my $line = $logfile->{fh}->getline()) {
-printf STDERR "line is %s\n", $line;
       if ($self->{timedout}) {
         $self->trace(sprintf "leaving the scan loop after %d lines",
             $self->{linesread});

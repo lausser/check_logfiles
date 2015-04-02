@@ -1,6 +1,6 @@
 AC_REVISION ($Revision: 1.150 $)
 AC_PREREQ(2.58)
-AC_INIT(check_logfiles,3.6.3)
+AC_INIT(check_logfiles,3.7)
 AM_INIT_AUTOMAKE
 AC_CANONICAL_HOST
 

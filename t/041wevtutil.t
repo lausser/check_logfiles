@@ -17,7 +17,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   diag("this is not a windows machine");
   plan skip_all => 'Test only relevant on Windows';
 } else {
-  plan tests => 13;
+  plan tests => 12;
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({
@@ -113,13 +113,6 @@ diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
 
-# 3 now find the two criticals and the two warnings
-$app->trace(sprintf "+----------------------- test %d ------------------", 3);
-sleep 120;
-$cl->reset_run();
-diag($cl->has_result());
-diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2));
 
 # 2 now find the two criticals
 $app->trace(sprintf "+----------------------- test %d ------------------", 4);
@@ -170,7 +163,7 @@ ok($cl->expect_result(0, 2, 0, 0, 1));
 # "PowerShell-Konsole ist für Benutzereingaben bereit."
 # in
 # Microsoft-Windows-PowerShell/Operational
-
+diag("check the new channels");
 $cl = Nagios::CheckLogfiles::Test->new({
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
@@ -189,13 +182,14 @@ $msps->delete_seekfile();
 $msps->trace("deleted seekfile");
 $app->trace("initial run");
 diag("cleanup");
-$cl->reset_run(); # cleanup
+$cl->reset_run(); # cleanup. it may find powershells from the last test run
+$cl->reset_run(); # now a reset run
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
 # 2 now find 1 w 1 c
 $app->trace(sprintf "+----------------------- test %d ------------------", 2);
-$cl->reset();
+diag("start the powershell");
 system('powershell -Command "echo hihi"');
 sleep 5;
 $cl->reset_run();

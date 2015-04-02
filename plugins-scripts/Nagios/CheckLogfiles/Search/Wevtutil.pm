@@ -152,7 +152,6 @@ sub TIEHANDLE {
         iso($eventlog->{lastsecond}),
         iso($eventlog->{thissecond}),
         ($^O eq "cygwin") ? '2>/dev/null |' : '2>NUL |';
-printf STDERR "exec %s\n", $exec;
     trace("calling %s", $exec);
     my $fh = new IO::File;
     if ($fh->open($exec)) {
@@ -217,7 +216,6 @@ sub transform {
 #<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='check_logfiles'/><EventID Qualifiers='0'>1</EventID><Level>4</Level><Task>0</Task><Keywords>0x80000000000000</Keywords><TimeCreated SystemTime='2015-03-28T23:00:44.000000000Z'/><EventRecordID>120492</EventRecordID><Channel>Application</Channel><Computer>it10</Computer><Security UserID='S-1-5-21-1938173854-155546141-2860328369-1000'/></System><EventData><Data>Firewall problem2</Data></EventData></Event>
 #<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='check_logfiles'/><EventID Qualifiers='0'>1</EventID><Level>4</Level><Task>0</Task><Keywords>0x80000000000000</Keywords><TimeCreated SystemTime='2015-03-30T11:29:01.000000000Z'/><EventRecordID>138895</EventRecordID><Channel>Application</Channel><Computer>HULSE.consol.lan</Computer><Security UserID='S-1-5-21-2368665722-2298231538-606384797-1001'/></System><EventData><Data>Firewall problem1</Data></EventData><RenderingInfo Culture='de-DE'><Message>Firewall problem1</Message><Level>Informationen</Level><Task></Task><Opcode>Info</Opcode><Channel></Channel><Provider></Provider><Keywords><Keyword>Klassisch</Keyword></Keywords></RenderingInfo></Event>
   my $event = {};
-#printf "transform %s\n", $xml;
   $xml =~ /<Level>(\d+)<\/Level>/; $event->{EventType} = $1;
   $xml =~ /<Channel>(.+?)<\/Channel>/; $event->{Category} = $1;
   $xml =~ /<Provider Name='(.*?)'\/>/; $event->{Source} = $1;
@@ -225,18 +223,14 @@ sub transform {
   $xml =~ /<Message>(.+)<\/Message>/; $event->{Message} = $1;
   $xml =~ /<Security UserID='(.*?)'\/>/; $event->{User} = $1;
   $xml =~ /<TimeCreated SystemTime='(.+?)'\/>/;
-#printf STDERR "transform %s\n", $1;
   my $t = ParseDate($1);
   $event->{TimeCreated} = UnixDate($t, "%s");
-#printf STDERR "to %s\n", $event->{TimeCreated};
-#printf STDERR "ch is %s\n", scalar localtime $event->{TimeCreated};
   $event->{Timewritten} = $event->{TimeCreated};
   $event->{TimeGenerated} = $event->{TimeCreated};
-if (! defined $event->{EventType}) {
-  # ignore broken events
-printf STDERR "drop schrott %s\n", $xml;
-return;
-}
+  if (! defined $event->{EventType}) {
+    # ignore broken events
+    return;
+  }
   if ($event->{EventType} == 2) { # map wevtutil levels to win32::eventlog defines
     $event->{EventType} = 1;
   } elsif ($event->{EventType} == 3) {

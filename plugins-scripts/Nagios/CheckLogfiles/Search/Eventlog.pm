@@ -488,7 +488,6 @@ sub TIEHANDLE {
             $firstoffset, $event);
         if (($event->{Timewritten} >= $eventlog->{lastsecond}) &&
           ($event->{Timewritten} < $eventlog->{thissecond})) {
-printf STDERR "eventEventType is %s\n", Data::Dumper::Dumper($event);
           if (included($event, $eventlog->{include}) && 
               ! excluded($event, $eventlog->{exclude})) {
             #printf STDERR "passed filter %s\n", Data::Dumper::Dumper($event);
@@ -570,7 +569,6 @@ sub READ {
   
 sub READLINE {
   if (my $event = shift @events) {
-printf STDERR "event is %s\n", Data::Dumper::Dumper($event);
     return $event->{Message};
   } else {
     return undef;
