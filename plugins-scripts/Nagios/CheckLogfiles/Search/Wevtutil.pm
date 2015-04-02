@@ -188,7 +188,7 @@ sub TIEHANDLE {
           }
           push(@events, $tmp_event);
         } else {
-           printf STDERR "blocked by filter %s\n", Data::Dumper::Dumper($event);
+           #printf STDERR "blocked by filter %s\n", Data::Dumper::Dumper($event);
         }
       }
       $fh->close();

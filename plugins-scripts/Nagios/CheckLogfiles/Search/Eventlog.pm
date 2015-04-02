@@ -699,10 +699,7 @@ sub included {
             (lc $item =~ /info/ && $event->{$attr} == EVENTLOG_INFORMATION_TYPE) ||
             (lc $item =~ /audit.*succ/ && $event->{$attr} == EVENTLOG_AUDIT_SUCCESS) ||
             (lc $item =~ /fail/ && $event->{$attr} == EVENTLOG_AUDIT_FAILURE)) {
-          printf STDERR "type %s matched\n", $item;
           $matches->{$attr}++;
-        } else {
-          printf STDERR "type %s nomatched\n", $item;
         }
       }
     } else {
