@@ -75,8 +75,8 @@ our @events = ();
 
 *Nagios::CheckLogfiles::Search::Wevtutil::Handle::events =
     *Nagios::CheckLogfiles::Search::Eventlog::Handle::events;
-*Nagios::CheckLogfiles::Search::Wevtutil::Handle::READLINE =
-    \&Nagios::CheckLogfiles::Search::Eventlog::Handle::READLINE;
+#*Nagios::CheckLogfiles::Search::Wevtutil::Handle::READLINE =
+#    \&Nagios::CheckLogfiles::Search::Eventlog::Handle::READLINE;
 *Nagios::CheckLogfiles::Search::Wevtutil::Handle::format_message =
     \&Nagios::CheckLogfiles::Search::Eventlog::Handle::format_message;
 *Nagios::CheckLogfiles::Search::Wevtutil::Handle::included =
@@ -137,9 +137,23 @@ sub TIEHANDLE {
   # Oeffnen des Eventlogs
   #
   if (! $mustabort) {
-# letzte sekunde lesen
-#      $mustabort = 1;
-#      $internal_error = "Eventlog permission denied";
+    my $exec = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" \"/format:RenderedXml\" %s", $wevtutil,
+        $eventlog->{eventlog},
+        iso(365*24*3600* $eventlog->{thissecond}),
+        iso(365*24*3600* $eventlog->{thissecond}), " 2>&1 |";
+    trace("checking %s", $exec);
+    my $fh = new IO::File;
+    if ($fh->open($exec)) {
+      my @lines = grep { defined $_ } $fh->getline();
+      if (@lines) {
+        $mustabort = 1;
+        $internal_error = join(", ", @lines);
+      }
+      $fh->close();
+    } else {
+      $mustabort = 1;
+      $internal_error = sprintf "could not run wevtutil with channel %s", $eventlog->{eventlog};
+    }
   }
   #
   # Schritt 5
@@ -203,6 +217,7 @@ sub TIEHANDLE {
 
 sub AUTOLOAD {
  # sonst mault perl wegen inherited autoload deprecated blabla
+printf STDERR "wevtutil autoload %s\n", $AUTOLOAD;
 }
 
 sub iso {
