@@ -10,7 +10,12 @@ use Getopt::Long qw(:config no_ignore_case getopt_compat);
 
 my($opt_with_seekfiles_dir, $opt_with_protocols_dir, $opt_with_trusted_path, 
     $opt_with_perl, $opt_with_gzip);
-my $release = "#RELEASE#";
+my $release = "";
+open CFGAC, "configure.ac";
+while (<CFGAC>) {
+ $release = $1 if /^AC_INIT\(.*,([\d\.]+)\)/;
+}
+close CFGAC;
 
 if (! GetOptions(
     "with-seekfiles-dir=s" => \$opt_with_seekfiles_dir,
