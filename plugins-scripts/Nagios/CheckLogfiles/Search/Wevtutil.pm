@@ -217,7 +217,7 @@ sub TIEHANDLE {
 
 sub AUTOLOAD {
  # sonst mault perl wegen inherited autoload deprecated blabla
-printf STDERR "wevtutil autoload %s\n", $AUTOLOAD;
+#printf STDERR "wevtutil autoload %s\n", $AUTOLOAD;
 }
 
 sub iso {
