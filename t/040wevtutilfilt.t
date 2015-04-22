@@ -50,6 +50,9 @@ my $cl = Nagios::CheckLogfiles::Test->new({
               }
 	    }
 	]    });
+
+$cl->make_windows_plugin();
+
 my $ssh = $cl->get_search_by_tag("ssh");
 if ($^O !~ /MSWin|cygwin/) {
   diag("windows only");
@@ -167,4 +170,5 @@ my $result = `$cmd`;
 diag($result);
 ok($result =~ /CRITICAL - \(2 errors in/);
 ok(($? >> 8) == 2);
+$cl->remove_windows_plugin();
 

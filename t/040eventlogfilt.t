@@ -23,11 +23,15 @@ sub sleep_until_next_minute {
   # now it is ~ hh:00, hh:01
 }
 
-if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
+if ($^O !~ /MSWin/) {
   diag("this is not a windows machine");
   plan skip_all => 'Test only relevant on Windows';
+} elsif ($^O eq "cygwin") {
+  diag("this is a windows machine, but cygwin. this worked in former times, afte
+r vista you have to use native windows for the tests");
+  plan skip_all => 'Test only relevant on Windows';
 } else {
-  plan tests => 6;
+  plan tests => 7;
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({

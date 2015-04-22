@@ -45,7 +45,7 @@ my $command = sprintf $perlpath.' ../plugins-scripts/check_logfiles --tag=%s --c
     $ssh->{tag}, $ssh->{patterns}->{CRITICAL}->[0], 
     $ssh->{patterns}->{WARNING}->[0],
     $ssh->{rotation}, $ssh->{logfile}, $cl->{seekfilesdir};
- 
+diag($command);
 $ssh->trace("executing %s", $command);
 $ssh->trace("deleting logfile and seekfile");
 $ssh->delete_logfile();
@@ -63,9 +63,12 @@ ok(($output =~ /OK - no errors or warnings/) && (($? >> 8) == 0));
 # now find the two criticals
 $ssh->trace("==== 2 ====");
 $cl->reset();
-$ssh->loggercrap(undef, undef, 100);
+sleep 1; # if not, cygwin says "Log file has the same modified time"
+#$ssh->loggercrap(undef, undef, 100);
 $ssh->logger(undef, undef, 2, "Failed password for invalid user2");
-$ssh->loggercrap(undef, undef, 100);
+#$ssh->loggercrap(undef, undef, 100);
+system("ls -l var/adm/messages");
+system("cat var/adm/messages");
 $output = `$command`;
 diag($output);
 ok(($output =~ /CRITICAL - \(2 errors in/) && (($? >> 8) == 2));

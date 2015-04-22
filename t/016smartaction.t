@@ -732,8 +732,12 @@ $postscript->{script} = sub {
   printf "OK - du mich auch\n";
   return 0;
 };
+# if not set, we see ugly uninizialized-errors
+$ENV{CHECK_LOGFILES_DATE_MM} = 0;
+$ENV{CHECK_LOGFILES_SERVICEOUTPUT} = "";
 $action->{script} = sub {
       my $grad = 0;
+      printf STDERR "in month %d i receive %s\n", $ENV{CHECK_LOGFILES_DATE_MM}, $ENV{CHECK_LOGFILES_SERVICEOUTPUT};
       $ENV{CHECK_LOGFILES_SERVICEOUTPUT} =~ /: (\d+) Grad/;
       $grad = $1;
       if ($grad > 30) {
@@ -754,6 +758,8 @@ $action->{script} = sub {
         return 0;
       }
 };
+printf "the script\n";
+printf STDERR "the script\n";
 $action->{options}->{supersmartscript} = 1;
 $action->{options}->{smartscript} = 1;
 $action->{options}->{script} = 1;

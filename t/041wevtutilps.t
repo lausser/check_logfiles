@@ -17,7 +17,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   diag("this is not a windows machine");
   plan skip_all => 'Test only relevant on Windows';
 } else {
-  plan tests => 3;
+  plan tests => 7;
 }
 
 ######################################################
@@ -43,6 +43,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
               }
             }
         ]    });
+$cl->make_windows_plugin();
 my $msps = $cl->get_search_by_tag("msps");
 $msps->delete_seekfile();
 $msps->trace("deleted seekfile");
@@ -138,4 +139,4 @@ diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 11, 11, 0, 2));
 
-
+$cl->remove_windows_plugin();

@@ -15,6 +15,9 @@ use constant TESTDIR => ".";
 if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   diag("this is not a windows machine");
   plan skip_all => 'Test only relevant on Windows';
+} elsif (! -f 'c:\Windows\Tasks\SchedLgU.txt' || ! -f 'C:\WINDOWS\SchedLgU.txt' || ! -f 'c:\Windows\Tasks\SchedLgU.txt') {
+  diag("no suitable file was found");
+  plan skip_all => 'Test can only run with an encoded file';
 } else {
   plan tests => 2;
 }

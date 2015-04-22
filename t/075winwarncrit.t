@@ -23,8 +23,8 @@ sub sleep_until_next_minute {
   # now it is ~ hh:00, hh:01
 }
 
-if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
-  diag("this is not a windows machine");
+if ($^O !~ /MSWin/) {
+  diag("this is not a windows machine (cygwin does not work since vista)");
   plan skip_all => 'Test only relevant on Windows';
 } else {
   plan tests => 6;
@@ -43,6 +43,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
               }
             }
         ]    });
+$cl->make_windows_plugin();
 my $ssh = $cl->get_search_by_tag("ssh");
 if ($^O !~ /MSWin|cygwin/) {
   diag("windows only");
@@ -138,6 +139,11 @@ if ($^O =~ /MSWin/) {
   $perlpath = 'C:\Perl\bin\perl ';
  }
   $ssh->{logfile} =~ s/\//\\/g;
+} else {
+  foreach (glob "/cygdrive/c/*awberry*/perl/bin/perl.exe") {
+    $perlpath = $_." ";
+    last;
+  }
 }
 my $command = sprintf $perlpath.'../plugins-scripts/check_logfiles --seekfilesdir "%s" --tag %s --type eventlog:eventlog=application --winwarncrit',
     TESTDIR."/var/tmp",
@@ -203,4 +209,4 @@ diag($command);
 $output = `$command`;
 diag($output);
 ok($output =~ /10 errors, 9 warnings.*ssh_lines=19/);
-
+$cl->remove_windows_plugin();

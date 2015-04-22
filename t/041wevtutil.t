@@ -33,6 +33,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
               }
 	    }
 	]    });
+$cl->make_windows_plugin();
 my $app = $cl->get_search_by_tag("app");
 $app->delete_seekfile();
 $app->trace("deleted seekfile");
@@ -196,4 +197,4 @@ $cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 1, 1, 0, 2));
-
+$cl->remove_windows_plugin();
