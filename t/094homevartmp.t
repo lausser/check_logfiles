@@ -6,7 +6,7 @@
 #
 
 use strict;
-use Test::More tests => 9;
+use Test::More tests => 21;
 use Cwd;
 use File::Path;
 use lib "../plugins-scripts";
@@ -67,6 +67,8 @@ $ssh->loggercrap(undef, undef, 100);
 $ssh->logger(undef, undef, 2, "Unknown user sepp");
 $ssh->loggercrap(undef, undef, 100);
 sleep 1;
+diag("seek ".$ssh->{seekfile});
+ok(-f "./var/tmp/check_logfiles.._var_adm_messages.ssh");
 
 $ENV{OMD_ROOT} = "./omd_root";
 $cl = Nagios::CheckLogfiles::Test->new({
@@ -86,9 +88,31 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 2, 2, 0, 2));
+diag("seek ".$ssh->{seekfile});
+ok(! -f "./var/tmp/check_logfiles.._var_adm_messages.ssh");
+ok(-f "./omd_root/var/tmp/check_logfiles/check_logfiles.._var_adm_messages.ssh");
+
+
+$cl->trace("now test if the migration really worked");
+# find the two criticals
+$ssh->trace(sprintf "+----------------------- test %d ------------------", 12);
+$cl->reset();
+$ssh->loggercrap(undef, undef, 10);
+$ssh->logger(undef, undef, 2, "Failed password for invalid user2...");
+$ssh->loggercrap(undef, undef, 10);
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 2, 0, 2));
+diag("seek ".$ssh->{seekfile});
+ok(! -f "./var/tmp/check_logfiles.._var_adm_messages.ssh");
+ok(-f "./omd_root/var/tmp/check_logfiles/check_logfiles.._var_adm_messages.ssh");
+
 rmtree("./omd_root");
 
 diag("# with configfile ====================================================");
+$cl->trace("# with configfile ====================================================");
 my $configfile = <<EOCFG;
 	\$seekfilesdir = TESTDIR."/var/tmp";
 	\@searches = (
@@ -151,6 +175,9 @@ $ssh->logger(undef, undef, 2, "Unknown user sepp");
 $ssh->loggercrap(undef, undef, 100);
 sleep 1;
 
+diag("seek ".$ssh->{seekfile});
+ok(-f "./var/tmp/check_action.._var_adm_messages.ssh");
+
 $ENV{OMD_ROOT} = "./omd_root";
 $configfile = <<EOCFG;
 	\$seekfilesdir = "homevartmp:".TESTDIR."/var/tmp";
@@ -163,12 +190,14 @@ $configfile = <<EOCFG;
 	    }
 	);
 EOCFG
+unlink("./etc/check_action.cfg");
 $testdir = TESTDIR;
 $configfile =~ s/TESTDIR/"$testdir"/g;
 open CCC, ">./etc/check_action.cfg";
 print CCC $configfile;
 close CCC;
-
+sleep 1;
+$cl->trace("now create a new CheckLogfiles with homevartmp");
 $cl = Nagios::CheckLogfiles::Test->new({ cfgfile => "./etc/check_action.cfg" });
 $ssh = $cl->get_search_by_tag("ssh");
 
@@ -176,6 +205,10 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 2, 2, 0, 2));
+
+diag("seek ".$ssh->{seekfile});
+ok(! -f "./var/tmp/check_action.._var_adm_messages.ssh");
+ok(-f "./omd_root/var/tmp/check_logfiles/check_action.._var_adm_messages.ssh");
 rmtree("./omd_root");
 
 
@@ -248,6 +281,9 @@ $ssh->logger(undef, undef, 2, "Unknown user sepp");
 $ssh->loggercrap(undef, undef, 100);
 sleep 1;
 
+diag("seek ".$ssh->{seekfile});
+ok(-f "./var/tmp/flatfile.._var_adm_messages.ssh");
+
 $ENV{OMD_ROOT} = "./omd_root";
 $configfile = <<EOCFG;
 	\$seekfilesdir = "homevartmp:".TESTDIR."/var/tmp";
@@ -278,7 +314,10 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 2, 2, 0, 2));
+
+diag("seek ".$ssh->{seekfile});
+ok(! -f "./var/tmp/flatfile.._var_adm_messages.ssh");
+ok(-f "./omd_root/var/tmp/check_logfiles/flatfile.._var_adm_messages.ssh");
+
 rmtree("./omd_root");
-
-
 

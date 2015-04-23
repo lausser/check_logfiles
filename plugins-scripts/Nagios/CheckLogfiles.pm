@@ -5,6 +5,7 @@ use IO::File;
 use File::Basename;
 use File::Spec;
 use File::Find;
+use File::Path;
 use Cwd;
 use Data::Dumper;
 #use Net::Domain qw(hostname hostdomain hostfqdn);
@@ -129,6 +130,7 @@ sub init {
         return undef;
       }
     } 
+    $self->late_init_macros;
     # if there is a dynamictag parameter then replace template names with
     # template_dynamictagtag
     if (scalar(@{$self->{selectedsearches}})) {
@@ -156,10 +158,14 @@ sub init {
     }
   } else {
     $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
+    $self->late_init_macros;
     # first the global options (from the commandline in this case)
     $self->refresh_options($params->{options});
+    $self->{seekfilesdir} = $self->relocate_dir("seekfilesdir", $self->{seekfilesdir});
+    $self->resolve_macros(\$self->{seekfilesdir});
     foreach (@{$params->{searches}}) {
       $_->{seekfilesdir} = $self->{seekfilesdir};
+      $_->{relocate_seekfilesdir} = $self->{relocate_seekfilesdir};
       $_->{scriptpath} = $self->{scriptpath};
       %{$_->{macros}} = %{$self->{macros}};
       $_->{tracefile} = $self->{tracefile};
@@ -231,8 +237,7 @@ sub init_from_file {
       $ExitMsg = sprintf "UNKNOWN - syntax error %s", (split(/\n/, $@))[0];
       return undef;
     }
-    # We might need this for a pidfile
-    $self->{abscfgfile} = (unpack("H*", $self->{cfgfile}));
+    $abscfgfile = "/dummy/dummy/".(unpack("H*", $self->{cfgfile}));
   } else {
     if (-f $self->{cfgfile}) {
       $abscfgfile = $self->{cfgfile};
@@ -250,6 +255,7 @@ sub init_from_file {
     }
     $abscfgfile = File::Spec->rel2abs($abscfgfile) 
         unless File::Spec->file_name_is_absolute($abscfgfile);
+    delete $INC{$abscfgfile}; # this is mostly because of the tests which cache the cfgfile
     eval {
       require $abscfgfile;
     };
@@ -259,53 +265,21 @@ sub init_from_file {
       return undef;
     }
     # We might need this for a pidfile
-    $self->{abscfgfile} = $abscfgfile;
   }
-  # autodetect a good place for a seekfilesdir
-  # abscfgfile usially is in path/etc
-  # 1. path/var/tmp
-  # 2. path/tmp
-  if ($seekfilesdir && $seekfilesdir eq "autodetect") {
-    my $basedir = dirname(dirname($abscfgfile));
-    if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
-      $seekfilesdir = $basedir.'/var/tmp/check_logfiles';
-      mkdir($seekfilesdir);
-    } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
-      $seekfilesdir = $basedir.'/tmp/check_logfiles';
-      mkdir($seekfilesdir);
-    } else {
-      $ExitCode = $ERROR_UNKNOWN;
-      $ExitMsg = sprintf "UNKNOWN - unable to autodetect an adequate seekfilesdir";
-      return undef;
-    }
-  } elsif ($seekfilesdir) {
-    $self->resolve_macros(\$seekfilesdir);
-  }
-  if ($protocolsdir && $protocolsdir eq "autodetect") {
-    my $basedir = dirname(dirname($abscfgfile));
-    if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
-      $protocolsdir = $basedir.'/var/tmp';
-    } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
-      $protocolsdir = $basedir.'/tmp';
-    } else {
-      $protocolsdir = $self->system_tempdir();
-    }
-  } elsif ($protocolsdir) {
-    $self->resolve_macros(\$protocolsdir);
-  }
-  if ($scriptpath && $scriptpath eq "autodetect") {
-    my @path = ();
-    my $basedir = dirname(dirname($abscfgfile));
-    if (-d $basedir.'/local/lib/nagios/plugins') {
-      push(@path, $basedir.'/local/lib/nagios/plugins');
-    }
-    if (-d $basedir.'/lib/nagios/plugins') {
-      push(@path, $basedir.'/lib/nagios/plugins');
-    }
-    $scriptpath = join(($^O =~ /MSWin/) ? ';' : ':', @path);
-  } elsif ($scriptpath) {
-    $self->resolve_macros(\$scriptpath);
-  }
+
+  $seekfilesdir ||= $self->{seekfilesdir};
+  $protocolsdir ||= $self->{protocolsdir};
+  $scriptpath ||= $self->{scriptpath};
+  # We might need this for a pidfile
+  $self->{abscfgfile} = $abscfgfile;
+  $seekfilesdir = $self->relocate_dir("seekfilesdir", $seekfilesdir, dirname(dirname($abscfgfile)));
+  return undef if ! $seekfilesdir;
+  $protocolsdir = $self->relocate_dir("protocolsdir", $protocolsdir, dirname(dirname($abscfgfile)));
+  $scriptpath = $self->relocate_dir("scriptpath", $scriptpath, dirname(dirname($abscfgfile)));
+  $self->resolve_macros(\$seekfilesdir);
+  $self->resolve_macros(\$protocolsdir);
+  $self->resolve_macros(\$scriptpath);
+
   $self->{tracefile} = $tracefile if $tracefile;
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
   # already done one level above $self->{cfgbase} = (split /\./, basename($self->{cfgfile}))[0];
@@ -351,6 +325,7 @@ sub init_from_file {
   }
   foreach (@searches) {
     $_->{seekfilesdir} = $self->{seekfilesdir};
+    $_->{relocate_seekfilesdir} = $self->{relocate_seekfilesdir};
     $_->{scriptpath} = $self->{scriptpath};
     %{$_->{macros}} = %{$self->{macros}};
     $_->{tracefile} = $self->{tracefile};
@@ -680,7 +655,6 @@ sub init_macros {
   #  Set default values for the built-in macros.
   #
   my $DEFAULTMACROS = {
-      CL_SERVICEDESC => $self->{cfgbase},
       CL_DATE_YYYY => sprintf("%04d", $year),
       CL_DATE_YY => substr($year,2,2),
       CL_DATE_MM => sprintf("%02d", $mon),
@@ -690,13 +664,10 @@ sub init_macros {
       CL_DATE_SS => sprintf("%02d", $sec),
       CL_DATE_TIMESTAMP => sprintf("%10d", time),
       CL_DATE_CW => sprintf("%02d", $cw),
-      CL_NSCA_SERVICEDESC => $self->{cfgbase},
       CL_NSCA_HOST_ADDRESS => "127.0.0.1",
       CL_NSCA_PORT => 5667,
       CL_NSCA_TO_SEC => 10,
       CL_NSCA_CONFIG_FILE => "/usr/local/nagios/etc/send_nsca.cfg",
-      CL_WARNING => $self->{warning},
-      CL_CRITICAL => $self->{critical},
   };
   if (defined(&Win32::LoginName)) {
     $DEFAULTMACROS->{CL_USERNAME} = &Win32::LoginName();
@@ -747,6 +718,16 @@ sub init_macros {
   return $self;
 }
 
+sub late_init_macros {
+  # these are macros filled with values that do not exist before
+  # the Nagios::CheckLogfiles object has been fully initialized
+  my $self = shift;
+  $self->{macros}->{CL_SERVICEDESC} = $self->{cfgbase};
+  $self->{macros}->{CL_NSCA_SERVICEDESC} = $self->{cfgbase};
+  $self->{CL_WARNING} = $self->{warning};
+  $self->{CL_CRITICAL} = $self->{critical};
+}
+
 #
 #  Resolve macros in a string. 
 #  If a second parameter is given, then this string is meant as a regular expression.
@@ -755,6 +736,7 @@ sub init_macros {
 sub resolve_macros {
   my $self = shift;
   my $pstring = shift;
+  return if ! defined $$pstring;
   while ($$pstring =~ /\$(.+?)\$/g) {
     my $maybemacro = $1;
     if (exists $self->{macros}->{$maybemacro}) {
@@ -768,6 +750,7 @@ sub resolve_macros {
 sub resolve_macros_in_pattern {
   my $self = shift;
   my $pstring = shift;
+  return if ! $$pstring;
   while ($$pstring =~ /\$(.+?)\$/g) {
   # das alte bleibt hier stehen als denkmal der schande
   #while ($$pstring =~ /.*\$(\w+)\$.*/g) { 
@@ -1705,12 +1688,78 @@ sub set_memory_limit {
   }
 }
 
+sub relocate_dir {
+  # $seekfilesdir = $self->relocate_dir("seekfilesdir", $seekfilesdir, dirname(dirname($abscfgfile)))) {
+  my $self = shift;
+  my $type = shift;
+  my $olddir = shift;
+  my $basedir = shift;
+  my $newdir = "";
+  if ($olddir =~ /^(autodetect|homevartmp):(.*)/) {
+    # this is a hint for the search which will move its seekfile
+    # from here to it's new location
+    $self->{"relocate_".$type} = $2;
+    $self->resolve_macros(\$self->{"relocate_".$type});
+  }
+  if ($olddir =~ /^autodetect/) {
+    if ($type eq "scriptpath") {
+      $newdir = join(($^O =~ /MSWin/) ? ';' : ':', grep {
+          -d $_
+      } map {
+          $basedir.$_;
+      } ('/local/lib/nagios/plugins', '/lib/nagios/plugins'));
+    } else {
+      if (-d $basedir.'/var/tmp' && -w $basedir.'/var/tmp') {
+        $newdir = $basedir.'/var/tmp/check_logfiles';
+        mkdir($newdir);
+      } elsif (-d $basedir.'/tmp' && -w $basedir.'/tmp') {
+        $newdir = $basedir.'/tmp/check_logfiles';
+        mkdir($newdir);
+      } elsif ($type eq "seekfilesdir") {
+        $ExitCode = $ERROR_UNKNOWN;
+        $ExitMsg = sprintf "UNKNOWN - unable to autodetect an adequate seekfilesdir";
+        return undef;
+      } else {
+        $newdir = $self->system_tempdir();
+      }
+    }
+    return $newdir;
+  } elsif ($olddir =~ /^homevartmp/) {
+    if ($type eq "scriptpath") {
+    } else {
+      foreach my $basedir ($ENV{OMD_ROOT}, $ENV{HOME}) {
+        next if ! $basedir;
+        foreach my $dir ("/var/tmp", "/tmp") {
+          eval {
+            mkpath($basedir.$dir."/check_logfiles");
+          };
+          next if $@;
+          $newdir = $basedir.$dir."/check_logfiles";
+          mkdir($newdir);
+          last;
+        }
+        last if $newdir;
+      }
+      if (! $newdir && $type eq "seekfilesdir") {
+        $ExitCode = $ERROR_UNKNOWN;
+        $ExitMsg = sprintf "UNKNOWN - unable to autodetect an adequate seekfilesdir";
+        return undef;
+      } elsif (! $newdir) {
+        $newdir = $self->system_tempdir();
+      }
+    }
+    return $newdir;
+  } else {
+    return $olddir;
+  }
+}
 
 package Nagios::CheckLogfiles::Search;
 
 use strict;
 use Exporter;
 use File::Basename;
+use File::Copy;
 use POSIX qw(SSIZE_MAX);
 #use Unicode::Normalize;
 #use Encode;
@@ -1743,6 +1792,7 @@ sub new {
   $self->{scriptdelay} = $params->{scriptdelay};
   $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
   $self->{seekfilesdir} = $params->{seekfilesdir} || $self->system_tempdir();
+  $self->{relocate_seekfilesdir} = $params->{relocate_seekfilesdir};
   $self->{archivedir} = $params->{archivedir};
   $self->{scriptpath} = $params->{scriptpath};
   $self->{macros} = $params->{macros};
@@ -2178,6 +2228,11 @@ sub construct_seekfile {
   $self->{pre2seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{logbasename},
       $self->{tag} eq "default" ? "seek" : $self->{seekfiletag};
+  if ($self->{relocate_seekfilesdir}) {
+    $self->{relocate_seekfile} = sprintf "%s/%s.%s.%s", $self->{relocate_seekfilesdir},
+        $self->{cfgbase}, $self->{seekfilebase},
+        $self->{tag} eq "default" ? "seek" : $self->{tag};
+  }
 }
 
 sub force_cfgbase {
@@ -2349,6 +2404,14 @@ sub loadstate {
           $self->{pre3seekfile}, $self->{seekfile});
       mkdir $self->{seekfilesdir} if ! -d $self->{seekfilesdir};
       rename $self->{pre3seekfile}, $self->{seekfile};
+      $self->trace("and call load_state again");
+      $self->loadstate() if -f $self->{seekfile};
+      return $self;
+    }
+    if ($self->{relocate_seekfilesdir}) {
+      $self->trace("relocatable seekfile %s found. move it to %s",
+          $self->{relocate_seekfile}, $self->{seekfile});
+      move $self->{relocate_seekfile}, $self->{seekfile};
       $self->trace("and call load_state again");
       $self->loadstate() if -f $self->{seekfile};
       return $self;
@@ -3711,6 +3774,11 @@ sub construct_seekfile {
   $self->{pre2seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{logbasename},
       $self->{tag} eq "default" ? "seek" : $self->{tag};
+  if ($self->{relocate_seekfilesdir}) {
+    $self->{relocate_seekfile} = sprintf "%s/%s.%s.%s", $self->{relocate_seekfilesdir},
+        $self->{cfgbase}, $self->{seekfilebase},
+        $self->{tag} eq "default" ? "seek" : $self->{tag};
+  }
   $self->trace("rewrote uniform seekfile to %s", $self->{seekfile});
   return $self;
 }

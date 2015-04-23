@@ -2,6 +2,9 @@
 # Changelog of the check_logfiles plugin #
 ##########################################
 
+3.7.1 - 2015-04-22
+- add homevartmp as another autodetect location for seekfiles
+
 3.7 - 2015-04-01
 - add type wevtutil to support EVTX (Crimson) event logs.
 

@@ -26,6 +26,17 @@ sub new {
   return bless $self, $class;
 }
 
+sub remove_windows_plugin {
+  my $self = shift;
+  system("mv ../plugins-scripts/check_logfiles.unix ../plugins-scripts/check_logfiles");
+}
+
+sub make_windows_plugin {
+  my $self = shift;
+  system("mv ../plugins-scripts/check_logfiles ../plugins-scripts/check_logfiles.unix");
+  system("cd ..; perl winconfig.pl");
+}
+
 sub reset {
   my $self = shift;
   $self->{allerrors} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
