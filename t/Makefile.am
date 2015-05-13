@@ -19,4 +19,4 @@ tests:
 #	PERL_DL_NONLAZY=1 $(FULLPERLRUN) "-MExtUtils::Command::MM" "-e" "test_harness($(TEST_VERBOSE), '$(INST_LIB)', '$(INST_ARCHLIB)')" $(TEST_FILES)
 
 clean:
-	rm var/adm/this_is_random*
+	rm -f var/adm/this_is_random*
