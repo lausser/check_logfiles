@@ -87,6 +87,7 @@ sub init {
       # multiple cfgfiles found in a config dir
       my @tmp_searches = ();
       $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
+      $self->late_init_macros;
       foreach my $cfgfile (@{$params->{cfgfile}}) {
         $self->{cfgfile} = $cfgfile;
         if (! $self->init_from_file()) {
@@ -120,17 +121,18 @@ sub init {
       # this must be an encoded flat file
       $self->{cfgfile} = $params->{cfgfile};
       $self->{cfgbase} = "flatfile";
+      $self->late_init_macros;
       if (! $self->init_from_file()) {
         return undef;
       }
     } else {
       $self->{cfgfile} = $params->{cfgfile};
       $self->{cfgbase} = (split /\./, basename($self->{cfgfile}))[0];
+      $self->late_init_macros;
       if (! $self->init_from_file()) {
         return undef;
       }
     } 
-    $self->late_init_macros;
     # if there is a dynamictag parameter then replace template names with
     # template_dynamictagtag
     if (scalar(@{$self->{selectedsearches}})) {
@@ -267,6 +269,7 @@ sub init_from_file {
     # We might need this for a pidfile
   }
 
+  $self->merge_macros($MACROS); # merge the defaultmacros with macros from the file
   $seekfilesdir ||= $self->{seekfilesdir};
   $protocolsdir ||= $self->{protocolsdir};
   $scriptpath ||= $self->{scriptpath};
@@ -295,7 +298,6 @@ sub init_from_file {
   $self->{postscriptparams} = $postscriptparams if $postscriptparams;
   $self->{postscriptstdin} = $postscriptstdin if $postscriptstdin;
   $self->{postscriptdelay} = $postscriptdelay if $postscriptdelay;
-  $self->{macros} = $MACROS if $MACROS;
   $self->{timeout} = $timeout || 360000;
   $self->{pidfile} = $pidfile if $pidfile;
   $self->{privatestate} = {};
@@ -726,6 +728,14 @@ sub late_init_macros {
   $self->{macros}->{CL_NSCA_SERVICEDESC} = $self->{cfgbase};
   $self->{CL_WARNING} = $self->{warning};
   $self->{CL_CRITICAL} = $self->{critical};
+}
+
+sub merge_macros {
+  my $self = shift;
+  my $extramacros = shift;
+  foreach (keys %{$extramacros}) {
+    $self->{macros}->{$_} = $extramacros->{$_};
+  }
 }
 
 #

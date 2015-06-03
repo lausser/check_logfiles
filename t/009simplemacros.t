@@ -6,7 +6,7 @@
 #
 
 use strict;
-use Test::More tests => 4;
+use Test::More tests => 12;
 use Cwd;
 use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
@@ -105,8 +105,156 @@ $lvm->logger(undef, undef, 2, sprintf "the month macro: %s", sprintf "%02d", $mo
 $lvm->logger(undef, undef, 2, "mpio: no light");
 $lvm->loggercrap(undef, undef, 100);
 sleep 1;
+system("ls -li ./var/adm/messages");
 $cl->run();
 $lvm->dump_protocol();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 2, 16, 0, 2));
+
+
+$cl->trace("-----------------------phase2-----------------------");
+my $configfile = <<EOCFG;
+	\$seekfilesdir = TESTDIR."/var/tmp";
+	\@searches =(
+	    {
+	      tag => "lvm",
+	      logfile => TESTDIR."/var/adm/messages",
+	      criticalpatterns => ['the username macro: \$CL_USERNAME\$'],
+	    }
+	);
+EOCFG
+my $testdir = TESTDIR;
+$configfile =~ s/TESTDIR/"$testdir"/g;
+unlink "./etc/check_action.cfg" if -f "./etc/check_action.cfg";
+open CCC, ">./etc/check_action.cfg";
+print CCC $configfile;
+close CCC;
+my $username = scalar getpwuid $>;
+diag("i am user $username");
+$cl = Nagios::CheckLogfiles::Test->new({ cfgfile => './etc/check_action.cfg'});
+$lvm = $cl->get_search_by_tag("lvm");
+$cl->reset();
+$lvm->logger(undef, undef, 2, "SCSI errors at device /dev/vg00");
+sleep 1;
+$lvm->trace("initial run");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
+
+$cl->reset();
+$lvm->loggercrap(undef, undef, 10);
+$lvm->logger(undef, undef, 1, "the username macro: $username hohoho");
+$lvm->loggercrap(undef, undef, 10);
+sleep 1;
+system("ls -li ./var/adm/messages");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2));
+
+$cl->trace("-----------------------phase3-----------------------");
+diag("check macros in prescript");
+$configfile = <<EOCFG;
+\$prescript = sub {
+  printf "i am user %s\\n", \$ENV{CHECK_LOGFILES_USERNAME};
+  return 2;
+};
+\$options = "supersmartprescript";
+        \$seekfilesdir = TESTDIR."/var/tmp";
+        \@searches =(
+            {
+              tag => "lvm",
+              logfile => TESTDIR."/var/adm/messages",
+              criticalpatterns => ['the username macro: \$CL_USERNAME\$'],
+            }
+        );
+EOCFG
+$testdir = TESTDIR;
+$configfile =~ s/TESTDIR/"$testdir"/g;
+unlink "./etc/check_action.cfg" if -f "./etc/check_action.cfg";
+open CCC, ">./etc/check_action.cfg";
+print CCC $configfile;
+close CCC;
+$username = scalar getpwuid $>;
+diag("i am user $username");
+$cl = Nagios::CheckLogfiles::Test->new({ cfgfile => './etc/check_action.cfg'});
+$lvm = $cl->get_search_by_tag("lvm");
+$cl->reset();
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->{exitmessage} =~ /i am user $username/); # prescript sees macros
+ok($cl->expect_result(0, 0, 1, 0, 2));
+
+diag("check macros in postscript");
+$configfile = <<EOCFG;
+\$postscript = sub {
+  printf "i am service %s\\n", \$ENV{CHECK_LOGFILES_SERVICEDESC};
+  return 2;
+};
+\$options = "supersmartpostscript";
+        \$seekfilesdir = TESTDIR."/var/tmp";
+        \@searches =(
+            {
+              tag => "lvm",
+              logfile => TESTDIR."/var/adm/messages",
+              criticalpatterns => ['the username macro: \$CL_USERNAME\$'],
+            }
+        );
+EOCFG
+$testdir = TESTDIR;
+$configfile =~ s/TESTDIR/"$testdir"/g;
+unlink "./etc/check_action.cfg" if -f "./etc/check_action.cfg";
+open CCC, ">./etc/check_action.cfg";
+print CCC $configfile;
+close CCC;
+$cl = Nagios::CheckLogfiles::Test->new({ cfgfile => './etc/check_action.cfg'});
+$lvm = $cl->get_search_by_tag("lvm");
+$cl->reset();
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->{exitmessage} =~ /i am service check_action/); # postscript sees macros
+ok($cl->expect_result(0, 0, 1, 0, 2));
+
+diag("check macros in smartscript");
+$configfile = <<EOCFG;
+\$options = "";   #!!!!!!!!!!!!!!!!!!!!!! fehlt das, dann wird automatisch supersmartpostscript gesetzt, warum auch immer
+        \$seekfilesdir = TESTDIR."/var/tmp";
+        \@searches =(
+            {
+              tag => "lvm",
+              logfile => TESTDIR."/var/adm/messages",
+              criticalpatterns => ['the username macro: \$CL_USERNAME\$'],
+              options => 'supersmartscript',
+              script => sub {
+                printf "i send my hit via nsca and i use the desc %s\\n", 
+                    \$ENV{CHECK_LOGFILES_NSCA_SERVICEDESC};
+                return 2;
+              },
+            }
+        );
+EOCFG
+$testdir = TESTDIR;
+$configfile =~ s/TESTDIR/"$testdir"/g;
+diag("./etc/check_action.cfg exists") if -f "./etc/check_action.cfg";
+unlink "./etc/check_action.cfg" if -f "./etc/check_action.cfg";
+diag("./etc/check_action.cfg deleted") if ! -f "./etc/check_action.cfg";
+open CCC, ">./etc/check_action.cfg";
+print CCC $configfile;
+close CCC;
+$cl = undef;
+$lvm = undef;
+$cl = Nagios::CheckLogfiles::Test->new({ cfgfile => './etc/check_action.cfg'});
+$lvm = $cl->get_search_by_tag("lvm");
+$cl->reset();
+$lvm->loggercrap(undef, undef, 10);
+$lvm->logger(undef, undef, 1, "the username macro: $username hohoho");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->{exitmessage} =~ /i send my hit via nsca and i use the desc check_action/); # script sees macros
+ok($cl->expect_result(0, 0, 1, 0, 2));
+

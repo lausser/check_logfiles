@@ -30,7 +30,7 @@ sub timestamp {
   my($sec, $min, $hour, $mday, $mon, $year) =
       (localtime)[0, 1, 2, 3, 4, 5];
   # Oct 31 15:49:21
-  $string =~ /^(\w+) (\d+) (\d+):(\d+):(\d+)/;
+  $string =~ /^(\w+)\s+(\d+) (\d+):(\d+):(\d+)/;
   my $time = POSIX::mktime($5, $4, $3, $2, {
       "Jan" => 0, "Feb" => 1, "Mar" => 2, "Apr" => 3, "May" => 4, "Jun" => 5, 
       "Jul" => 6, "Aug" => 7, "Sep" => 8, "Oct" => 9, "Nov" => 10, "Dec" => 11

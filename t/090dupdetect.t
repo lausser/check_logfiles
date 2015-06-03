@@ -52,7 +52,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 2, 2, 0, 2));
-ok($cl->{exitmessage} =~ /CRITICAL - \(2 errors, 2 warnings\) - \w{3} \d{2} \d{2}:\d{2}:\d{2}.*Failed.*user4/);
+ok($cl->{exitmessage} =~ /CRITICAL - \(2 errors, 2 warnings\) - \w{3}\s+\d+ \d{2}:\d{2}:\d{2}.*Failed.*user4/);
 
 unlink("./etc/check_action.cfg");
 $configfile = <<EOCFG;
@@ -95,7 +95,7 @@ $cl2->run();
 diag($cl2->has_result());
 diag($cl2->{exitmessage});
 ok($cl2->expect_result(0, 2, 2, 0, 2));
-ok($cl2->{exitmessage} =~ /CRITICAL - \w{3} \d{2} \d{2}:\d{2}:\d{2}.*Failed.*user4/);
+ok($cl2->{exitmessage} =~ /CRITICAL - \w{3}\s+\d+ \d{2}:\d{2}:\d{2}.*Failed.*user4/);
 
 exit;
 
