@@ -4,7 +4,7 @@ Description
 check_logfiles is a Plugin for Icinga which scans log files for specific patterns.
 
 Motivation
-----------
+==========
 
 The conventional plugins which scan log files are not adequate in a mission critical environment. Especially the missing ability to handle logfile rotation and inclusion of the rotated archives in the scan allow gaps in the monitoring. Check_logfiles was written because these deficiencies would have prevented Nagios from replacing a propritetary monitoring system.
 
