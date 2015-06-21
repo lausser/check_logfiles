@@ -1,0 +1,8 @@
+name: check_logfiles
+description: "file:///README.md"
+url: "https://github.com/lausser/check_logfiles"
+tags: logfile,event,pattern,alert,messages
+vendor: Linux,Microsoft
+target: Log
+type: Plugin
+license: gplv2
