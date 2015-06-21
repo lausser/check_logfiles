@@ -1,5 +1,5 @@
-Beschreibung
-============
+Description
+===========
 
 check_logfiles is a Plugin for Icinga which scans log files for specific patterns.
 
@@ -23,9 +23,10 @@ Features
 
 Examples
 ========
-nagios$ check_logfiles --logfile /var/adm/messages \
-     --criticalpattern 'Failed password' --tag ssh
-CRITICAL - (4 errors) - May  9 11:33:12 localhost sshd[29742] Failed password for invalid user8 ... |ssh_lines27 ssh_warnings=0 ssh_criticals=4 ssh_unknowns=0
+
+    nagios$ check_logfiles --logfile /var/adm/messages \
+         --criticalpattern 'Failed password' --tag ssh
+    CRITICAL - (4 errors) - May  9 11:33:12 localhost sshd[29742] Failed password for invalid user8 ... |ssh_lines27 ssh_warnings=0 ssh_criticals=4 ssh_unknowns=0
 
 Homepage
 ========
