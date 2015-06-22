@@ -476,6 +476,9 @@ sub run {
     $self->htmlencode(\$self->{exitmessage});
     $self->htmlencode(\$self->{long_exitmessage});
   }
+  if ($self->{rununique}) {
+    $self->cleanup_pidfile();
+  }
   return $self;
 }
 
@@ -1444,14 +1447,41 @@ sub check_pidfile {
         $self->write_pidfile();
         return 1;
       } else {
-        $self->trace("This pidfile is held by a running process. Exiting");
-        return 0;
+        my $is_a_check_logfiles = 0;
+        open(KILL, "/bin/ps -o args -e|");
+        while (<KILL>) {
+          if (/^(\d+)\s+.*check_logfiles.*/) {
+            if ($1 == $pid) {
+              $is_a_check_logfiles = 1;
+            }
+          }
+        }
+        close KILL;
+        if ($is_a_check_logfiles) {
+          $self->trace("This pidfile is held by a running process. Exiting");
+          return 0;
+        } else {
+          $self->trace("This pidfile is held by some other process. Writing a new one");
+          $self->write_pidfile();
+          return 1;
+        }
       }
     }
   } else {
     $self->trace("Found no pidfile. Writing a new one");
     $self->write_pidfile();
     return 1;
+  }
+}
+
+sub cleanup_pidfile {
+  my $self = shift;
+  if ($self->{pidfile}) {
+    $self->trace(sprintf "Cleanup pidfile. %s", -f $self->{pidfile} ? "Yes" : "No");
+    -f $self->{pidfile} && unlink $self->{pidfile};
+    $self->trace(sprintf "Cleaned up pidfile. %s", ! -f $self->{pidfile} ? "Yes" : "No");
+  } else {
+    $self->trace("Not running with a pidfile");
   }
 }
 
@@ -1579,7 +1609,7 @@ sub run_as_daemon {
         }
       }
     } while($keep_going);
-    -f $self->{pidfile} && unlink $self->{pidfile};
+    $self->cleanup_pidfile();
     $self->trace("Daemon exiting...");
   }
 }
@@ -1763,6 +1793,7 @@ sub relocate_dir {
     return $olddir;
   }
 }
+
 
 package Nagios::CheckLogfiles::Search;
 
