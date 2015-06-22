@@ -1,431 +1,318 @@
-##########################################
-# Changelog of the check_logfiles plugin #
-##########################################
-
-3.7.1.2 - 2015-06-11
-- cleanup my pidfile
-
-3.7.1.1 - 2015-06-03
-- fix a macro-bug 
-
-3.7.1 - 2015-04-22
-- add homevartmp as another autodetect location for seekfiles
-
-3.7 - 2015-04-01
-- add type wevtutil to support EVTX (Crimson) event logs.
-
-3.6.3 - 2014-12-21
-- resolve macros in seekfilesdir
-
-3.6.2.1 - 2014-04-09
-- fix eventid-format for _tecad_win_
-
-3.6.2 - 2014-04-08
-- eventlogformat _tecad_win_
-
-3.6.1.1 - 2014-02-04
-- fix a race-condition (pid file) in unix-daemon-mode (thanks Klaus Wagner)
-
-3.6.1 - 2014-01-25
-- added search-option "capturegroups"
-- add forgotten --allyoucaneat
-
-3.6 - 2013-11-14
-- added global option "nooutputhitcount"
-- added search-option "thresholdexpiry="
-- okpattern resets threshold counters
-
-3.5.3.3 - 2013-09-24
-- exe files without x-bit can now run in a cygwin environment (Thanks Michael Glaser)
-
-3.5.3.2 - 2013-03-28
-- fixed a bug in allyoucaneat (if used with rotations)
-
-3.5.3.1 - 2012-11-29
-- --verbose finally works on the commandline
-- htmlencode can also be an option inside a config file
-
-3.5.3 - 2012-10-26
-- add option htmlencode (Thanks Sven Nierlein)
-
-3.5.2.1 - 2012-09-19
-- fix a bug related to nfs-mounted logfiles under linux
-
-3.5.2 - 2012-06-21
-- fix a bug in CL_PATTERN_KEY (Thanks Frank Rothaupt)
-
-3.5.1 - 2012-06-02
-- add parameters --warning and --critical (they become CL_WARNING/CL_CRITICAL)
-- add option "savestate" for type "virtual"
-
-3.5 - 2012-04-23
-- --timeout aborts searches in a controlled manner
-
-3.4.7.1 - 2012-01-16
-- fix a bug in maxmemsize and solaris
-- fix a bug where a supersmartpostscript's output was overwritten by longoutput
-
-3.4.7 - 2012-01-10
-- add new type dumpel (customer's request
-- bugfix in errpt's unstick method (Thanks Jim Winkle)
-
-3.4.6.1 - 2012-01-05
-- make rotatewait a global option
-- make logfileerror a global option
-
-3.4.6 - 2012-01-04
-- add maxmemsize
-- cleanup tab-indendation
-- add option logfileerror (unlike seekfileerror it is local)
-- add option rotatewait (sleep until chaos during rotation is over)
-- [selected]searches can be regexp
-- Eliminate "Use of qw(...) as parentheses is deprecated" warnings in perl 5.14 (Thanks Tommi)
-
-3.4.5.2 - 2011-11-08
-- set the path to gzip for hpux /opt/contrib..)
-- fix a bug where % in error messages caused ugly perl-errors when used with scriptstdin (Thanks Thomas Klaradic)
-
-3.4.5.1 - 2011-09-28
-- seekfilesdir can be "autodetect" with a configfile 
-- also protocolsdir (dirname(dirname(cfgfile)) + [/var/tmp|/tmp]
-- also scriptpath (dirname(dirname(cfgfile)) + [/local/lib/nagios/plugins|/lib/nagios/plugins]
-- type executable
-- fix a perl undef (patternkey stuff which i don't remember)
-
-3.4.5
-- add parameter --rununique
-
-3.4.4.2 - 2011-08-03
-- patterns can be hashes
-
-3.4.4.1 - 2011-05-31
-- seekfilesdir is now local (./var/tmp) in an OMD environment
-
-3.4.4 - 2011-04-19
-- add parameter patternfile
-
-3.4.3.2 - 2011-03-15
-- fix a bug with --type rotating::uniform on the commandline
-
-3.4.3.1 - 2011-03-10
-- create the pidfile's directory if it doesn't exist
-- new option unstick (Thanks Holger Reif)
-
-3.4.3 - 2011-01-19
-- add pid file handling to avoid concurrent processes with --daemon
-
-3.4.2.2 - 2010-09-29
-- add pattern loglog0bz2log1bz2  (Thanks Christian Schulz)
-- add pattern ehl (Thanks Daniel Haist)
-
-3.4.2.1 - 2010-08-04
-- add %u (User) to option eventlogformat
-
-3.4.2 - 2010-06-29
-- fixed a bug where exceptions only worked if patterns were defined. (Thanks Heiko)
-- small patch so filenames can be specified with --tag
-
-3.4.1 - 2010-05-08
-- new option archivedirregexp
-- fixed a bug in eventlogs. (take care of type EVENTLOG_SUCCESS)
-
-3.4 - 2010-05-07
-- used a new version of par::packer for check_logfiles.exe (there were problems if PERL5LIB was set by an oracle/veritas/... perl installation)
-
-3.3 - 2010-04-27
-- speedup in pattern matching
-- new (global) option seekfileerror
-- added Win32::Daemon to the windows version
-
-3.2 - 2010-04-08
-- better errorhandling for type=eventlog. non-existing eventlogs and dead remote servers result in unknown
-- type=eventlog now opens a secure channel to ipc$ if necessary
-- type=eventlog now checks if the desired eventlog exists (reads registry)
-- speedup in tivoli mode
-- add 099benchmark.t
-
-3.1.5 - 2010-03-05
-- lookback option is now allowed in the config file
-- fixed a bug which caused a perl-warning (only if criticalpattern=.* and last line is empty). (Thanks Sven Nierlein)
-- matching empty lines are displayed as _(null)_
-
-3.1.4 - 2010-02-24
-- just beautify the release string
-
-3.1.3.2 - 2010-02-24
-- added option randominode (Thanks Sergio)
-- implemented the allyoucaneat option in Eventlog
-- added option preferredlevel 
-
-3.1.3.1 - 2010-01-14
-- made the logfile name visible in PRIVATESTATE
-- changed HOMEPATH to USERPROFILE for the Windows HOME (Thanks Richard Tryzna)
-
-3.1.3 - 2009-12-12
-- fixed a bug in module Ipmitool
-
-3.1.2 - 2009-12-08
-- fixed a bug in scriptparams+macros+batsccipt
-
-3.1.1 - 2009-12-02
-- max plugin output length is now configurable with $options="maxlength=8192"
-
-3.1 - 2009-11-22
-- report can now be set in a cfgfile (global, e.g. $options="report=long")
-- new option "allyoucaneat" (the initial run starts from line 0)
-- new option "eventlogformat" (e.g. options='eventlogformat="id:%i %m",..')
-- Eventlog can now be filtered with include and exclude
-- new module Esxdiag
-
-3.0.4 - 2009-09-20
-- accept the contents of a config file as encoded string
-
-3.0.3.1 - 2009-09-07
-- Fixed a bug where incorrect EventIDs were read from the EventLog
-
-3.0.3 - 2009-08-26
-- Speedup in Eventlog scans
-- Under some OSs the daemon did not detach itself from the terminal
-
-3.0.2 - 2009-07-23
-- fixed a bug for --config. (Windows uses HOMEPATH instead of HOME)
-- fixed a bug in Eventlog+Tivoli (Thanks Werner Breitschmid)
-
-3.0.1 - 2009-06-25
-- fixed a bug in Eventlog+Tivoli
-- added match_them_all and match_never_ever as predefined patterns
-
-3.0 - 2009-06-19
-- added the ability to run as a windows service. (needs Win32::Daemon)
-
-2.6 2009-05-26
-- added the --lookback parameter to simulate filter-written of CheckEventLog
-- --critical/warningpattern can now be "match_them_all" instead of ".*"
-- --archivedir is now also a cmd line parameter
-- added the --daemon parameter. 
-- warning/criticalthreshold moved into options. 
-- added --warning/criticalthreshold to the list of possible comdline parameters 
-- Sven Nierlein wrote a module which reads patterns from a Tivoli Format File.
-- fixed incorrect calculation of protocolretention. (Thanks Rainer Rose)
-
-2.5.6.1 - 2009-03-25
-- there was some debugging output left from 2.5.6
-
-2.5.6 - 2009-03-25
-- fixed a bug in oraclealertlog+sticky
-- rewrote oraclealertlog so that the key is database time and not the plugin's system time
-- added the --macro parameter, e.g. --macro CL_LOGIN=nagios --macro CL_PASS=secret
-- added errorresource to type errpt
-- added the --nocase parameter
-- fixed a bug with line endings in unicode files
-
-2.5.5.2 - 2009-02-20
-- added the report variable to config files
-- more extensive testing of the logfile's permissions
-- added the option maxlength which truncates lines (Thanks Thomas Borger)
-- added the option winwarncrit which uses EventLog types instead of patterns
-
-2.5.5.1 - 2009-02-02
-- another bugfix for blanks in protocolsdir
-- i accidentially published a messed-up version of 2.5.5
-
-2.5.5 - 2008-01-23
-- multiline output with --report=long/html
-- bugfix in rotation patterns (Thanks Elbert Lai and Prasana Iyengar)
-- bugfix in type=oraclealertlog
-- bugfix in scripts and windows pathnames with blanks. (Thanks Juergen Walker)
-
-2.5 - 2008-11-04
-- native support for Windows eventlog (type=eventlog)
-
-2.4.1.9 - 2008-10-30
-- bugfix in handling of config file paths. (Thanks Ken Harford)
-
-2.4.1.8 - 2008-10-24
-- bugfix in Windows scriptpath. (Thanks Markus Wagner)
-- relative pathnames for config files are now possible under windows
-
-2.4.1.7 - 2008-10-10
-- bugfix in rotating::uniform and macros in rotation
-- bugfix scriptparams with CL_TAG (Thanks Markus Wagner)
-
-2.4.1.6 - 2008-09-03
-- added parameter --environment
-
-2.4.1.5 - 2008-08-15
-- syslogclient hostnames can be case insensitive with option nocase
-
-2.4.1.4 - 2008-07-20
-- scripts have access to a state hash, Environ. LAST_RUNTIME, RUN_COUNT
-- bugfix in type=uniform
-
-2.4.1.3 - 2008-06-24
-- fixed a bug in --sticky=<duration> (Thanks Severin Rossignol)
-
-2.4.1.2 - 2008-06-18
-- fixed a bug in CL_DATE_YY (Thanks beboy)
-
-2.4.1.1 - 2008-05-29
-- archivedir can contain macros
-
-2.4.1 - 2008-05-22
-- fixed a bug in sticky code (Thanks Nils Mueller)
-
-2.4 - 2008-05-07
-- added support for oracle alert log through database connection
-
-2.3.3 - 2008-04-10
-- introduced -F which allows directories full of configfiles 
+* 3.7.1.2 - 2015-06-11
+  cleanup my pidfile
+* 3.7.1.1 - 2015-06-03
+  fix a macro-bug 
+* 3.7.1 - 2015-04-22
+  add homevartmp as another autodetect location for seekfiles
+* 3.7 - 2015-04-01
+  add type wevtutil to support EVTX (Crimson) event logs.
+* 3.6.3 - 2014-12-21
+  resolve macros in seekfilesdir
+* 3.6.2.1 - 2014-04-09
+  fix eventid-format for _tecad_win_
+* 3.6.2 - 2014-04-08
+  eventlogformat _tecad_win_
+* 3.6.1.1 - 2014-02-04
+  fix a race-condition (pid file) in unix-daemon-mode (thanks Klaus Wagner)
+* 3.6.1 - 2014-01-25
+  added search-option "capturegroups"
+  add forgotten --allyoucaneat
+* 3.6 - 2013-11-14
+  added global option "nooutputhitcount"
+  added search-option "thresholdexpiry="
+  okpattern resets threshold counters
+* 3.5.3.3 - 2013-09-24
+  exe files without x-bit can now run in a cygwin environment (Thanks Michael Glaser)
+* 3.5.3.2 - 2013-03-28
+  fixed a bug in allyoucaneat (if used with rotations)
+* 3.5.3.1 - 2012-11-29
+  --verbose finally works on the commandline
+  htmlencode can also be an option inside a config file
+* 3.5.3 - 2012-10-26
+  add option htmlencode (Thanks Sven Nierlein)
+* 3.5.2.1 - 2012-09-19
+  fix a bug related to nfs-mounted logfiles under linux
+* 3.5.2 - 2012-06-21
+  fix a bug in CL_PATTERN_KEY (Thanks Frank Rothaupt)
+* 3.5.1 - 2012-06-02
+  add parameters --warning and --critical (they become CL_WARNING/CL_CRITICAL)
+  add option "savestate" for type "virtual"
+* 3.5 - 2012-04-23
+  --timeout aborts searches in a controlled manner
+* 3.4.7.1 - 2012-01-16
+  fix a bug in maxmemsize and solaris
+  fix a bug where a supersmartpostscript's output was overwritten by longoutput
+* 3.4.7 - 2012-01-10
+  add new type dumpel (customer's request
+  bugfix in errpt's unstick method (Thanks Jim Winkle)
+* 3.4.6.1 - 2012-01-05
+  make rotatewait a global option
+  make logfileerror a global option
+* 3.4.6 - 2012-01-04
+  add maxmemsize
+  cleanup tab-indendation
+  add option logfileerror (unlike seekfileerror it is local)
+  add option rotatewait (sleep until chaos during rotation is over)
+  [selected]searches can be regexp
+  Eliminate "Use of qw(...) as parentheses is deprecated" warnings in perl 5.14 (Thanks Tommi)
+* 3.4.5.2 - 2011-11-08
+  set the path to gzip for hpux /opt/contrib..)
+  fix a bug where % in error messages caused ugly perl-errors when used with scriptstdin (Thanks Thomas Klaradic)
+* 3.4.5.1 - 2011-09-28
+  seekfilesdir can be "autodetect" with a configfile 
+  also protocolsdir (dirname(dirname(cfgfile)) + [/var/tmp|/tmp]
+  also scriptpath (dirname(dirname(cfgfile)) + [/local/lib/nagios/plugins|/lib/nagios/plugins]
+  type executable
+  fix a perl undef (patternkey stuff which i don't remember)
+* 3.4.5
+  add parameter --rununique
+* 3.4.4.2 - 2011-08-03
+  patterns can be hashes
+* 3.4.4.1 - 2011-05-31
+  seekfilesdir is now local (./var/tmp) in an OMD environment
+* 3.4.4 - 2011-04-19
+  add parameter patternfile
+* 3.4.3.2 - 2011-03-15
+  fix a bug with --type rotating::uniform on the commandline
+* 3.4.3.1 - 2011-03-10
+  create the pidfile's directory if it doesn't exist
+  new option unstick (Thanks Holger Reif)
+* 3.4.3 - 2011-01-19
+  add pid file handling to avoid concurrent processes with --daemon
+* 3.4.2.2 - 2010-09-29
+  add pattern loglog0bz2log1bz2  (Thanks Christian Schulz)
+  add pattern ehl (Thanks Daniel Haist)
+* 3.4.2.1 - 2010-08-04
+  add %u (User) to option eventlogformat
+* 3.4.2 - 2010-06-29
+  fixed a bug where exceptions only worked if patterns were defined. (Thanks Heiko)
+  small patch so filenames can be specified with --tag
+* 3.4.1 - 2010-05-08
+  new option archivedirregexp
+  fixed a bug in eventlogs. (take care of type EVENTLOG_SUCCESS)
+* 3.4 - 2010-05-07
+  used a new version of par::packer for check_logfiles.exe (there were problems if PERL5LIB was set by an oracle/veritas/... perl installation)
+* 3.3 - 2010-04-27
+  speedup in pattern matching
+  new (global) option seekfileerror
+  added Win32::Daemon to the windows version
+* 3.2 - 2010-04-08
+  better errorhandling for type=eventlog. non-existing eventlogs and dead remote servers result in unknown
+  type=eventlog now opens a secure channel to ipc$ if necessary
+  type=eventlog now checks if the desired eventlog exists (reads registry)
+  speedup in tivoli mode
+  add 099benchmark.t
+* 3.1.5 - 2010-03-05
+  lookback option is now allowed in the config file
+  fixed a bug which caused a perl-warning (only if criticalpattern=.* and last line is empty). (Thanks Sven Nierlein)
+  matching empty lines are displayed as _(null)_
+* 3.1.4 - 2010-02-24
+  just beautify the release string
+* 3.1.3.2 - 2010-02-24
+  added option randominode (Thanks Sergio)
+  implemented the allyoucaneat option in Eventlog
+  added option preferredlevel 
+* 3.1.3.1 - 2010-01-14
+  made the logfile name visible in PRIVATESTATE
+  changed HOMEPATH to USERPROFILE for the Windows HOME (Thanks Richard Tryzna)
+* 3.1.3 - 2009-12-12
+  fixed a bug in module Ipmitool
+* 3.1.2 - 2009-12-08
+  fixed a bug in scriptparams+macros+batsccipt
+* 3.1.1 - 2009-12-02
+  max plugin output length is now configurable with $options="maxlength=8192"
+* 3.1 - 2009-11-22
+  report can now be set in a cfgfile (global, e.g. $options="report=long")
+  new option "allyoucaneat" (the initial run starts from line 0)
+  new option "eventlogformat" (e.g. options='eventlogformat="id:%i %m",..')
+  Eventlog can now be filtered with include and exclude
+  new module Esxdiag
+* 3.0.4 - 2009-09-20
+  accept the contents of a config file as encoded string
+* 3.0.3.1 - 2009-09-07
+  Fixed a bug where incorrect EventIDs were read from the EventLog
+* 3.0.3 - 2009-08-26
+  Speedup in Eventlog scans
+  Under some OSs the daemon did not detach itself from the terminal
+* 3.0.2 - 2009-07-23
+  fixed a bug for --config. (Windows uses HOMEPATH instead of HOME)
+  fixed a bug in Eventlog+Tivoli (Thanks Werner Breitschmid)
+* 3.0.1 - 2009-06-25
+  fixed a bug in Eventlog+Tivoli
+  added match_them_all and match_never_ever as predefined patterns
+* 3.0 - 2009-06-19
+  added the ability to run as a windows service. (needs Win32::Daemon)
+* 2.6 2009-05-26
+  added the --lookback parameter to simulate filter-written of CheckEventLog
+  --critical/warningpattern can now be "match_them_all" instead of ".*"
+  --archivedir is now also a cmd line parameter
+  added the --daemon parameter. 
+  warning/criticalthreshold moved into options. 
+  added --warning/criticalthreshold to the list of possible comdline parameters 
+  Sven Nierlein wrote a module which reads patterns from a Tivoli Format File.
+  fixed incorrect calculation of protocolretention. (Thanks Rainer Rose)
+* 2.5.6.1 - 2009-03-25
+  there was some debugging output left from 2.5.6
+* 2.5.6 - 2009-03-25
+  fixed a bug in oraclealertlog+sticky
+  rewrote oraclealertlog so that the key is database time and not the plugin's system time
+  added the --macro parameter, e.g. --macro CL_LOGIN=nagios --macro CL_PASS=secret
+  added errorresource to type errpt
+  added the --nocase parameter
+  fixed a bug with line endings in unicode files
+* 2.5.5.2 - 2009-02-20
+  added the report variable to config files
+  more extensive testing of the logfile's permissions
+  added the option maxlength which truncates lines (Thanks Thomas Borger)
+  added the option winwarncrit which uses EventLog types instead of patterns
+* 2.5.5.1 - 2009-02-02
+  another bugfix for blanks in protocolsdir
+  i accidentially published a messed-up version of 2.5.5
+* 2.5.5 - 2008-01-23
+  multiline output with --report=long/html
+  bugfix in rotation patterns (Thanks Elbert Lai and Prasana Iyengar)
+  bugfix in type=oraclealertlog
+  bugfix in scripts and windows pathnames with blanks. (Thanks Juergen Walker)
+* 2.5 - 2008-11-04
+  native support for Windows eventlog (type=eventlog)
+* 2.4.1.9 - 2008-10-30
+  bugfix in handling of config file paths. (Thanks Ken Harford)
+* 2.4.1.8 - 2008-10-24
+  bugfix in Windows scriptpath. (Thanks Markus Wagner)
+  relative pathnames for config files are now possible under windows
+* 2.4.1.7 - 2008-10-10
+  bugfix in rotating::uniform and macros in rotation
+  bugfix scriptparams with CL_TAG (Thanks Markus Wagner)
+* 2.4.1.6 - 2008-09-03
+  added parameter --environment
+* 2.4.1.5 - 2008-08-15
+  syslogclient hostnames can be case insensitive with option nocase
+* 2.4.1.4 - 2008-07-20
+  scripts have access to a state hash, Environ. LAST_RUNTIME, RUN_COUNT
+  bugfix in type=uniform
+* 2.4.1.3 - 2008-06-24
+  fixed a bug in --sticky=<duration> (Thanks Severin Rossignol)
+* 2.4.1.2 - 2008-06-18
+  fixed a bug in CL_DATE_YY (Thanks beboy)
+* 2.4.1.1 - 2008-05-29
+  archivedir can contain macros
+* 2.4.1 - 2008-05-22
+  fixed a bug in sticky code (Thanks Nils Mueller)
+* 2.4 - 2008-05-07
+  added support for oracle alert log through database connection
+* 2.3.3 - 2008-04-10
+  introduced -F which allows directories full of configfiles 
   (ending in .cfg or .conf)
-- fixed a typo in LOGLOG0LOG1 definition
-
-2.3.2.1 - 2008-02-26
-- fixed a bug which appeared with perl 5.10
-- tinkered with encoding.
-
-2.3.2 - 2008-02-12
-- added support for ipmitool system event log.
-- fixed a small errpt bug.
-- added decoding of ucs-2 encoded files as proposed by Dominic Horn.
-
-2.3.1.3 - 2008-01-28
-- small change to make it work with perl 5.10
-
-2.3.1.2 - 2007-12-27
-- added macro CL_PROTOCOLFILE
-- more commandline options
-- Fixed a bug in conjunction with very big logfiles.
-
-2.3.1.1 - 2007-11-16
-- Fixed a bug concerning sticky. (Thanks Marc Richter)
-- New option savethresholdcount. (Thanks Hannu Kivimäki)
-
-2.3.1 - 2007-10-14
-- Added search templates. Thanks Axel.
-- Threshold counters are remembered.
-- Fixed a big in scriptparams found by Niall Downie.
-- Support for bzip2'ed archives
-
-2.3 - 2007-09-10
-- Added AIX errpt as a new type of logfile.
-- Performance data are now in the expected format.
-- Added the sticky option. (I hate it. No support!)
-- Added the syslogclient option.
-- Error counters can now be reset with okpatterns.
-- Buxfixes for supersmart postscript output.
-
-2.2.4.1 - 2007-06-11
-- Fixed a bug (--searches) found by Mark Petersen
-
-2.2.4 - 2007-06-06
-- Added support for "virtual" files. (like /proc/*)
-
-2.2.3 - 2007-06-05
-- Fixed a bug with non-linux unices. 
-- Banged my head against the table. 
-
-2.2.2 - 2007-06-02
-- Added support for supersmart pre/postscripts with no output
-
-2.2.1 - 2007-06-01
-- Added parameters to perl-based scripts
-- Fixed bugs in DOS batch files
-
-2.2 - 2007-05-31
-- Scripts can now be code references.
-- Added smart scripts.
-
-2.1.2 - 2007-05-24
-- Added the [no]case option to enable case insensitive searches.
-- Fixed a bug related to acls and linux. (thx Marcus Fleige).
-
-2.1.1 - 2007-05-21
-- Removed sloppyness from the release 2.1
-
-2.1 - 2007-05-21
-- Added support for Windows (ActiveState Perl)
-- Added the mod_log_rotate method for Apache and Windows.
-- Fixed a bug in configure for solaris/awk 
-- Added "selectedsearches" as proposed by Lars Stavholm.
-
-2.0 - 2007-05-09
-- New layout of code using perl objects.
-- Added handling of nonrotating logfiles as proposed by Kai Nielsen.
-- Added performance data.
-- Bugs, improvements, cosmetics, tests
-
-1.3.6.1 - 2006-10-20
-- Corrected a bug which created protocol files even if no pattern matched.
-- Added a delay option as proposed by some users of the syslog check method.
-
-1.3.6
-- Added execution of scripts if inverse patterns are not found.
-- Corrected typos in README
-- Added command line parameters as proposed by Hendrik "Andurin" Baecker.
-
-1.3.5 - 2006-08-23
-- Code cleanup
-- Removed nsca support in favour of a more flexible script handling.
-- Added support for script parameters and modeling of the script's input.
-- Matches are now passed as environment parameters to scripts.
-
-1.3.4 - 2006-08-06
-- Added support for shifting logfilenames through macros.
-
-1.3.3 - 2006-07-03
-- Added nsca support for standalone use of check_logfiles
-
-1.3.2 - 2006-07-27
-- Added "watchdog" patterns which raise an alert when not found.
-- Added exceptions for patterns which stop processing of a preceding match.
-- More documentation in README
-- Fixed syntax errors found by Doug Lochart.
-
-1.3.1 - 2006-07-24
-- Added automatic deletion of old protocol files.
-- Added handling of an unreadable logfile.
-
-1.3 - 2006-07-04
-- Added an option for syslogservers to filter out foreign log entries.
-- Added macros in patterns.
-- Fixed a bug in timeout handling.
-- Added Debian to the list of predefined rotation methods.
-
-1.2.6 - 2006-07-03
-- Added options {critical,warning}threshold as proposed by jorge cabrera.
-
-1.2.5 - 2006-04-17
-- Fixed a bug in the fake seek algorithm.
-
-1.2.4 - 2006-04-15
-- Added a workaround to enable seeking in a pipe.
-- Minor bugfixing in tracing output.
-- Added some more examples to README.
-
-1.2.3 - 2006-04-11
-- Minor modifications to tracing.
-- Duplicate file detection to prevent scanning the same file twice.
-- Added examples to README.
-
-1.2.2 - 2006-03-31
-------------------
-- Added an new item to tracing as requested
-
-1.2.1 - 2006-03.27
-------------------
-- Fixed a small bug in mtime comparison
-
-1.2 - 2006-03-27
-----------------
-- Changed the default timeout to 60 seconds
-- Added a better rotation detection
-- Added -d option to activate extensive tracing
-- Bugfixing and commenting
-
-1.1 - 2006-03-24
-----------------
-- Added the first match to the plugin's output
-
-1.0 - 2006-03-12
-----------------
-- Initial release
+  fixed a typo in LOGLOG0LOG1 definition
+* 2.3.2.1 - 2008-02-26
+  fixed a bug which appeared with perl 5.10
+  tinkered with encoding.
+* 2.3.2 - 2008-02-12
+  added support for ipmitool system event log.
+  fixed a small errpt bug.
+  added decoding of ucs-2 encoded files as proposed by Dominic Horn.
+* 2.3.1.3 - 2008-01-28
+  small change to make it work with perl 5.10
+* 2.3.1.2 - 2007-12-27
+  added macro CL_PROTOCOLFILE
+  more commandline options
+  Fixed a bug in conjunction with very big logfiles.
+* 2.3.1.1 - 2007-11-16
+  Fixed a bug concerning sticky. (Thanks Marc Richter)
+  New option savethresholdcount. (Thanks Hannu Kivimäki)
+* 2.3.1 - 2007-10-14
+  Added search templates. Thanks Axel.
+  Threshold counters are remembered.
+  Fixed a big in scriptparams found by Niall Downie.
+  Support for bzip2'ed archives
+* 2.3 - 2007-09-10
+  Added AIX errpt as a new type of logfile.
+  Performance data are now in the expected format.
+  Added the sticky option. (I hate it. No support!)
+  Added the syslogclient option.
+  Error counters can now be reset with okpatterns.
+  Buxfixes for supersmart postscript output.
+* 2.2.4.1 - 2007-06-11
+  Fixed a bug (--searches) found by Mark Petersen
+* 2.2.4 - 2007-06-06
+  Added support for "virtual" files. (like /proc/*)
+* 2.2.3 - 2007-06-05
+  Fixed a bug with non-linux unices. 
+  Banged my head against the table. 
+* 2.2.2 - 2007-06-02
+  Added support for supersmart pre/postscripts with no output
+* 2.2.1 - 2007-06-01
+  Added parameters to perl-based scripts
+  Fixed bugs in DOS batch files
+* 2.2 - 2007-05-31
+  Scripts can now be code references.
+  Added smart scripts.
+* 2.1.2 - 2007-05-24
+  Added the [no]case option to enable case insensitive searches.
+  Fixed a bug related to acls and linux. (thx Marcus Fleige).
+* 2.1.1 - 2007-05-21
+  Removed sloppyness from the release 2.1
+* 2.1 - 2007-05-21
+  Added support for Windows (ActiveState Perl)
+  Added the mod_log_rotate method for Apache and Windows.
+  Fixed a bug in configure for solaris/awk 
+  Added "selectedsearches" as proposed by Lars Stavholm.
+* 2.0 - 2007-05-09
+  New layout of code using perl objects.
+  Added handling of nonrotating logfiles as proposed by Kai Nielsen.
+  Added performance data.
+  Bugs, improvements, cosmetics, tests
+* 1.3.6.1 - 2006-10-20
+  Corrected a bug which created protocol files even if no pattern matched.
+  Added a delay option as proposed by some users of the syslog check method.
+* 1.3.6
+  Added execution of scripts if inverse patterns are not found.
+  Corrected typos in README
+  Added command line parameters as proposed by Hendrik "Andurin" Baecker.
+* 1.3.5 - 2006-08-23
+  Code cleanup
+  Removed nsca support in favour of a more flexible script handling.
+  Added support for script parameters and modeling of the script's input.
+  Matches are now passed as environment parameters to scripts.
+* 1.3.4 - 2006-08-06
+  Added support for shifting logfilenames through macros.
+* 1.3.3 - 2006-07-03
+  Added nsca support for standalone use of check_logfiles
+* 1.3.2 - 2006-07-27
+  Added "watchdog" patterns which raise an alert when not found.
+  Added exceptions for patterns which stop processing of a preceding match.
+  More documentation in README
+  Fixed syntax errors found by Doug Lochart.
+* 1.3.1 - 2006-07-24
+  Added automatic deletion of old protocol files.
+  Added handling of an unreadable logfile.
+* 1.3 - 2006-07-04
+  Added an option for syslogservers to filter out foreign log entries.
+  Added macros in patterns.
+  Fixed a bug in timeout handling.
+  Added Debian to the list of predefined rotation methods.
+* 1.2.6 - 2006-07-03
+  Added options {critical,warning}threshold as proposed by jorge cabrera.
+* 1.2.5 - 2006-04-17
+  Fixed a bug in the fake seek algorithm.
+* 1.2.4 - 2006-04-15
+  Added a workaround to enable seeking in a pipe.
+  Minor bugfixing in tracing output.
+  Added some more examples to README.
+* 1.2.3 - 2006-04-11
+  Minor modifications to tracing.
+  Duplicate file detection to prevent scanning the same file twice.
+  Added examples to README.
+* 1.2.2 - 2006-03-31
+  Added an new item to tracing as requested
+* 1.2.1 - 2006-03.27
+  Fixed a small bug in mtime comparison
+* 1.2 - 2006-03-27
+  Changed the default timeout to 60 seconds
+  Added a better rotation detection
+  Added -d option to activate extensive tracing
+  Bugfixing and commenting
+* 1.1 - 2006-03-24
+  Added the first match to the plugin's output
+* 1.0 - 2006-03-12
+  Initial release
