@@ -729,8 +729,8 @@ sub late_init_macros {
   my $self = shift;
   $self->{macros}->{CL_SERVICEDESC} = $self->{cfgbase};
   $self->{macros}->{CL_NSCA_SERVICEDESC} = $self->{cfgbase};
-  $self->{CL_WARNING} = $self->{warning};
-  $self->{CL_CRITICAL} = $self->{critical};
+  $self->{macros}->{CL_WARNING} = $self->{warning};
+  $self->{macros}->{CL_CRITICAL} = $self->{critical};
 }
 
 sub merge_macros {
@@ -2388,6 +2388,9 @@ sub loadstate {
     }
     if (! $self->{laststate}->{logfile}) {
       $self->{laststate}->{logfile} = $self->{logfile};
+    }
+    if (! $self->{laststate}->{logtime}) {
+      $self->{laststate}->{logtime} = 0;
     }
     if (! $self->{laststate}->{devino}) {
       # upgrade vom < 1.4 on the fly
