@@ -223,7 +223,7 @@
   Fixed a bug in conjunction with very big logfiles.
 * 2.3.1.1 - 2007-11-16
   Fixed a bug concerning sticky. (Thanks Marc Richter)
-  New option savethresholdcount. (Thanks Hannu Kivim‰ki)
+  New option savethresholdcount. (Thanks Hannu Kivim√§ki)
 * 2.3.1 - 2007-10-14
   Added search templates. Thanks Axel.
   Threshold counters are remembered.
