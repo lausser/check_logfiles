@@ -445,6 +445,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
         $commandline{maxmemsize} ? "maxmemsize=".$commandline{maxmemsize} : undef,
         $commandline{rotatewait} ? "rotatewait" : undef,
         $commandline{htmlencode} ? "htmlencode" : undef,
+        $commandline{rununique} ? "rununique" : undef,
     ),
     selectedsearches => [split(/,/, $commandline{selectedsearches})],
     dynamictag => $commandline{tag} ? $commandline{tag} : undef,
@@ -456,7 +457,6 @@ if (my $cl = Nagios::CheckLogfiles->new({
     protocolsretention => $commandline{protocolsretention} ? $commandline{protocolsretention} : undef,
     reset => $commandline{reset} ? $commandline{reset} : undef,
     unstick => $commandline{unstick} ? $commandline{unstick} : undef,
-    rununique => $commandline{rununique} ? $commandline{rununique} : undef,
     warning => $commandline{warning} ? $commandline{warning} : undef,
     critical => $commandline{critical} ? $commandline{critical} : undef,
   })) {

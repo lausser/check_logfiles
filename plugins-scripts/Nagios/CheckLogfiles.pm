@@ -71,7 +71,6 @@ sub init {
   $self->{cmdlinemacros} = $params->{cmdlinemacros} || {};
   $self->{reset} = $params->{reset} || 0;
   $self->{unstick} = $params->{unstick} || 0;
-  $self->{rununique} = $params->{rununique} || 0;
   $self->{warning} = $params->{warning} || 0;
   $self->{critical} = $params->{critical} || 0;
   $self->init_macros;
@@ -80,7 +79,7 @@ sub init {
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
       seekfileerror => 'critical', logfileerror => 'critical', 
       maxmemsize => 0, rotatewait => 0, htmlencode => 0,
-      outputhitcount => 1,
+      outputhitcount => 1, rununique => 0,
   });
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
@@ -385,11 +384,11 @@ sub run {
     }
     return $self;
   }
-  if ($self->{rununique}) {
+  if ($self->{options}->{rununique}) {
     $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
     if (! $self->check_pidfile()) {
       $self->trace("Exiting because another check is already running");
-      printf STDERR "Exiting because another check is already running\n";
+      printf "Exiting because another check is already running\n";
       exit 3;
     }
   }
@@ -476,7 +475,7 @@ sub run {
     $self->htmlencode(\$self->{exitmessage});
     $self->htmlencode(\$self->{long_exitmessage});
   }
-  if ($self->{rununique}) {
+  if ($self->{options}->{rununique}) {
     $self->cleanup_pidfile();
   }
   return $self;
@@ -1570,12 +1569,12 @@ sub run_as_daemon {
     $self->{pidfile} = $self->{pidfile} || $self->construct_pidfile();
     if (! $self->check_pidfile()) {
       $self->trace("Exiting because another daemon is already running");
-      printf STDERR "Exiting because another daemon is already running\n";
+      printf "Exiting because another daemon is already running\n";
       exit 3;
     }
     if (! POSIX::setsid()) {
       $self->trace("Cannot detach from controlling terminal");
-      printf STDERR "Cannot detach from controlling terminal\n";
+      printf "Cannot detach from controlling terminal\n";
       exit 3;
     }
     $self->set_memory_limit();
@@ -1689,7 +1688,7 @@ sub set_memory_limit {
     return;
   } elsif ($limit < 200) {
     $self->trace("I won't run with at least 200MB memory");
-    printf STDERR "I won't run with at least 200MB memory\n";
+    printf "I won't run with at least 200MB memory\n";
     exit 3;
   } elsif ($^O eq "solaris" && ! defined(&SYS_setrlimit)) {
       # From /usr/include/sys/syscall.h and /usr/include/sys/resource.h
@@ -1698,7 +1697,7 @@ sub set_memory_limit {
       eval 'sub RLIMIT_AS () {6;}';
   } elsif (! defined(&SYS_setrlimit)) {
     $self->trace("I dont't know how to set resource limits");
-    printf STDERR "I dont't know how to set resource limits\n";
+    printf "I dont't know how to set resource limits\n";
     exit 3;
   }
   $SIG{'SEGV'} = sub {
@@ -1713,14 +1712,14 @@ sub set_memory_limit {
   my $limits = pack "L!L!", $soft_as_limit, $hard_as_limit;
   if (syscall(&SYS_setrlimit, &RLIMIT_AS, $limits) == -1) {
     $self->trace("Cannot set address space limits (%s)", "$!");
-    printf STDERR "Cannot set address space limits (%s)\n", "$!";
+    printf "Cannot set address space limits (%s)\n", "$!";
     exit 3;
   } else {
     syscall(&SYS_getrlimit, &RLIMIT_AS, $limits);
     my ($new_soft_as_limit, $new_hard_as_limit) = unpack "L!L!", $limits;
     if ($new_soft_as_limit != $soft_as_limit) {
       $self->trace("Cannot set address space limits (!=)");
-      printf STDERR "Cannot set address space limits (!=)\n";
+      printf "Cannot set address space limits (!=)\n";
       exit 3;
     } else {
       $self->trace("Setting address space limits to %.2fMB", $limit);
