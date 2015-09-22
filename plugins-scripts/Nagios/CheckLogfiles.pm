@@ -166,7 +166,6 @@ sub init {
     $self->resolve_macros(\$self->{seekfilesdir});
     foreach (@{$params->{searches}}) {
       $_->{seekfilesdir} = $self->{seekfilesdir};
-      $_->{relocate_seekfilesdir} = $self->{relocate_seekfilesdir};
       $_->{scriptpath} = $self->{scriptpath};
       %{$_->{macros}} = %{$self->{macros}};
       $_->{tracefile} = $self->{tracefile};
@@ -326,7 +325,6 @@ sub init_from_file {
   }
   foreach (@searches) {
     $_->{seekfilesdir} = $self->{seekfilesdir};
-    $_->{relocate_seekfilesdir} = $self->{relocate_seekfilesdir};
     $_->{scriptpath} = $self->{scriptpath};
     %{$_->{macros}} = %{$self->{macros}};
     $_->{tracefile} = $self->{tracefile};
@@ -1734,12 +1732,6 @@ sub relocate_dir {
   my $olddir = shift;
   my $basedir = shift;
   my $newdir = "";
-  if ($olddir =~ /^(autodetect|homevartmp):(.*)/) {
-    # this is a hint for the search which will move its seekfile
-    # from here to it's new location
-    $self->{"relocate_".$type} = $2;
-    $self->resolve_macros(\$self->{"relocate_".$type});
-  }
   if ($olddir =~ /^autodetect/) {
     if ($type eq "scriptpath") {
       $newdir = join(($^O =~ /MSWin/) ? ';' : ':', grep {
@@ -1832,7 +1824,6 @@ sub new {
   $self->{scriptdelay} = $params->{scriptdelay};
   $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
   $self->{seekfilesdir} = $params->{seekfilesdir} || $self->system_tempdir();
-  $self->{relocate_seekfilesdir} = $params->{relocate_seekfilesdir};
   $self->{archivedir} = $params->{archivedir};
   $self->{scriptpath} = $params->{scriptpath};
   $self->{macros} = $params->{macros};
@@ -1965,6 +1956,7 @@ sub init {
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
       report => 'short',
       seekfileerror => 'critical', logfileerror => 'critical', 
+      logfilemissing => 'unknown',
       archivedirregexp => 0, 
       capturegroups => 0,
   });
@@ -2268,11 +2260,6 @@ sub construct_seekfile {
   $self->{pre2seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{logbasename},
       $self->{tag} eq "default" ? "seek" : $self->{seekfiletag};
-  if ($self->{relocate_seekfilesdir}) {
-    $self->{relocate_seekfile} = sprintf "%s/%s.%s.%s", $self->{relocate_seekfilesdir},
-        $self->{cfgbase}, $self->{seekfilebase},
-        $self->{tag} eq "default" ? "seek" : $self->{tag};
-  }
 }
 
 sub force_cfgbase {
@@ -2447,14 +2434,6 @@ sub loadstate {
           $self->{pre3seekfile}, $self->{seekfile});
       mkdir $self->{seekfilesdir} if ! -d $self->{seekfilesdir};
       rename $self->{pre3seekfile}, $self->{seekfile};
-      $self->trace("and call load_state again");
-      $self->loadstate() if -f $self->{seekfile};
-      return $self;
-    }
-    if ($self->{relocate_seekfilesdir}) {
-      $self->trace("relocatable seekfile %s found. move it to %s",
-          $self->{relocate_seekfile}, $self->{seekfile});
-      move $self->{relocate_seekfile}, $self->{seekfile};
       $self->trace("and call load_state again");
       $self->loadstate() if -f $self->{seekfile};
       return $self;
@@ -3278,11 +3257,12 @@ sub collectfiles {
             sprintf "insufficient permissions to open logfile %s",
             $self->{logfile});
       } else {
-        if ($self->{options}->{logfilenocry}) {
+        if ($self->get_option('logfilenocry')) {
           # logfiles which are not rotated but deleted and re-created may be missing
           #  maybe a rotation situation, a typo in the configfile,...
           $self->trace("could not find logfile %s", $self->{logfile});
-          $self->addevent('UNKNOWN', sprintf "could not find logfile %s",
+          $self->addevent($self->get_option('logfilemissing'),
+              sprintf "could not find logfile %s",
               $self->{logfile});
         } else {
           # dont care.
@@ -3592,11 +3572,12 @@ sub collectfiles {
             sprintf "insufficient permissions to open logfile %s", 
             $self->{logfile});
       } else {
-        if ($self->{options}->{logfilenocry}) {
+        if ($self->get_option('logfilenocry')) {
           # logfiles which are not rotated but deleted and re-created may be missing
           #  maybe a rotation situation, a typo in the configfile,...
           $self->trace("could not find logfile %s", $self->{logfile});
-          $self->addevent('UNKNOWN', sprintf "could not find logfile %s",
+          $self->addevent($self->get_option('logfilemissing'),
+              sprintf "could not find logfile %s",
               $self->{logfile});
         } else {
           # dont care.
@@ -3817,11 +3798,6 @@ sub construct_seekfile {
   $self->{pre2seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{logbasename},
       $self->{tag} eq "default" ? "seek" : $self->{tag};
-  if ($self->{relocate_seekfilesdir}) {
-    $self->{relocate_seekfile} = sprintf "%s/%s.%s.%s", $self->{relocate_seekfilesdir},
-        $self->{cfgbase}, $self->{seekfilebase},
-        $self->{tag} eq "default" ? "seek" : $self->{tag};
-  }
   $self->trace("rewrote uniform seekfile to %s", $self->{seekfile});
   return $self;
 }
@@ -3891,9 +3867,10 @@ sub collectfiles {
             sprintf "insufficient permissions to open logfile %s",
             $self->{logfile});
     } else {
-      if ($self->{options}->{logfilenocry}) {
+      if ($self->get_option('logfilenocry')) {
         $self->trace("could not find logfile %s", $self->{logfile});
-        $self->addevent('UNKNOWN', sprintf "could not find logfile %s",
+        $self->addevent($self->get_option('logfilemissing'),
+            sprintf "could not find logfile %s",
             $self->{logfile});
       } else {
         # dont care.
@@ -3935,7 +3912,8 @@ sub init {
   $self->{scriptdelay} = $params->{scriptdelay};   
   $self->default_options({ script => 0, protocol => 0, count => 1,
       smartscript => 0, supersmartscript => 0,
-      report => 'short', seekfileerror => 'critical', logfileerror => 'critical' });
+      report => 'short', seekfileerror => 'critical',
+      logfileerror => 'critical' });
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;

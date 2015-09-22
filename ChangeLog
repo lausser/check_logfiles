@@ -1,3 +1,5 @@
+* 3.7.2 2015-09-22
+  add option logfilemissing=[warning|critical]
 * 3.7.1.5 2015-09-07
   bugfix in --rununique, also add $options="rununique"
 * 3.7.1.4 2015-08-04

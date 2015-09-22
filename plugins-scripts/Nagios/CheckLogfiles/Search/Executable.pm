@@ -55,7 +55,8 @@ sub collectfiles {
     } else {
       if ($self->get_option('logfilenocry')) {
         $self->trace("could not find scriptfile %s", $self->{logfile});
-        $self->addevent('UNKNOWN', sprintf "could not find scriptfile %s",
+        $self->addevent($self->get_option('logfilemissing'),
+            sprintf "could not find scriptfile %s",
             $self->{logfile});
       } else {
         # dont care.
