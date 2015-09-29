@@ -3004,12 +3004,14 @@ sub scan {
   #
   #  if patterns beginning with ! were not found, treat this as an alert.
   #
-  if ($self->{hasinversepat} && (! $self->{likeavirgin} || $self->{options}->{allyoucaneat})) {
+  if ($self->{hasinversepat}) {
     foreach my $level (qw(CRITICAL WARNING)) {
       my $patcnt = -1;
       foreach my $pattern (@{$self->{negpatterns}->{$level}}) {
         $patcnt++;
-        if ($self->{negpatterncnt}->{$level}->[$patcnt] == 0) {
+        # 0 matches means alert. but not when this was an initial run
+        if ($self->{negpatterncnt}->{$level}->[$patcnt] == 0 &&
+            ! ($self->{likeavirgin} && $self->{options}->{allyoucaneat})) {
           if ($self->{options}->{script}) {
             $self->{macros}->{CL_SERVICESTATEID} = $ERRORS{$level};
             $self->{macros}->{CL_SERVICEOUTPUT} = sprintf("MISSING: %s", $pattern);
