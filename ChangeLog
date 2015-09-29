@@ -1,3 +1,5 @@
+* 3.7.3 2015-09-29
+  bugfix for inversepat&allyoucaneat (pullrequest by ibpl)
 * 3.7.2 2015-09-22
   add option logfilemissing=[warning|critical]
 * 3.7.1.5 2015-09-07

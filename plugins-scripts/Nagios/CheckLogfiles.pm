@@ -3004,7 +3004,7 @@ sub scan {
   #
   #  if patterns beginning with ! were not found, treat this as an alert.
   #
-  if ($self->{hasinversepat}) {
+  if ($self->{hasinversepat} && (! $self->{likeavirgin} || $self->{options}->{allyoucaneat})) {
     foreach my $level (qw(CRITICAL WARNING)) {
       my $patcnt = -1;
       foreach my $pattern (@{$self->{negpatterns}->{$level}}) {
