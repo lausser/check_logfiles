@@ -78,6 +78,7 @@ sub init {
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
       supersmartpostscript => 0, report => 'short', maxlength => 4096,
       seekfileerror => 'critical', logfileerror => 'critical', 
+      protocolfileerror => 'ok',
       maxmemsize => 0, rotatewait => 0, htmlencode => 0,
       outputhitcount => 1, rununique => 0,
   });
@@ -172,7 +173,7 @@ sub init {
       $_->{cfgbase} = $self->{cfgbase};
       if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
         # maybe override default search options with global ones (ex. report)
-        $search->refresh_default_options($self->get_options('report,seekfileerror,logfileerror'));
+        $search->refresh_default_options($self->get_options('report,seekfileerror,logfileerror,protocolfileerror'));
         push(@{$self->{searches}}, $search);
       } else {
         $ExitCode = $ERROR_UNKNOWN;
@@ -335,7 +336,7 @@ sub init_from_file {
     }
     $_->{dynamictag} = $self->{dynamictag};
     if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
-      $search->refresh_options($self->get_options('report,seekfileerror,logfileerror'));
+      $search->refresh_options($self->get_options('report,seekfileerror,logfileerror,protocolfileerror'));
       push(@{$self->{searches}}, $search);
       $_->{privatestate}->{$search->{tag}} = $search->{privatestate};
     } else {
@@ -393,6 +394,10 @@ sub run {
   if ($self->get_option('rotatewait')) {
     $self->await_while_rotate();
   }
+  my $protocol_had_error = 0;
+  if (! -w $self->{protocolsdir}) {
+    $protocol_had_error = 1;
+  }
   foreach my $search (@{$self->{searches}}) {
     if (1) { # there will be a timesrunningout variable
       if ($search->{tag} eq "postscript") {
@@ -425,6 +430,11 @@ sub run {
       }
       $_->{privatestate}->{$search->{tag}} = $search->{privatestate};
       if ($search->{options}->{protocol}) {
+        # must write protocol
+        if ($protocol_had_error) {
+          $search->addevent($self->get_option('protocolfileerror'),
+              sprintf "cannot write protocol file %s! check your filesystem (permissions/usage/integrity) and disk devices", $self->{protocolsdir});
+        }
         if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
             scalar(@{$search->{matchlines}->{WARNING}}) ||
             scalar(@{$search->{matchlines}->{UNKNOWN}})) {
@@ -1957,6 +1967,7 @@ sub init {
       report => 'short',
       seekfileerror => 'critical', logfileerror => 'critical', 
       logfilemissing => 'unknown',
+      protocolfileerror => 'ok',
       archivedirregexp => 0, 
       capturegroups => 0,
   });
@@ -3915,6 +3926,7 @@ sub init {
   $self->default_options({ script => 0, protocol => 0, count => 1,
       smartscript => 0, supersmartscript => 0,
       report => 'short', seekfileerror => 'critical',
+      protocolfileerror => 'ok',
       logfileerror => 'critical' });
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
@@ -3982,7 +3994,8 @@ sub init {
   $self->{privatestate} = $params->{privatestate};   
   $self->default_options({ script => 0, protocol => 0, count => 1,
       smartscript => 0, supersmartscript => 0,
-      report => 'short', seekfileerror => 'critical', logfileerror => 'critical', });
+      report => 'short', seekfileerror => 'critical',
+      protocolfileerror => 'ok', logfileerror => 'critical', });
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->{lastmsg} = { OK => "", WARNING => "", CRITICAL => "", UNKNOWN => "" };
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
