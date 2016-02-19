@@ -475,6 +475,8 @@ if (my $cl = Nagios::CheckLogfiles->new({
     $cl->run();
   }
   my $exitmessage      = $cl->{exitmessage};
+  # Escape | character to not break perfdata
+  $exitmessage         =~ s/\|/\/\//g;
   my $long_exitmessage = $cl->{long_exitmessage} ? $cl->{long_exitmessage}."\n" : "";
   printf "%s%s\n%s", $exitmessage,
       $cl->{perfdata} ? "|".$cl->{perfdata} : "",
