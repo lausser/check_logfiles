@@ -225,7 +225,8 @@ sub init_from_file {
   our($seekfilesdir, $protocolsdir, $scriptpath, $protocolretention,
       $prescript, $prescriptparams ,$prescriptstdin, $prescriptdelay,
       $postscript, $postscriptparams, $postscriptstdin, $postscriptdelay,
-      @searches, @logs, $tracefile, $options, $report, $timeout, $pidfile);
+      @searches, @logs, $tracefile, $options, $report, $timeout, $pidfile,
+      $CHECK_LOGFILES_PRIVATESTATE);
   our $MACROS = {};
   if ($^O =~ /MSWin/) {
     $ENV{HOME} = $ENV{USERPROFILE};
