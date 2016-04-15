@@ -434,23 +434,25 @@ sub run {
         # must write protocol
         if ($protocol_had_error) {
           $search->addevent($self->get_option('protocolfileerror'),
-              sprintf "cannot write protocol file %s! check your filesystem (permissions/usage/integrity) and disk devices", $self->{protocolsdir});
-        }
-        if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
-            scalar(@{$search->{matchlines}->{WARNING}}) ||
-            scalar(@{$search->{matchlines}->{UNKNOWN}})) {
-          if ($self->{protocolfh}->open($self->{protocolfile}, "a")) {
-            foreach (qw(CRITICAL WARNING UNKNOWN)) {
-              if (@{$search->{matchlines}->{$_}}) {
-                $self->{protocolfh}->print(sprintf "%s Errors in %s (tag %s)\n",
-                    $_, $search->{logbasename}, $search->{tag});
-                foreach (@{$search->{matchlines}->{$_}}) {
-                  $self->{protocolfh}->printf("%s\n", $_);
+              sprintf "cannot write protocol file %s! check your filesystem (permissions/usage/integrity) and disk devices", $self->{protocolsdir})
+              if lc $self->get_option('protocolfileerror') ne 'ok';
+        } else {
+          if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
+              scalar(@{$search->{matchlines}->{WARNING}}) ||
+              scalar(@{$search->{matchlines}->{UNKNOWN}})) {
+            if ($self->{protocolfh}->open($self->{protocolfile}, "a")) {
+              foreach (qw(CRITICAL WARNING UNKNOWN)) {
+                if (@{$search->{matchlines}->{$_}}) {
+                  $self->{protocolfh}->print(sprintf "%s Errors in %s (tag %s)\n",
+                      $_, $search->{logbasename}, $search->{tag});
+                  foreach (@{$search->{matchlines}->{$_}}) {
+                    $self->{protocolfh}->printf("%s\n", $_);
+                  }
                 }
               }
+              $self->{protocolfh}->close();
+              $self->{protocolwritten} = 1;
             }
-            $self->{protocolfh}->close();
-            $self->{protocolwritten} = 1;
           }
         }
       }
