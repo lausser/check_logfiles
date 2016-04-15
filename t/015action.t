@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 my $configfile = <<EOCFG;
 \$seekfilesdir = "./var/tmp";
+\$protocolsdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$MACROS = {
   CL_NSCA_HOST_ADDRESS => 'nagios.dierichs.de',

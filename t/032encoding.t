@@ -29,6 +29,7 @@ postscript => sub {
  printf "doooooof\n"; 
  return $ENV{CHECK_LOGFILES_SERVICESTATEID}; 
 },
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {

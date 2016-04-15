@@ -32,6 +32,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {

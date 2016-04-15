@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 
 my $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$options = "outputhitcount";
 \@searches = ({
@@ -52,10 +53,11 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 2, 2, 0, 2));
-ok($cl->{exitmessage} =~ /CRITICAL - \(2 errors, 2 warnings\) - \w{3}\s+\d+ \d{2}:\d{2}:\d{2}.*Failed.*user4/);
+ok($cl->{exitmessage} =~ /CRITICAL - \(2 errors, 2 warnings.* - \w{3}\s+\d+ \d{2}:\d{2}:\d{2}.*Failed.*user4/);
 
 unlink("./etc/check_action.cfg");
 $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$options = "nooutputhitcount";
 \@searches = ({

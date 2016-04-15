@@ -26,6 +26,7 @@ use constant TESTDIR => ".";
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -81,11 +82,12 @@ ok($ssh->{perfdata} =~ /ssh_lines=\d+ ssh_warnings=0 ssh_criticals=2 ssh_unknown
 ok($test->{perfdata} eq "");
 ok($null->{perfdata} =~ /null_lines=\d+ null_warnings=0 null_criticals=0 null_unknowns=0/);
 ok($cl->{perfdata} =~ /ssh_lines=\d+ ssh_warnings=0 ssh_criticals=2 ssh_unknowns=0 null_lines=\d+ null_warnings=0 null_criticals=0 null_unknowns=0/);
-ok($cl->{exitmessage} =~ /CRITICAL - \(4 errors\) - [\w: \[\]]+ Failed password for invalid user8 ...\s*$/);
+ok($cl->{exitmessage} =~ /CRITICAL - \(4 errors.* - [\w: \[\]]+ Failed password for invalid user8 ...\s*$/);
 diag(sprintf "((%s))", $cl->{exitmessage});
 
 
 my $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$options = "supersmartpostscript";

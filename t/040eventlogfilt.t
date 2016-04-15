@@ -35,6 +35,7 @@ r vista you have to use native windows for the tests");
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {

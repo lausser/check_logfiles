@@ -13,11 +13,13 @@ use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
 my $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \@searches = (
     {
       tag => "action",
+      protocolsdir => "./var/tmp",
       logfile => "./var/adm/messages",
       criticalpatterns => [ 
              '.*ERROR.*',
@@ -27,6 +29,7 @@ my $configfile = <<EOCFG;
     },
     {
       tag => "action2",
+      protocolsdir => "./var/tmp",
       logfile => "./var/adm/messages",
       criticalpatterns => [ 
              '.*ERROR.*',
@@ -43,6 +46,12 @@ close CCC;
 my $cl = Nagios::CheckLogfiles::Test->new({ cfgfile => "./etc/check_action.cfg" });
 my $action = $cl->get_search_by_tag("action");
 my $action2 = $cl->get_search_by_tag("action2");
+$action->delete_seekfile();
+$action2->delete_seekfile();
+$action->loggercrap(undef, undef, 100);
+$action2->loggercrap(undef, undef, 100);
+$cl->run(); #init
+sleep 1;
 $cl->reset();
 $action->{script} = sub {
   sleep 5;

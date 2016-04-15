@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+    protocolsdir => TESTDIR."/var/tmp",
     seekfilesdir => TESTDIR."/var/tmp",
     searches => [{
         tag => "rsync",
@@ -131,6 +132,7 @@ ok($cl->expect_result(0, 0, 6, 0, 2));
 # allyoucaneat means, read everything during the initial run.
 # but we don't want an alert on missing patterns
 $cl = Nagios::CheckLogfiles::Test->new({
+    protocolsdir => TESTDIR."/var/tmp",
     seekfilesdir => TESTDIR."/var/tmp",
     searches => [{
         options => "allyoucaneat",

@@ -13,6 +13,7 @@ use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
 my $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \@searches = ({
       tag => "html",
@@ -26,6 +27,7 @@ print CCC $configfile;
 close CCC;
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => "./var/tmp",
         seekfilesdir => "./var/tmp",
         searches => [
             {
@@ -79,6 +81,7 @@ ok(($output =~ /<head title="bled">A&B<\/head><body title='bb'>/) && (($? >> 8) 
 
 printf STDERR "now i add options/htmlencode\n";
 $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \@searches = ({
       tag => "html",

@@ -22,6 +22,7 @@ use constant TESTDIR => ".";
 #
 #
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	macros => { CL_VG00 => '/dev/vg00', CL_VG => '/dev/vg' },
 	searches => [
@@ -115,6 +116,7 @@ ok($cl->expect_result(0, 2, 16, 0, 2));
 
 $cl->trace("-----------------------phase2-----------------------");
 my $configfile = <<EOCFG;
+	\$protocolsdir = TESTDIR."/var/tmp";
 	\$seekfilesdir = TESTDIR."/var/tmp";
 	\@searches =(
 	    {
@@ -162,6 +164,7 @@ $configfile = <<EOCFG;
   return 2;
 };
 \$options = "supersmartprescript";
+        \$protocolsdir = TESTDIR."/var/tmp";
         \$seekfilesdir = TESTDIR."/var/tmp";
         \@searches =(
             {
@@ -195,6 +198,7 @@ $configfile = <<EOCFG;
   return 2;
 };
 \$options = "supersmartpostscript";
+        \$protocolsdir = TESTDIR."/var/tmp";
         \$seekfilesdir = TESTDIR."/var/tmp";
         \@searches =(
             {
@@ -222,6 +226,7 @@ ok($cl->expect_result(0, 0, 1, 0, 2));
 diag("check macros in smartscript");
 $configfile = <<EOCFG;
 \$options = "";   #!!!!!!!!!!!!!!!!!!!!!! fehlt das, dann wird automatisch supersmartpostscript gesetzt, warum auch immer
+        \$protocolsdir = TESTDIR."/var/tmp";
         \$seekfilesdir = TESTDIR."/var/tmp";
         \@searches =(
             {

@@ -22,6 +22,7 @@ use constant TESTDIR => ".";
 #
 #
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	macros => { CL_VG00 => '/dev/vg00', CL_VG => '/dev/vg' },
 	searches => [

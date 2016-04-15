@@ -27,6 +27,7 @@ if ($^O =~ /MSWin/) {
  -f 'etc/tivoli.cfg' && system ("rm -rf etc/tivoli.cfg");
 }
 my $configfile =<<EOCFG;
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
@@ -257,6 +258,7 @@ if ($^O =~ /MSWin/) {
 sleep 1;
 
 $configfile =<<EOCFG;
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
@@ -407,6 +409,7 @@ if ($^O =~ /MSWin/) {
 sleep 1;
 
 $configfile =<<EOCFG;
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {

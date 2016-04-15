@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 my $now = time;
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -283,6 +284,7 @@ $door = undef;
 #
 
 $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -442,6 +444,7 @@ diag("test block 3");
 # and the result must still be sticky critical with the critical message
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

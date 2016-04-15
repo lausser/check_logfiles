@@ -20,6 +20,7 @@ $year += 1900; $mon += 1;
 my $sauvegarde = sprintf "sauvegarde%02d-%02d-%04d.log", $mday, $mon, $year;
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	macros => { VARDIR => '/var/adm', EVILUSER => 'lausser/2'},
 	searches => [

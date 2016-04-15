@@ -26,6 +26,7 @@ use constant TESTDIR => ".";
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -159,6 +160,7 @@ ok($cl->expect_result(0, 0, 0, 0, 0));
 # now scream on deleted logfiles
 #
 $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {

@@ -15,6 +15,7 @@ use constant TESTDIR => ".";
 
 my $cl = Nagios::CheckLogfiles::Test->new({
         options => "rotatewait",
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {

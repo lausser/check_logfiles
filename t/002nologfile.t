@@ -13,6 +13,7 @@ use constant TESTDIR => ".";
 # now with nologfilenocry
 #
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {

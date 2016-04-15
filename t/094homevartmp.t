@@ -15,6 +15,7 @@ use constant TESTDIR => ".";
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -72,6 +73,7 @@ ok(-f "./var/tmp/check_logfiles.._var_adm_messages.ssh");
 
 $ENV{OMD_ROOT} = "./omd_root";
 $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => "homevartmp:".TESTDIR."/var/tmp",
 	seekfilesdir => "homevartmp:".TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -114,6 +116,7 @@ rmtree("./omd_root");
 diag("# with configfile ====================================================");
 $cl->trace("# with configfile ====================================================");
 my $configfile = <<EOCFG;
+	\$protocolsdir = TESTDIR."/var/tmp";
 	\$seekfilesdir = TESTDIR."/var/tmp";
 	\@searches = (
 	    {
@@ -180,6 +183,7 @@ ok(-f "./var/tmp/check_action.._var_adm_messages.ssh");
 
 $ENV{OMD_ROOT} = "./omd_root";
 $configfile = <<EOCFG;
+	\$protocolsdir = "homevartmp:".TESTDIR."/var/tmp";
 	\$seekfilesdir = "homevartmp:".TESTDIR."/var/tmp";
 	\@searches = (
 	    {
@@ -214,6 +218,7 @@ rmtree("./omd_root");
 
 diag("# now with string ============================================");
 $configfile = <<EOCFG;
+	\$protocolsdir = TESTDIR."/var/tmp";
 	\$seekfilesdir = TESTDIR."/var/tmp";
 	\@searches = (
 	    {
@@ -286,6 +291,7 @@ ok(-f "./var/tmp/flatfile.._var_adm_messages.ssh");
 
 $ENV{OMD_ROOT} = "./omd_root";
 $configfile = <<EOCFG;
+	\$protocolsdir = "homevartmp:".TESTDIR."/var/tmp";
 	\$seekfilesdir = "homevartmp:".TESTDIR."/var/tmp";
 	\@searches = (
 	    {

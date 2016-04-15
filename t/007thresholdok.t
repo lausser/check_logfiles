@@ -30,6 +30,7 @@ use constant TESTDIR => ".";
 #         run: CRITICAL (19)
 # 
 my $cl = Nagios::CheckLogfiles::Test->new({
+  protocolsdir => TESTDIR."/var/tmp",
   seekfilesdir => TESTDIR."/var/tmp",
   searches => [{
     tag => "nmap",
@@ -128,6 +129,7 @@ ok($cl->expect_result(0, 0, 1, 0, 2));
 #         run: CRITICAL (18)
 # 
 $cl = Nagios::CheckLogfiles::Test->new({
+  protocolsdir => TESTDIR."/var/tmp",
   seekfilesdir => TESTDIR."/var/tmp",
   searches => [{
     tag => "nmap",

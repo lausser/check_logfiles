@@ -47,6 +47,7 @@ sub log_to_file {
   $logdir =~ /.*(\d{4})(\d{2})/;
   my ($year, $mon) = ($1, $2);
   my $cl = Nagios::CheckLogfiles::Test->new({
+      protocolsdir => './var/tmp',
       seekfilesdir => './var/tmp',
       searches => [{
         tag => "unused",
@@ -79,6 +80,7 @@ log_to_file($logdir, $day, $hour, 2, "Failed password for invalid user1");
 sleep 1;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => './var/tmp',
         seekfilesdir => './var/tmp',
 	searches => [{
 	  tag => "ssh",
@@ -107,6 +109,7 @@ log_to_file($logdir, $day, $hour, 2, "Failed password for invalid user1");
 sleep 1;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => './var/tmp',
         seekfilesdir => './var/tmp',
         searches => [{
           tag => "ssh",
@@ -132,6 +135,7 @@ log_to_file($logdir, $day, $hour, 3, "Failed password for invalid user1");
 sleep 1;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => './var/tmp',
         seekfilesdir => './var/tmp',
         searches => [{
           tag => "ssh",
@@ -160,6 +164,7 @@ log_to_file($logdir, $day, $hour, 4, "Failed password for invalid user1");
 sleep 1;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => './var/tmp',
         seekfilesdir => './var/tmp',
         searches => [{
           tag => "ssh",
@@ -195,6 +200,7 @@ log_to_file($logdir, $day, $hour, 1, "Failed password for invalid user1");
 sleep 1;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => './var/tmp',
         seekfilesdir => './var/tmp',
         searches => [{
           tag => "ssh",
@@ -228,6 +234,7 @@ log_to_file($logdir, $day, $hour, 1, "Failed password for invalid user1");
 sleep 1;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => './var/tmp',
         seekfilesdir => './var/tmp',
         searches => [{
           tag => "ssh",

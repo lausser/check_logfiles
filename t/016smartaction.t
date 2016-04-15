@@ -13,6 +13,7 @@ use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
 my $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$options = "smartprescript,smartpostscript";
@@ -548,7 +549,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 4, 0, 2));
-ok($cl->{exitmessage} =~ /CRITICAL - \(4 errors\) - .*localhost check_logfiles\[\d+\] there was an rsync error.*\.\.\./);
+ok($cl->{exitmessage} =~ /CRITICAL - \(4 errors.* - .*localhost check_logfiles\[\d+\] there was an rsync error.*\.\.\./);
 
 $cl->trace("=========== 11 repeat and modifies the maches =============");
 diag("supersmart script repeats an mods the match");
@@ -594,7 +595,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 4, 0, 2));
-ok($cl->{exitmessage} =~ /CRITICAL - \(4 errors\) - .*hihi .* localhost check_logfiles\[\d+\] there was an rsync error.*\.\.\./);
+ok($cl->{exitmessage} =~ /CRITICAL - \(4 errors.* - .*hihi .* localhost check_logfiles\[\d+\] there was an rsync error.*\.\.\./);
 
 
 
@@ -716,7 +717,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 5, 0, 0, 1));
-ok($cl->{exitmessage} =~ /WARNING - \(5 warnings\).*hirnhornharn.*/);
+ok($cl->{exitmessage} =~ /WARNING - \(5 warnings.*hirnhornharn.*/);
 
 $cl->trace("=========== 13 heals some matches with perl =============");
 diag("supersmart heals some matches");
@@ -944,6 +945,7 @@ if ($^O =~ /MSWin/) {
   $perlpath = 'C:\Perl\bin\perl';
  }
 $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$MACROS = {
@@ -973,6 +975,7 @@ exit 0
 ");
 } else {
 $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$MACROS = {
@@ -1023,6 +1026,7 @@ diag ("real run: ".$output);
 ok($output =~ /OK/);
 
 $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$options = "supersmartpostscript";
@@ -1072,6 +1076,7 @@ ok($ycl->expect_result(1, 0, 0, 0, 0));
 ok($ycl->{exitmessage} eq "0");
 
 $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$scriptpath = "./bin";
 \$options = "supersmartpostscript";

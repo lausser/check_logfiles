@@ -21,6 +21,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -166,6 +167,7 @@ ok($cl->expect_result(0, 2, 0, 0, 1));
 # Microsoft-Windows-PowerShell/Operational
 diag("check the new channels");
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

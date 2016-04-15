@@ -16,6 +16,7 @@ use constant TESTDIR => ".";
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+  protocolsdir => TESTDIR."/var/tmp",
   seekfilesdir => TESTDIR."/var/tmp",
   searches => [{
     tag => "nmap",
@@ -117,6 +118,7 @@ $cl = undef;
 $nmap = undef;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+  protocolsdir => TESTDIR."/var/tmp",
   seekfilesdir => TESTDIR."/var/tmp",
   searches => [{
     tag => "nmap",
@@ -229,6 +231,7 @@ ok($nmap->{thresholdcnt}->{CRITICAL} == 5);
 # now the same but with the new method
 # options => 'criticalthreshold=x,warningthreshold=y
 $cl = Nagios::CheckLogfiles::Test->new({
+  protocolsdir => TESTDIR."/var/tmp",
   seekfilesdir => TESTDIR."/var/tmp",
   searches => [{
     tag => "nmap",
@@ -331,6 +334,7 @@ $cl = undef;
 $nmap = undef;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+  protocolsdir => TESTDIR."/var/tmp",
   seekfilesdir => TESTDIR."/var/tmp",
   searches => [{
     tag => "nmap",
@@ -444,6 +448,7 @@ ok($nmap->{thresholdcnt}->{CRITICAL} == 5);
 
 
 $cl = Nagios::CheckLogfiles::Test->new({
+  protocolsdir => TESTDIR."/var/tmp",
   seekfilesdir => TESTDIR."/var/tmp",
   searches => [{
     tag => "nmap",

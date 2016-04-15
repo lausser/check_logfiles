@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 my $cl = Nagios::CheckLogfiles::Test->new({
         options => "perfdata",
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -71,6 +72,7 @@ ok($cl->expect_result(0, 0, 0, 1, 3));
 
 $cl = Nagios::CheckLogfiles::Test->new({
         options => "perfdata",
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -127,6 +129,7 @@ ok($cl->expect_result(0, 0, 0, 0, 0));
 
 $cl = Nagios::CheckLogfiles::Test->new({
         options => "perfdata",
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -183,6 +186,7 @@ ok($cl->expect_result(0, 1, 0, 0, 1));
 
 $cl = Nagios::CheckLogfiles::Test->new({
         options => "perfdata",
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -239,6 +243,7 @@ ok($cl->expect_result(0, 0, 1, 0, 2));
 
 $cl = Nagios::CheckLogfiles::Test->new({
         options => "perfdata",
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

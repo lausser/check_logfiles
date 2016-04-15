@@ -98,6 +98,7 @@ printf STDERR "oldest %s ... period %d\n", scalar localtime $oldest_event_time, 
   }
 }
 
+$protocolsdir = "./var/tmp";
 $seekfilesdir = "./var/tmp";
 $scriptpath = "./bin";
 @searches = ({
@@ -268,6 +269,7 @@ $cl = undef;
 $flood = undef;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -382,6 +384,7 @@ ok($flood->{thresholdcnt}->{CRITICAL} == 5);
 # options => 'criticalthreshold=x,warningthreshold=y
 
 $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [ {
 	      tag => "flood",
@@ -481,6 +484,7 @@ $cl = undef;
 $flood = undef;
 
 $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -593,6 +597,7 @@ ok($flood->{thresholdcnt}->{CRITICAL} == 5);
 
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

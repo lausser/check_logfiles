@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -63,6 +64,7 @@ $ssh->delete_logfile();
 
 diag("now be less strict. no permission = warning only");
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -117,6 +119,7 @@ diag("now be less strict. no permission = warning only");
 diag("and we use logfileerror global, which is the preferred way");
 $cl = Nagios::CheckLogfiles::Test->new({
         options => "logfileerror=warning",
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

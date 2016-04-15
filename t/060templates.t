@@ -13,6 +13,7 @@ use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
 my $configfile =<<EOCFG;	
+	\$protocolsdir = "./var/tmp";
 	\$seekfilesdir = "./var/tmp";
 	\@searches = (
 	    {
@@ -42,6 +43,7 @@ print CCC $configfile;
 close CCC;
 
 $configfile =<<EOCFG;	
+	\$protocolsdir = "./var/tmp";
 	\$seekfilesdir = "./var/tmp";
 	\@searches = (
 	    {
@@ -159,11 +161,11 @@ $clsimple->run();
 diag($cl0815->has_result());
 diag($cl0815->{exitmessage});
 ok($cl0815->expect_result(0, 4, 4, 0, 2));
-ok($cl0815->{exitmessage} =~ /CRITICAL - \(4 errors, 4 warnings\) - .* mailbox corrupt /);
+ok($cl0815->{exitmessage} =~ /CRITICAL - \(4 errors, 4 warnings.* - .* mailbox corrupt /);
 diag($cl4711->has_result());
 diag($cl4711->{exitmessage});
 ok($cl4711->expect_result(0, 18, 4, 0, 2));
-ok($cl4711->{exitmessage} =~ /CRITICAL - \(4 errors, 18 warnings\) - .* oo file .* /);
+ok($cl4711->{exitmessage} =~ /CRITICAL - \(4 errors, 18 warnings.* - .* oo file .* /);
 diag($clall->has_result());
 diag($clall->{exitmessage});
 
@@ -188,7 +190,7 @@ $clall->run();
 diag($clall->has_result());
 diag($clall->{exitmessage});
 ok($clall->expect_result(0, 19, 13, 0, 2));
-ok($clall->{exitmessage} =~ /CRITICAL - \(13 errors, 19 warnings\) - .*4711.muc: Failed .* /);
+ok($clall->{exitmessage} =~ /CRITICAL - \(13 errors, 19 warnings.* - .*4711.muc: Failed .* /);
 
 $clsimple->reset();
 $clsimple->run();
@@ -211,7 +213,7 @@ $clsimple->run();
 diag($clsimple->has_result());
 diag($clsimple->{exitmessage});
 ok($clsimple->expect_result(0, 0, 6, 0, 2));
-ok($clsimple->{exitmessage} =~ /CRITICAL - \(6 errors\) - .*4711.muc: Failed .* /);
+ok($clsimple->{exitmessage} =~ /CRITICAL - \(6 errors.* - .*4711.muc: Failed .* /);
 
 #$cl4711->run();
 #$clsimple->run()

@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 
 my $configfile =<<EOCFG;
+#        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {

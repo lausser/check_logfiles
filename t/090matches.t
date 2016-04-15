@@ -13,6 +13,7 @@ use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
 my $configfile = <<EOCFG;
+\$protocolsdir = "./var/tmp";
 \$seekfilesdir = "./var/tmp";
 \$options = "smartprescript,smartpostscript";
 \@searches = (
@@ -52,8 +53,8 @@ $action->loggercrap(undef, undef, 100);
 sleep 1;
 $cl->run();
 #$action->dump_protocol();
-#diag($cl->has_result());
-#diag($cl->{exitmessage});
+diag($cl->has_result());
+diag($cl->{exitmessage});
 
 ok($cl->{exitmessage} eq "CRITICAL - (1 errors) - 3:pat1(pat1 blub pat2kaas)pat2(pat1)pat3(pat2kaas) ");
 ok($cl->expect_result(0, 0, 1, 0, 2));

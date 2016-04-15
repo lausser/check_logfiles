@@ -24,6 +24,7 @@ system ("rm -rf var/tmp/*");
 
 my $configfile =<<EOCFG;
 		\$options = "supersmartpostscript";
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
@@ -62,6 +63,7 @@ close CCC;
 
 $configfile =<<EOCFG;
         \$options = "supersmartpostscript";
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
@@ -203,6 +205,7 @@ system ("rm -f etc/searches.cfg");
 
 $configfile =<<EOCFG;
         \$options = "supersmartpostscript";
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
@@ -241,6 +244,7 @@ close CCC;
 
 $configfile =<<EOCFG;
         \$options = "supersmartpostscript";
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
@@ -265,6 +269,7 @@ close CCC;
 
 $configfile =<<EOCFG;
         \$options = "supersmartpostscript";
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {

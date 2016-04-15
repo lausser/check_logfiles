@@ -12,11 +12,13 @@ use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
+my $protocolsdir = ($^O =~/MSWin/) ? 'C:\TEMP\$MACAMACA$' : '/tmp/$MACAMACA$';
 my $seekfilesdir = ($^O =~/MSWin/) ? 'C:\TEMP\$MACAMACA$' : '/tmp/$MACAMACA$';
 my $resolved_seekfilesdir = $seekfilesdir;
 $resolved_seekfilesdir =~ s/\$MACAMACA\$/gsuhjch/;
 
 my $configfile = <<EOCFG;
+\$protocolsdir = \'$protocolsdir\';
 \$seekfilesdir = \'$seekfilesdir\';
 \@searches = ({
       tag => "ssh",
@@ -32,6 +34,7 @@ print CCC $configfile;
 close CCC;
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => $seekfilesdir,
         seekfilesdir => $seekfilesdir,
         searches => [
             {

@@ -19,6 +19,7 @@ use Nagios::CheckLogfiles::Test;
 use constant TESTDIR => ".";
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => ($^O =~/MSWin/) ? 'C:\TEMP' : '/tmp',
         seekfilesdir => ($^O =~/MSWin/) ? 'C:\TEMP' : '/tmp',
         searches => [
             {

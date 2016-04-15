@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -119,6 +120,7 @@ ok($cl->{perfdata} =~ /.*ipata22_criticals=30.*/);
 # repeat the tests. instead of prefilter we set the syslogclient option
 #
 $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {
@@ -223,6 +225,7 @@ diag("add case insensitivity");
 # repeat the tests. we set the syslogclient option and mix cases
 #
 $cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
 	seekfilesdir => TESTDIR."/var/tmp",
 	searches => [
 	    {

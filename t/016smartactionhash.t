@@ -14,6 +14,7 @@ use constant TESTDIR => ".";
 
 my $configfile = q!
 $options =  "report=long";
+$protocolsdir = "./var/tmp";
 $seekfilesdir = "./var/tmp";
 @searches = ({
       tag => "smart",
@@ -89,6 +90,7 @@ $warningexceptions = {
 EOF
 
 $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

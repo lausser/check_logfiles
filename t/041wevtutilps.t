@@ -31,6 +31,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
 # Microsoft-Windows-PowerShell/Operational
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

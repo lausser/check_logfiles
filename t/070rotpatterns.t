@@ -91,6 +91,7 @@ sub delete_and_create_ramsch {
 }
 
 my $cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {

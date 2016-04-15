@@ -18,6 +18,7 @@ plan tests => 3;
 my @patterns = ();
 
 my $configfile =<<EOCFG;
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {

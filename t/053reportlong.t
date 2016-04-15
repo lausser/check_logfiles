@@ -17,6 +17,7 @@ plan tests => 35;
 
 my $cl = Nagios::CheckLogfiles::Test->new({
   options => 'report=long',
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -85,6 +86,7 @@ ok($cl->{long_exitmessage} =~ /tag ssh CRITICAL\n.*user3\n.*user4\n.*sepp/m);
 
 my $configfile =<<EOCFG;
         \$options = 'report=long';
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
@@ -151,7 +153,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 4, 2, 0, 2));
-ok($cl->{exitmessage} =~ /CRITICAL - \(2 errors, 4 warnings\) - .* Failed password .*user8 /);
+ok($cl->{exitmessage} =~ /CRITICAL - \(2 errors, 4 warnings.*- .* Failed password .*user8 /);
 diag($cl->{long_exitmessage});
 # --ok 10
 ok($cl->{long_exitmessage} =~ /tag ssh CRITICAL\n.*user8.*\n.*user8.*\n.*Unknown.*\n.*Unknown.*\ntag null WARNING\n.*crap.*\n.*crap/);
@@ -176,6 +178,7 @@ ok((length $cl->{long_exitmessage} <= 4096) && (length $cl->{long_exitmessage} >
 
 $configfile =<<EOCFG;
         \$options = 'report=long,maxlength=8192';
+        \$protocolsdir = "./var/tmp";
         \$seekfilesdir = "./var/tmp";
         \@searches = (
             {
@@ -231,6 +234,7 @@ ok((length $cl->{long_exitmessage} <= 8192) && (length $cl->{long_exitmessage} >
 
 $cl = Nagios::CheckLogfiles::Test->new({
         options => 'report=long',
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -302,6 +306,7 @@ ok($cl->{long_exitmessage} eq "");
 
 $cl = Nagios::CheckLogfiles::Test->new({
         options => 'report=long',
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
@@ -364,6 +369,7 @@ ok($cl->expect_result(1, 0, 3, 0, 2));
 # handle empty lines
 $cl = Nagios::CheckLogfiles::Test->new({
         options => 'report=long',
+        protocolsdir => TESTDIR."/var/tmp",
         seekfilesdir => TESTDIR."/var/tmp",
         searches => [
             {
