@@ -2726,6 +2726,7 @@ sub scan {
   my $actionfailed = 0;
   my $resetted = 0;
   $self->{timedout} = 0;
+  my $charsize = 1; # 1 byte, e.g. ascii
 
   if ($self->{timeout} != 360000) {
     # 360000 is the default, meaning there was no --timeout
@@ -2753,6 +2754,20 @@ sub scan {
 
   my $needfilter = scalar(@{$self->{preliminaryfilter}->{NEED}});
   my $skipfilter = scalar(@{$self->{preliminaryfilter}->{SKIP}});
+
+  if ($self->{options}->{encoding}) {
+    $charsize = length(Encode::encode($self->{options}->{encoding},
+        Encode::decode("ascii", "a")));
+    if ($charsize == 2) {
+      # seek stopped pointing at the second byte of a character, so
+      # if we start reading there we will not read the correct
+      # 2-byte-sequences. Instead of a1a2, b1b2, c1c2, ....
+      # we will get a2b1, b2c1, c2d1 with a, b, c being utf-characters
+      $self->{laststate}->{logoffset} = $self->{laststate}->{logoffset} ?
+          $self->{laststate}->{logoffset} - 1 : 0;
+    }
+  }
+
   foreach my $logfile (@{$self->{relevantfiles}}) {
     $self->trace("moving to position %u in %s", $self->{laststate}->{logoffset},
         $logfile->{filename});

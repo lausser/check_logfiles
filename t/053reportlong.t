@@ -225,7 +225,10 @@ diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 700, 0, 2));
 diag(length $cl->{long_exitmessage});
-ok((length $cl->{long_exitmessage} <= 8192) && (length $cl->{long_exitmessage} > 8000));
+my $length = 700 * (length("Failed password for invalid user8") + 8 + 3 + 3);
+diag($length);
+# Apr 15 15:49:56, 8 for the time, 2 for day, 2 for month with blanks
+ok((length $cl->{long_exitmessage} <= 8192) && ($length > 8192));
 
 
 # zeilen mit returncode 0 sollen nur im longoutput auftauchen, wenn sie
