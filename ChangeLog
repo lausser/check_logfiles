@@ -1,3 +1,5 @@
+* 3.7.4.2 2016-06-22
+  bugfix for lastoffset and 16-bit-encodings
 * 3.7.4.1 2016-04-14
   bugfix for flatfiles using privatestate
   bugfix for protocolfileerror
