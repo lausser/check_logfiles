@@ -48,7 +48,15 @@ buildPkg() {
 
 
 ##------------------------------------------------------------
+autoReconf() {
+    [ -f ./configure ] || {
+	autoreconf
+    }
+}
+
+##------------------------------------------------------------
 main() {
+    autoreconf
     rebuildChangelog <"$CL_US" >"$CL_DEB"
     buildPkg
 }
