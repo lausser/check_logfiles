@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+
+export NP_LIB_DIR=/usr/lib/nagios/plugins
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- libdir=$(NP_LIB_DIR) libexecdir=$(NP_LIB_DIR)
