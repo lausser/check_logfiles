@@ -56,7 +56,7 @@ autoReconf() {
 
 ##------------------------------------------------------------
 main() {
-    autoreconf
+    autoReconf
     rebuildChangelog <"$CL_US" >"$CL_DEB"
     buildPkg
 }
