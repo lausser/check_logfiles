@@ -106,6 +106,12 @@ How to "compile" the check_logfiles script.
    the correct paths to the new plugin.
 
 
+How to build a debian package
+-----------------------------
+
+Calling the script ./gen_deb_pkg.sh should be enough.
+
+
 Command line parameters
 -----------------------
 

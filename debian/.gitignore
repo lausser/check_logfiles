@@ -1,0 +1,7 @@
+.debhelper/
+debhelper-build-stamp
+files
+*.debhelper.log
+*.substvars
+nagios-plugin-check-logfiles/
+changelog
