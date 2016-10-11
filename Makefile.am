@@ -3,7 +3,7 @@
 # find . \( -type d -and -name .svn -and -prune \) -or -type f -exec fromdos -v {} \;
 
 SUBDIRS = plugins-scripts t
-EXTRA_DIST = winconfig.pl README.exe
+EXTRA_DIST = winconfig.pl README.wondows-exe
 
 dist-hook:
 	rm -f t/var/tmp/*
