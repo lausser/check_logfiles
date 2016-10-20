@@ -6,7 +6,7 @@ use File::Basename;
 use File::Find;
 use Getopt::Long;
 
-#import Devel::TraceMethods qw( 
+#import Devel::TraceMethods qw(
 #    Nagios::CheckLogfiles
 #    Nagios::CheckLogfiles::Search
 #    Nagios::CheckLogfiles::Search::Simple
@@ -19,8 +19,8 @@ use Getopt::Long;
 #    Nagios::Tivoli::Config::Logfile::Format
 #    Nagios::Tivoli::Config::Logfile::Hit
 #);
-#Devel::TraceMethods::callback ( 
-#    'Nagios::CheckLogfiles' => \&logger, 
+#Devel::TraceMethods::callback (
+#    'Nagios::CheckLogfiles' => \&logger,
 #    'Nagios::CheckLogfiles::Search' => \&logger,
 #    'Nagios::CheckLogfiles::Search::Simple' => \&logger,
 #    'Nagios::CheckLogfiles::Search::Rotating' => \&logger,
@@ -70,7 +70,7 @@ Copyright by ConSol Software GmbH, Gerhard Lausser.
 This plugin looks for patterns in logfiles, even in those who were rotated
 since the last run of this plugin.
 
-You can find the complete documentation at 
+You can find the complete documentation at
 http://labs.consol.de/nagios/check_logfiles/
 
 Usage: check_logfiles [-t timeout] -f <configfile>
@@ -136,7 +136,7 @@ my @params = (
     "debug|d",
     "verbose|v",
     #
-    # 
+    #
     #
     "environment|e=s%",
     "daemon:i",
@@ -220,7 +220,7 @@ my @params = (
 if (! GetOptions(\%commandline, @params)) {
   print_help();
   exit $ERRORS{UNKNOWN};
-} 
+}
 
 if (exists $commandline{version}) {
   print_version();
@@ -304,9 +304,9 @@ if (exists $commandline{configdir}) {
   sub eachFile {
     my $filename = $_;
     my $fullpath = $File::Find::name;
-    #remember that File::Find changes your CWD, 
+    #remember that File::Find changes your CWD,
     #so you can call open with just $_
-    if ((-f $filename) && ($filename =~ /\.(cfg|conf)$/)) { 
+    if ((-f $filename) && ($filename =~ /\.(cfg|conf)$/)) {
       push(@cfgfiles, $fullpath);
     }
   }
@@ -348,7 +348,7 @@ if (! exists $commandline{seekfilesdir}) {
     $commandline{seekfilesdir} = $ENV{OMD_ROOT}."/var/tmp/check_logfiles";
   } else {
     $commandline{seekfilesdir} = $SEEKFILESDIR;
-  } 
+  }
 }
 
 if ($^O eq "hpux") {
@@ -357,7 +357,7 @@ if ($^O eq "hpux") {
 
 if (my $cl = Nagios::CheckLogfiles->new({
     cfgfile => $commandline{config} ? $commandline{config} : undef,
-    searches => [ 
+    searches => [
         map {
           if (exists $commandline{type} && $commandline{type} eq 'rotating::uniform') {
             $_->{type} = $commandline{type};
@@ -374,7 +374,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
              	    if (exists $toplevel->{$key}) {
                     $toplevel->{$key} .= ','.$value;
                   } else {
-                    $toplevel->{$key} = $value;	
+                    $toplevel->{$key} = $value;
                   }
                 } else {
                   $_->{$type}->{$key} = {};
@@ -386,16 +386,16 @@ if (my $cl = Nagios::CheckLogfiles->new({
           $_;
         }
         map { # ausputzen
-            foreach my $key (keys %{$_}) { 
+            foreach my $key (keys %{$_}) {
     	      delete $_->{$key} unless $_->{$key}}; $_;
         } ({
-        tag => 
+        tag =>
             $commandline{tag} ? $commandline{tag} : undef,
-        logfile => 
+        logfile =>
             $commandline{logfile} ? $commandline{logfile} : undef,
-        type => 
+        type =>
             $commandline{type} ? $commandline{type} : undef,
-        rotation => 
+        rotation =>
             $commandline{rotation} ? $commandline{rotation} : undef,
         tivolipatterns =>
             $commandline{tivolipattern} ?
