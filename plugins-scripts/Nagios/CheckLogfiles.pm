@@ -13,6 +13,7 @@ use Socket;
 use POSIX qw(strftime);
 use IPC::Open2;
 use Errno;
+use Sys::Hostname;
 
 
 use constant GZIP => '#GZIP#';
@@ -73,6 +74,7 @@ sub init {
   $self->{unstick} = $params->{unstick} || 0;
   $self->{warning} = $params->{warning} || 0;
   $self->{critical} = $params->{critical} || 0;
+  $self->{getinetmacros} = $params->{getinetmacros} || 0;
   $self->init_macros;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
@@ -691,22 +693,31 @@ sub init_macros {
     $DEFAULTMACROS->{CL_USERNAME} = scalar getpwuid $>;
     $DEFAULTMACROS->{CL_HAS_WIN32} = 0;
   }
-  if (defined(&Net::Domain::hostname)) {
-    $DEFAULTMACROS->{CL_HOSTNAME} = &Net::Domain::hostname();
-    $DEFAULTMACROS->{CL_DOMAIN} = &Net::Domain::hostdomain();
-    $DEFAULTMACROS->{CL_FQDN} = &Net::Domain::hostfqdn();
-    $DEFAULTMACROS->{CL_HAS_NET_DOMAIN} = 1;
+  if ($self->{getinetmacros}) {
+    if (defined(&Net::Domain::hostname)) {
+      $DEFAULTMACROS->{CL_HOSTNAME} = &Net::Domain::hostname();
+      $DEFAULTMACROS->{CL_DOMAIN} = &Net::Domain::hostdomain();
+      $DEFAULTMACROS->{CL_FQDN} = &Net::Domain::hostfqdn();
+      $DEFAULTMACROS->{CL_HAS_NET_DOMAIN} = 1;
+    } else {
+      $DEFAULTMACROS->{CL_HOSTNAME} = POSIX::uname();
+      $DEFAULTMACROS->{CL_DOMAIN} = "localdomain";
+      $DEFAULTMACROS->{CL_FQDN} = POSIX::uname().$DEFAULTMACROS->{CL_DOMAIN};
+      $DEFAULTMACROS->{CL_HAS_NET_DOMAIN} = 0;
+    }
+    $DEFAULTMACROS->{CL_IPADDRESS} =
+        scalar gethostbyname($DEFAULTMACROS->{CL_HOSTNAME}) ?
+        inet_ntoa(scalar gethostbyname($DEFAULTMACROS->{CL_HOSTNAME})) :
+        '127.0.0.1';
   } else {
-    $DEFAULTMACROS->{CL_HOSTNAME} = POSIX::uname();
+    $DEFAULTMACROS->{CL_HOSTNAME} = hostname;
     $DEFAULTMACROS->{CL_DOMAIN} = "localdomain";
-    $DEFAULTMACROS->{CL_FQDN} = POSIX::uname().'.'.'localdomain';
+    $DEFAULTMACROS->{CL_FQDN} = $DEFAULTMACROS->{CL_HOSTNAME}.$DEFAULTMACROS->{CL_DOMAIN};
     $DEFAULTMACROS->{CL_HAS_NET_DOMAIN} = 0;
+    $DEFAULTMACROS->{CL_IPADDRESS} = '127.0.0.1';
   }
-#printf STDERR "%s\n", Data::Dumper::Dumper($DEFAULTMACROS);
-  $DEFAULTMACROS->{CL_IPADDRESS} =
-      scalar gethostbyname($DEFAULTMACROS->{CL_HOSTNAME}) ?
-      inet_ntoa(scalar gethostbyname($DEFAULTMACROS->{CL_HOSTNAME})) :
-      '127.0.0.1';
+  #printf STDERR "%s\n", Data::Dumper::Dumper($DEFAULTMACROS);
+
   #
   #  Add self-defined macros to the defaultmacros structure or overwrite
   #  already defined macros.

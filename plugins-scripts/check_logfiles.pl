@@ -215,6 +215,7 @@ my @params = (
     "rotatewait",
     "rununique",
     "htmlencode",
+    "getinetmacros",
 );
 if (! GetOptions(\%commandline, @params)) {
   print_help();
@@ -435,6 +436,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
             $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,
             defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef,
             $commandline{preferredlevel} ? "preferredlevel=".$commandline{preferredlevel} : undef,
+            $commandline{getinetmacros} ? "getinetmacros" : undef,
         ),
         archivedir =>
             $commandline{archivedir} ?
@@ -461,6 +463,7 @@ if (my $cl = Nagios::CheckLogfiles->new({
     unstick => $commandline{unstick} ? $commandline{unstick} : undef,
     warning => $commandline{warning} ? $commandline{warning} : undef,
     critical => $commandline{critical} ? $commandline{critical} : undef,
+    getinetmacros => $commandline{getinetmacros} ? $commandline{getinetmacros} : undef,
   })) {
   $cl->{verbose} = $commandline{verbose} ? 1 : 0;
   $cl->{timeout} = $commandline{timeout} ? $commandline{timeout} : 360000;
