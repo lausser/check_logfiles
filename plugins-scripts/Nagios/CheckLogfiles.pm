@@ -705,10 +705,8 @@ sub init_macros {
       $DEFAULTMACROS->{CL_FQDN} = POSIX::uname().$DEFAULTMACROS->{CL_DOMAIN};
       $DEFAULTMACROS->{CL_HAS_NET_DOMAIN} = 0;
     }
-    $DEFAULTMACROS->{CL_IPADDRESS} =
-        scalar gethostbyname($DEFAULTMACROS->{CL_HOSTNAME}) ?
-        inet_ntoa(scalar gethostbyname($DEFAULTMACROS->{CL_HOSTNAME})) :
-        '127.0.0.1';
+    my $ipaddress = scalar gethostbyname($DEFAULTMACROS->{CL_HOSTNAME});
+    $DEFAULTMACROS->{CL_IPADDRESS} = $ipaddress ? inet_ntoa($ipaddress) : '127.0.0.1';
   } else {
     $DEFAULTMACROS->{CL_HOSTNAME} = hostname;
     $DEFAULTMACROS->{CL_DOMAIN} = "localdomain";
