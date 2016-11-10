@@ -40,6 +40,7 @@ sub make_windows_plugin {
 sub reset {
   my $self = shift;
   $self->{allerrors} = { OK => 0, WARNING => 0, CRITICAL => 0, UNKNOWN => 0 };
+  $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   foreach my $level (qw(OK CRITICAL WARNING UNKNOWN)) {
     $self->{lastmsg}->{$level} = "";
   }  

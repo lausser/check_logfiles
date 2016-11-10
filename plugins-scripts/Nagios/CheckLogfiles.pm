@@ -73,6 +73,7 @@ sub init {
   $self->{unstick} = $params->{unstick} || 0;
   $self->{warning} = $params->{warning} || 0;
   $self->{critical} = $params->{critical} || 0;
+  $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->init_macros;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
@@ -80,7 +81,7 @@ sub init {
       seekfileerror => 'critical', logfileerror => 'critical', 
       protocolfileerror => 'ok',
       maxmemsize => 0, rotatewait => 0, htmlencode => 0,
-      outputhitcount => 1, rununique => 0,
+      outputhitcount => 1, rununique => 0, preview => 1,
   });
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
@@ -462,6 +463,13 @@ sub run {
           if ($search->{lastmsg}->{$_}) {
             $self->{lastmsg}->{$_} = $search->{lastmsg}->{$_};
           }
+          foreach my $searchmatch (@{$search->{matchlines}->{$_}}) {
+            unshift(@{$self->{matchlines}->{$_}}, $searchmatch);
+          }
+          while (scalar(@{$self->{matchlines}->{$_}}) >
+              $self->get_option("preview")) {
+            my $runter = pop(@{$self->{matchlines}->{$_}});
+          }
         }
       }
       $self->formulate_result();
@@ -532,12 +540,27 @@ sub formulate_result {
     $self->{hint} .= ")";
   }
   foreach my $level (qw(CRITICAL WARNING UNKNOWN OK)) {
+    my $preview;
+    my $continue;
+    if ($self->get_option("preview") > 1) {
+      if (scalar(@{$self->{matchlines}->{$level}}) <
+          $self->get_option("preview")) {
+        $preview = join(", ", @{$self->{matchlines}->{$level}});
+      } else {
+        $preview = join(", ", @{$self->{matchlines}->{$level}});
+      }
+      $continue = scalar(@{$self->{matchlines}->{$level}}) <=
+          $self->get_option("preview") ? "" : "...";
+    } else {
+      $preview = $self->{lastmsg}->{$level};
+      $continue = $self->{allerrors}->{$level} == 1 ? "" : "...";
+    }
     $self->{exitcode} = $ERRORS{$level};
     if (($level ne "OK") && ($self->{allerrors}->{$level})) {
       $self->{exitmessage} = sprintf "%s%s - %s %s", $level, 
           $self->get_option("outputhitcount") ? " - ".$self->{hint} : "",
-          $self->{lastmsg}->{$level}, 
-          ($self->{allerrors}->{$level} == 1 ? "" : "...");
+          $preview,
+          $continue;
       last;
     } else {
       $self->{exitmessage} = sprintf "OK - no errors or warnings";
