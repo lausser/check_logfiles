@@ -1,3 +1,5 @@
+* 3.7.6.3 2016-11-14
+  fix perl undef mesg when truncating with %(0-9)s part II
 * 3.7.6.2 2016-11-11
   fix perl undef mesg when truncating with %(0-9)s
 * 3.7.6.1 2016-11-11

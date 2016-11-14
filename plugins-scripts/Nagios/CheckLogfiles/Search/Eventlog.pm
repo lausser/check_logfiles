@@ -636,9 +636,10 @@ sub format_message {
   foreach (keys %{$format}) {
     $message =~ s/$_/$format->{$_}/g;
   }
-  if ($message =~ /%(\d+)m/) {
-    $format->{'%m'} = sprintf "%.".$1."s", $event->{Message};
-    $message =~ s/$_/$format->{'%m'}/g;
+  while ($message =~ /%(\d+)m/) {
+    my $search = "%".$1."m";
+    my $replace = sprintf "%.".$1."s", $event->{Message};
+    $message =~ s/$search/$replace/g;
   }
   $event->{Message} = $message;
 }
