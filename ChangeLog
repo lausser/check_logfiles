@@ -1,3 +1,7 @@
+* 3.7.6.2 2016-11-11
+  fix perl undef mesg when truncating with %(0-9)s
+* 3.7.6.1 2016-11-11
+  truncate eventlog message with %(0-9)s
 * 3.7.6 2016-11-10
   add option preview
 * 3.7.5.2 2016-07-13
