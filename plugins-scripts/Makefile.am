@@ -35,5 +35,6 @@ $(libexec_SCRIPTS) : $(EXTRA_DIST)
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Ipmitool.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Oraclealertlog.pm | $(AWK) -f ./subst >> $@
 	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Esxdiag.pm | $(AWK) -f ./subst >> $@
+	$(SED) -e 's/^1;//g' < Nagios/CheckLogfiles/Search/Journald.pm | $(AWK) -f ./subst >> $@
 	$(CAT) check_logfiles.pl | $(AWK) -f ./subst >> $@
 	chmod +x $@
