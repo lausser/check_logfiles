@@ -2693,7 +2693,7 @@ sub formulate_perfdata {
       $self->{perftag} = $self->{tag};
     }
     $self->{perfdata} = 
-        sprintf "%s_lines=%d %s_warnings=%d %s_criticals=%d %s_unknowns=%d",
+        sprintf "'%s_lines'=%d '%s_warnings'=%d '%s_criticals'=%d '%s_unknowns'=%d",
         $self->{perftag}, $self->{linesread},
         $self->{perftag}, scalar(@{$self->{matchlines}->{WARNING}}),
         $self->{perftag}, scalar(@{$self->{matchlines}->{CRITICAL}}),
