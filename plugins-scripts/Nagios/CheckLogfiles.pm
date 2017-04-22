@@ -2415,6 +2415,9 @@ sub loadstate {
     if (! $self->{laststate}->{logtime}) {
       $self->{laststate}->{logtime} = 0;
     }
+    if (! $self->{laststate}->{logoffset}) {
+      $self->{laststate}->{logoffset} = 0;
+    }
     if (! $self->{laststate}->{devino}) {
       # upgrade vom < 1.4 on the fly
       $self->{laststate}->{devino} = $self->getfilefingerprint($self->{logfile});
