@@ -1,3 +1,5 @@
+* 3.8 2017-04-22
+  add type systemd (journald), pull request #15 from adrianlzt
 * 3.7.6.3 2016-11-14
   fix perl undef mesg when truncating with %(0-9)s part II
 * 3.7.6.2 2016-11-11
