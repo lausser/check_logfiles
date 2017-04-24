@@ -215,7 +215,6 @@ my @params = (
     "rotatewait",
     "rununique",
     "htmlencode",
-    "journaldunit=s",
 );
 if (! GetOptions(\%commandline, @params)) {
   print_help();
@@ -462,7 +461,6 @@ if (my $cl = Nagios::CheckLogfiles->new({
     unstick => $commandline{unstick} ? $commandline{unstick} : undef,
     warning => $commandline{warning} ? $commandline{warning} : undef,
     critical => $commandline{critical} ? $commandline{critical} : undef,
-    journaldunit => $commandline{journaldunit} ? $commandline{journaldunit} : undef,
   })) {
   $cl->{verbose} = $commandline{verbose} ? 1 : 0;
   $cl->{timeout} = $commandline{timeout} ? $commandline{timeout} : 360000;
