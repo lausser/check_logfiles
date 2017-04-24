@@ -73,6 +73,7 @@ sub init {
   $self->{unstick} = $params->{unstick} || 0;
   $self->{warning} = $params->{warning} || 0;
   $self->{critical} = $params->{critical} || 0;
+  $self->{journaldunit} = $params->{journaldunit} || "";
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->init_macros;
   $self->default_options({ prescript => 1, smartprescript => 0,
@@ -172,6 +173,7 @@ sub init {
       %{$_->{macros}} = %{$self->{macros}};
       $_->{tracefile} = $self->{tracefile};
       $_->{cfgbase} = $self->{cfgbase};
+      $_->{journaldunit} = $self->{journaldunit};
       if (my $search = Nagios::CheckLogfiles::Search->new($_)) {
         # maybe override default search options with global ones (ex. report)
         $search->refresh_default_options($self->get_options('report,seekfileerror,logfileerror,protocolfileerror'));

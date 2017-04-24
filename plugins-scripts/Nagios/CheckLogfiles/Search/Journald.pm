@@ -22,6 +22,7 @@ sub init {
   my $self = shift;
   my $params = shift;
   $self->{logfile} = "/usr/bin/journalctl";
+  $self->{journaldunit} = $params->{journaldunit};
   $self->default_options({ exeargs => "", });
   $self->SUPER::init($params);
 }
@@ -41,7 +42,11 @@ sub collectfiles {
   my @rotatedfiles = ();
   my $fh = new IO::File;
   if ($self->getfileisexecutable($self->{logfile})) {
-    my $cmdline = $self->{logfile}." --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
+    my $cmdline = $self->{logfile};
+    if ($self->{journaldunit}) {
+      $cmdline = $cmdline." --unit '".$self->{journaldunit}."'";
+    }
+    $cmdline = $cmdline." --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
     if ($fh->open($cmdline)) {
       push(@{$self->{relevantfiles}},
         { filename => $self->{logfile},
