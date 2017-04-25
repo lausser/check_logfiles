@@ -1,3 +1,7 @@
+* 3.8.0.2 2017-04-25
+  reorg Makefile.am
+* 3.8.0.1 2017-04-24
+  add forgotten files to the dist
 * 3.8 2017-04-22
   add type systemd (journald), pull request #15 from adrianlzt
 * 3.7.6.3 2016-11-14

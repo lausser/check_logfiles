@@ -133,6 +133,10 @@ open CCC, ">./etc/check_action.cfg";
 print CCC $configfile;
 close CCC;
 my $username = scalar getpwuid $>;
+if ($^O =~ /(cygwin|MSWin)/ && $username =~ /(\w+)\+(\w+)/) {
+  # hostname+username
+  $username = $2;
+}
 diag("i am user $username");
 $cl = Nagios::CheckLogfiles::Test->new({ cfgfile => './etc/check_action.cfg'});
 $lvm = $cl->get_search_by_tag("lvm");
@@ -181,6 +185,10 @@ open CCC, ">./etc/check_action.cfg";
 print CCC $configfile;
 close CCC;
 $username = scalar getpwuid $>;
+if ($^O =~ /(cygwin|MSWin)/ && $username =~ /(\w+)\+(\w+)/) {
+  # hostname+username
+  $username = $2;
+}
 diag("i am user $username");
 $cl = Nagios::CheckLogfiles::Test->new({ cfgfile => './etc/check_action.cfg'});
 $lvm = $cl->get_search_by_tag("lvm");
