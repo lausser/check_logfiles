@@ -22,7 +22,6 @@ sub init {
   my $self = shift;
   my $params = shift;
   $self->{logfile} = "/usr/bin/journalctl";
-  $self->{journaldunit} = $params->{logfile};
   $self->default_options({ exeargs => "", });
   $self->SUPER::init($params);
 }
