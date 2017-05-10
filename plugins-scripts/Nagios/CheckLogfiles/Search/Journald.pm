@@ -22,6 +22,7 @@ sub init {
   my $self = shift;
   my $params = shift;
   $self->{logfile} = "/usr/bin/journalctl";
+  $self->{journaldunit} = $params->{journald}->{unit};
   $self->default_options({ exeargs => "", });
   $self->SUPER::init($params);
 }
@@ -30,10 +31,10 @@ sub prepare {
   my $self = shift;
   $self->{options}->{nologfilenocry} = 1;
 }
-    
+
 sub analyze_situation {
   my $self = shift;
-  $self->{logmodified} = 1; 
+  $self->{logmodified} = 1;
 }
 
 sub collectfiles {
