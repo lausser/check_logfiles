@@ -23,6 +23,9 @@ sub init {
   my $params = shift;
   $self->{logfile} = "/usr/bin/journalctl";
   $self->{journaldunit} = $params->{journald}->{unit};
+  if ($self->{journaldunit} and $self->{tag} eq "default") {
+    $self->{tag} = $self->{journaldunit};
+  }
   $self->default_options({ exeargs => "", });
   $self->SUPER::init($params);
 }
