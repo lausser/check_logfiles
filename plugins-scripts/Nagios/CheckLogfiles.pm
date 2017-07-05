@@ -2332,7 +2332,9 @@ sub rewind {
 
 sub unstick {
   my $self = shift;
+printf STDERR "THIS IS UNS\n";
   $self->loadstate();
+printf STDERR "loadstate %s\n", Data::Dumper::Dumper($self);
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }

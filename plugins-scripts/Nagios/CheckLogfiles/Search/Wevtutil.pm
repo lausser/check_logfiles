@@ -137,7 +137,7 @@ sub TIEHANDLE {
   # Oeffnen des Eventlogs
   #
   if (! $mustabort) {
-    my $exec = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" \"/format:RenderedXml\" %s", $wevtutil,
+    my $exec = sprintf "%s query-events \"%s\" \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" \"/format:RenderedXml\" %s", $wevtutil,
         $eventlog->{eventlog},
         iso(365*24*3600* $eventlog->{thissecond}),
         iso(365*24*3600* $eventlog->{thissecond}), " 2>&1 |";
@@ -161,7 +161,7 @@ sub TIEHANDLE {
   # Jetzt beginnt das eigentliche Auslesen des Eventlogs
   #
   if (! $mustabort) {
-    my $exec = sprintf "%s query-events %s \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" \"/format:RenderedXml\" %s", $wevtutil,
+    my $exec = sprintf "%s query-events \"%s\" \"/query:*[System[TimeCreated[\@SystemTime>='%s' and \@SystemTime<'%s']]]\" \"/format:RenderedXml\" %s", $wevtutil,
         $eventlog->{eventlog},
         iso($eventlog->{lastsecond}),
         iso($eventlog->{thissecond}),
