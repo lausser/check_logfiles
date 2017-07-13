@@ -124,8 +124,8 @@ $output = `$command`;
 diag($output);
 diag($? >> 8);
 #ok(($? >> 8) == 2);
-ok($output =~ / null_warnings=/);
-ok($output =~ / doppelnull_warnings=/);
+ok($output =~ / 'null_warnings'=/);
+ok($output =~ / 'doppelnull_warnings'=/);
 
 diag("only searches with null");
 # doppelnull wird nicht ausgefuehrt, da 'null' keine * und ? enthaelt und daher
@@ -138,8 +138,8 @@ $output = `$command`;
 diag($output);
 diag($? >> 8);
 #ok(($? >> 8) == 2);
-ok($output =~ / null_warnings=/);
-ok($output !~ / doppelnull_warnings=/);
+ok($output =~ / 'null_warnings'=/);
+ok($output !~ / 'doppelnull_warnings'=/);
 
 
 

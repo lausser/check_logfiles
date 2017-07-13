@@ -43,7 +43,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
               	eventlog => "application",
                 include => {
                   EventType => 'Error',
-                  Source => 'check_logfiles',
+                  Source => 'EventCreate',
                 },
                 exclude => {
                   EventID => '13,23',
@@ -92,6 +92,7 @@ diag("1st run");
 $cl->reset();
 diag("cleanup");
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 7);
+sleep_until_next_minute();
 $ssh->logger(undef, undef, 1, "Firewall problem1", undef, { 
   EventType => 'Error',
   EventID => '0010',
@@ -102,7 +103,7 @@ $ssh->logger(undef, undef, 1, "Firewall problem2", undef, {
 });
 $ssh->logger(undef, undef, 1, "DVD problem1", undef, {
   EventType => 'Error',
-  EventID => '0012',
+  EventID => '0013',
   Source => 'DVD',   # block
 });
 $ssh->logger(undef, undef, 1, "Firewall problem3", undef, {
@@ -127,7 +128,6 @@ diag($cl->has_result());
 diag($cl->{exitmessage}.'|'.$cl->{perfdata});
 ok($cl->expect_result(0, 0, 2, 0, 2)); #2
 
-
 sleep 2;
 $cl->reset();
 diag("now commandline");
@@ -142,7 +142,7 @@ $ssh->logger(undef, undef, 1, "Firewall problem2", undef, {
 });
 $ssh->logger(undef, undef, 1, "DVD problem1", undef, {
   EventType => 'Error',
-  EventID => '0012',
+  EventID => '0013',
   Source => 'DVD',   # block
 });
 $ssh->logger(undef, undef, 1, "Firewall problem3", undef, {
@@ -151,7 +151,7 @@ $ssh->logger(undef, undef, 1, "Firewall problem3", undef, {
 });
 # run commandline
 sleep 2;
-my $cmd = sprintf "perl ../plugins-scripts/check_logfiles --tag %s --seekfilesdir %s --criticalpattern \".*\" --type \"wevtutil:eventlog=application,include,EventType=Error,Source=check_logfiles,exclude,eventid=13,eventid=23\"",
+my $cmd = sprintf "perl ../plugins-scripts/check_logfiles --tag %s --seekfilesdir %s --criticalpattern \".*\" --type \"wevtutil:eventlog=application,include,EventType=Error,Source=EventCreate,exclude,eventid=13,eventid=23\"",
   "ssh", TESTDIR."/var/tmp";
 diag($cmd);
 #my $result = `$cmd`;

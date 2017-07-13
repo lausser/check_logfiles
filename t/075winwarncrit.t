@@ -108,7 +108,7 @@ diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 3, 10, 0, 2));
 diag($cl->{perfdata});
-ok($cl->{perfdata} =~ /ssh_lines=16/);
+ok($cl->{perfdata} =~ /'ssh_lines'=16/);
 
 # 4 now find the them with the command line
 $ssh->trace(sprintf "+----------------------- test %d ------------------", 4);

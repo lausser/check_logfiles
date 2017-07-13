@@ -72,6 +72,8 @@ diag("seek ".$ssh->{seekfile});
 ok(-f "./var/tmp/check_logfiles.._var_adm_messages.ssh");
 
 $ENV{OMD_ROOT} = "./omd_root";
+unlink "./omd_root/var/tmp/check_logfiles/check_logfiles.._var_adm_messages.ssh" if -f "./omd_root/var/tmp/check_logfiles/check_logfiles.._var_adm_messages.ssh";
+# neues seekfile loeschen, damit die migration stattfindet.
 $cl = Nagios::CheckLogfiles::Test->new({
 	protocolsdir => "homevartmp:".TESTDIR."/var/tmp",
 	seekfilesdir => "homevartmp:".TESTDIR."/var/tmp",

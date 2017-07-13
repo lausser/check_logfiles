@@ -78,10 +78,10 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 4, 0, 2));
-ok($ssh->{perfdata} =~ /ssh_lines=\d+ ssh_warnings=0 ssh_criticals=2 ssh_unknowns=0/);
+ok($ssh->{perfdata} =~ /'ssh_lines'=\d+ 'ssh_warnings'=0 'ssh_criticals'=2 'ssh_unknowns'=0/);
 ok($test->{perfdata} eq "");
-ok($null->{perfdata} =~ /null_lines=\d+ null_warnings=0 null_criticals=0 null_unknowns=0/);
-ok($cl->{perfdata} =~ /ssh_lines=\d+ ssh_warnings=0 ssh_criticals=2 ssh_unknowns=0 null_lines=\d+ null_warnings=0 null_criticals=0 null_unknowns=0/);
+ok($null->{perfdata} =~ /'null_lines'=\d+ 'null_warnings'=0 'null_criticals'=0 'null_unknowns'=0/);
+ok($cl->{perfdata} =~ /'ssh_lines'=\d+ 'ssh_warnings'=0 'ssh_criticals'=2 'ssh_unknowns'=0 'null_lines'=\d+ 'null_warnings'=0 'null_criticals'=0 'null_unknowns'=0/);
 ok($cl->{exitmessage} =~ /CRITICAL - \(4 errors.* - [\w: \[\]]+ Failed password for invalid user8 ...\s*$/);
 diag(sprintf "((%s))", $cl->{exitmessage});
 
@@ -165,7 +165,7 @@ diag("modified results");
 diag("perf: ".$cl->{perfdata});
 diag("exit: ".$cl->{exitmessage});
 
-ok($cl->{perfdata} =~ /xxl_lines=\d+ xxl_warnings=0 xxl_criticals=2 xxl_unknowns=0 zero_lines=\d+ zero_warnings=0 zero_criticals=0 zero_unknowns=0/);
+ok($cl->{perfdata} =~ /'xxl_lines'=\d+ 'xxl_warnings'=0 'xxl_criticals'=2 'xxl_unknowns'=0 'zero_lines'=\d+ 'zero_warnings'=0 'zero_criticals'=0 'zero_unknowns'=0/);
 ok($cl->{exitmessage} =~ /^HURTZ! - das lamm schrie $/);
 diag(sprintf "((%s))", $cl->{exitmessage});
 
@@ -176,6 +176,6 @@ SKIP:{
   $ssh->loggercrap(undef, undef, 20);
   my $output = `../plugins-scripts/check_logfiles -f ./etc/check_action.cfg`;
   diag($output);
-  ok($output =~ /^HURTZ! - das lamm schrie |xxl_lines=\d+ xxl_warnings=0 xxl_criticals=2 xxl_unknowns=0 zero_lines=\d+ zero_warnings=0 zero_criticals=0 zero_unknowns=0/);
+  ok($output =~ /^HURTZ! - das lamm schrie |'xxl_lines'=\d+ 'xxl_warnings'=0 'xxl_criticals'=2 'xxl_unknowns'=0 'zero_lines'=\d+ 'zero_warnings'=0 'zero_criticals'=0 'zero_unknowns'=0/);
 }
 

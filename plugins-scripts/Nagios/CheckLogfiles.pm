@@ -168,6 +168,7 @@ sub init {
     $self->resolve_macros(\$self->{seekfilesdir});
     foreach (@{$params->{searches}}) {
       $_->{seekfilesdir} = $self->{seekfilesdir};
+      $_->{relocate_seekfilesdir} = $self->{relocate_seekfilesdir};
       $_->{scriptpath} = $self->{scriptpath};
       %{$_->{macros}} = %{$self->{macros}};
       $_->{tracefile} = $self->{tracefile};
@@ -328,6 +329,7 @@ sub init_from_file {
   }
   foreach (@searches) {
     $_->{seekfilesdir} = $self->{seekfilesdir};
+    $_->{relocate_seekfilesdir} = $self->{relocate_seekfilesdir};
     $_->{scriptpath} = $self->{scriptpath};
     %{$_->{macros}} = %{$self->{macros}};
     $_->{tracefile} = $self->{tracefile};
@@ -1768,7 +1770,9 @@ sub relocate_dir {
   my $olddir = shift;
   my $basedir = shift;
   my $newdir = "";
-  if ($olddir =~ /^autodetect/) {
+  if ($olddir =~ /^autodetect:(.*)/) {
+    $self->{"relocate_".$type} = $1;
+    $self->resolve_macros(\$self->{"relocate_".$type});
     if ($type eq "scriptpath") {
       $newdir = join(($^O =~ /MSWin/) ? ';' : ':', grep {
           -d $_
@@ -1791,7 +1795,9 @@ sub relocate_dir {
       }
     }
     return $newdir;
-  } elsif ($olddir =~ /^homevartmp/) {
+  } elsif ($olddir =~ /^homevartmp:(.*)/) {
+    $self->{"relocate_".$type} = $1;
+    $self->resolve_macros(\$self->{"relocate_".$type});
     if ($type eq "scriptpath") {
     } else {
       foreach my $basedir ($ENV{OMD_ROOT}, $ENV{HOME}) {
@@ -1860,6 +1866,7 @@ sub new {
   $self->{scriptdelay} = $params->{scriptdelay};
   $self->{cfgbase} = $params->{cfgbase} || "check_logfiles";
   $self->{seekfilesdir} = $params->{seekfilesdir} || $self->system_tempdir();
+  $self->{relocate_seekfilesdir} = $params->{relocate_seekfilesdir};
   $self->{archivedir} = $params->{archivedir};
   $self->{scriptpath} = $params->{scriptpath};
   $self->{macros} = $params->{macros};
@@ -2297,6 +2304,11 @@ sub construct_seekfile {
   $self->{pre2seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{logbasename},
       $self->{tag} eq "default" ? "seek" : $self->{seekfiletag};
+  if ($self->{relocate_seekfilesdir}) {
+    $self->{relocate_seekfile} = sprintf "%s/%s.%s.%s", $self->{relocate_seekfilesdir},
+        $self->{cfgbase}, $self->{seekfilebase},
+        $self->{tag} eq "default" ? "seek" : $self->{tag};
+  }
 }
 
 sub force_cfgbase {
@@ -2319,6 +2331,7 @@ sub finish {
 
 sub rewind {
   my $self = shift;
+  $self->prepare();
   $self->loadstate();
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
@@ -2332,9 +2345,8 @@ sub rewind {
 
 sub unstick {
   my $self = shift;
-printf STDERR "THIS IS UNS\n";
+  $self->prepare();
   $self->loadstate();
-printf STDERR "loadstate %s\n", Data::Dumper::Dumper($self);
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }
@@ -2476,6 +2488,14 @@ sub loadstate {
           $self->{pre3seekfile}, $self->{seekfile});
       mkdir $self->{seekfilesdir} if ! -d $self->{seekfilesdir};
       rename $self->{pre3seekfile}, $self->{seekfile};
+      $self->trace("and call load_state again");
+      $self->loadstate() if -f $self->{seekfile};
+      return $self;
+    }
+    if ($self->{relocate_seekfilesdir}) {
+      $self->trace("relocatable seekfile %s found. move it to %s",
+          $self->{relocate_seekfile}, $self->{seekfile});
+      move $self->{relocate_seekfile}, $self->{seekfile};
       $self->trace("and call load_state again");
       $self->loadstate() if -f $self->{seekfile};
       return $self;

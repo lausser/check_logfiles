@@ -924,7 +924,7 @@ $cl->run();
 diag($cl->has_result()); # 4xCritica =>script=>4xOK, 1xMissing dto
 diag($cl->{exitmessage}); # postscript resets
 ok($cl->expect_result(0, 0, 1, 0, 2)); # 32
-ok($cl->{exitmessage} =~ /ois is hi/ && $cl->{perfdata} =~ /smart_criticals=5 .*/);
+ok($cl->{exitmessage} =~ /ois is hi/ && $cl->{perfdata} =~ /'smart_criticals'=5 .*/);
 
 
 # an supersmart postscript wird der komplette serviceoutput geliefert

@@ -458,8 +458,9 @@ sub logger {
     my $id = exists $details->{EventID} ? $details->{EventID} : 1;
     while ($count--) {
       if ($^O =~ /cygwin/) {
-        $cmd = sprintf '/cygdrive/c/WINDOWS/system32/eventcreate /L Application /SO %s /T %s /ID %s /D "%s" >/dev/null 2>&1',
-            $source, $type, $id, $message;
+        #$cmd = sprintf '/cygdrive/c/WINDOWS/system32/eventcreate /L Application /SO %s /T %s /ID %s /D "%s" >/dev/null 2>&1',
+        $cmd = sprintf '/cygdrive/c/WINDOWS/system32/eventcreate /L Application /T %s /ID %s /D "%s" >/dev/null 2>&1',
+            $type, $id, $message;
       } else { # MSWin or other native windows perls
         $cmd = sprintf 'C:\WINDOWS\system32\eventcreate /L Application /SO %s /T %s /ID %s /D "%s" 1>NUL 2>&1',
             $source, $type, $id, $message;

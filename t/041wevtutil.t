@@ -84,8 +84,9 @@ sleep 10;
 $cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
+diag($cl->{perfdata});
 #ok($cl->expect_result(0, 0, 6, 0, 2));
-$cl->{perfdata} =~ /.*app_criticals=(\d+).*/;
+$cl->{perfdata} =~ /.*'app_criticals'=(\d+).*/;
 my $found = $1;
 diag(sprintf "reported %d errors so far. %d to come", $found, 6 - $found);
 ok($cl->{exitmessage} =~ /CRITICAL/);
@@ -133,7 +134,7 @@ $cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 #ok($cl->expect_result(0, 0, 6, 0, 2));
-$cl->{perfdata} =~ /.*app_criticals=(\d+).*/;
+$cl->{perfdata} =~ /.*'app_criticals'=(\d+).*/;
 $found = $1;
 diag(sprintf "reported %d errors so far. %d to come", $found, 6 - $found);
 ok($cl->{exitmessage} =~ /CRITICAL/);
@@ -162,6 +163,8 @@ ok($cl->expect_result(0, 2, 0, 0, 1));
 # leaves 
 # "PowerShell-Konsole wird gestartet."
 # and
+# siehe 041wevtutilps
+# and
 # "PowerShell-Konsole ist für Benutzereingaben bereit."
 # in
 # Microsoft-Windows-PowerShell/Operational
@@ -175,6 +178,7 @@ $cl = Nagios::CheckLogfiles::Test->new({
               type => "wevtutil",
               criticalpatterns => ["Microsoft", "PowerShell.*(ready|bereit)" ],
               warningpatterns => ["PowerShell.*(started|gestartet)" ],
+              warningexceptions => ["PowerShell.*DefaultAppDomain.*(started|gestartet)" ],
               wevtutil => {
                 eventlog => "Microsoft-Windows-PowerShell/Operational",
               }
@@ -198,5 +202,8 @@ sleep 5;
 $cl->reset_run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
+printf "%s\n", Data::Dumper::Dumper($cl->{allerrors});
+$msps = $cl->get_search_by_tag("msps");
+printf "%s\n", Data::Dumper::Dumper($msps->{matchlines});
 ok($cl->expect_result(0, 1, 1, 0, 2));
 $cl->remove_windows_plugin();

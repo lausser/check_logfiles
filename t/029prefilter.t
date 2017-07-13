@@ -6,7 +6,7 @@
 #
 
 use strict;
-use Test::More tests => 26;
+use Test::More tests => 24;
 use Cwd;
 use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
@@ -104,15 +104,15 @@ $simple->logger(undef, undef, 30, "ipata22: Failed password for invalid user1...
 $cl->reset();
 sleep 1;
 $cl->run();
-ok($siapp8->{perfdata});
+diag($siapp8->{perfdata});
 diag($ipata22->{perfdata});
 diag($simple->{perfdata});
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 65, 0, 2));
-ok($cl->{perfdata} =~ /.*simple_criticals=34.*/);
-ok($cl->{perfdata} =~ /.*siapp8_criticals=1.*/);
-ok($cl->{perfdata} =~ /.*ipata22_criticals=30.*/);
+ok($cl->{perfdata} =~ /.*'simple_criticals'=34.*/);
+ok($cl->{perfdata} =~ /.*'siapp8_criticals'=1.*/);
+ok($cl->{perfdata} =~ /.*'ipata22_criticals'=30.*/);
 
 
 #
@@ -208,15 +208,12 @@ $simple->logger(undef, undef, 30, "ipata23: Failed password for invalid user1...
 $cl->reset();
 sleep 1;
 $cl->run();
-ok($siapp8->{perfdata});
-diag($ipata22->{perfdata});
-diag($simple->{perfdata});
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 65, 0, 2));
-ok($cl->{perfdata} =~ /.*simple_criticals=34.*/);
-ok($cl->{perfdata} =~ /.*siapp9_criticals=1.*/);
-ok($cl->{perfdata} =~ /.*ipata23_criticals=30.*/);
+ok($cl->{perfdata} =~ /.*'simple_criticals'=34.*/);
+ok($cl->{perfdata} =~ /.*'siapp9_criticals'=1.*/);
+ok($cl->{perfdata} =~ /.*'ipata23_criticals'=30.*/);
 ok(@{$ipata22->{preliminaryfilter}->{NEED}}[0] eq "ipata23");
 
 diag("add case insensitivity");
@@ -320,9 +317,9 @@ diag($simple->{perfdata});
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 65, 0, 2));
-ok($cl->{perfdata} =~ /.*simple_criticals=34.*/);
-ok($cl->{perfdata} =~ /.*siapp9_criticals=1.*/);
-ok($cl->{perfdata} =~ /.*ipata23_criticals=30.*/);
+ok($cl->{perfdata} =~ /.*'simple_criticals'=34.*/);
+ok($cl->{perfdata} =~ /.*'siapp9_criticals'=1.*/);
+ok($cl->{perfdata} =~ /.*'ipata23_criticals'=30.*/);
 ok(@{$ipata22->{preliminaryfilter}->{NEED}}[0] eq "(?i)ipata23");
 
 

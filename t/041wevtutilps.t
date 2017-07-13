@@ -26,6 +26,8 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
 # leaves 
 # "PowerShell-Konsole wird gestartet."
 # and
+# "Windows PowerShell hat einen IPC-Listeningthread für den Prozess 7204 in AppDomain DefaultAppDomain gestartet" ( this seems to be new since some win 10 creators? update
+# and
 # "PowerShell-Konsole ist für Benutzereingaben bereit."
 # in
 # Microsoft-Windows-PowerShell/Operational
@@ -39,6 +41,7 @@ my $cl = Nagios::CheckLogfiles::Test->new({
               type => "wevtutil",
               criticalpatterns => ["Microsoft", "PowerShell.*(ready|bereit)" ],
               warningpatterns => ["PowerShell.*(started|gestartet)" ],
+              warningexceptions => ["PowerShell.*DefaultAppDomain.*(started|gestartet)" ],
               wevtutil => {
                 eventlog => "Microsoft-Windows-PowerShell/Operational",
               }

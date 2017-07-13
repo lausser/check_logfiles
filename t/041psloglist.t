@@ -91,7 +91,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 #ok($cl->expect_result(0, 0, 6, 0, 2));
-$cl->{perfdata} =~ /.*ssh_criticals=(\d+).*/;
+$cl->{perfdata} =~ /.*'ssh_criticals'=(\d+).*/;
 my $found = $1;
 diag(sprintf "reported %d errors so far. %d to come", $found, 6 - $found);
 ok($cl->{exitmessage} =~ /CRITICAL/);
