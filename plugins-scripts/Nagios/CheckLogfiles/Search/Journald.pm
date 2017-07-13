@@ -22,6 +22,10 @@ sub init {
   my $self = shift;
   my $params = shift;
   $self->{logfile} = "/usr/bin/journalctl";
+  $self->{journaldunit} = $params->{journald}->{unit};
+  if ($self->{journaldunit} and $self->{tag} eq "default") {
+    $self->{tag} = $self->{journaldunit};
+  }
   $self->default_options({ exeargs => "", });
   $self->SUPER::init($params);
 }
@@ -30,10 +34,10 @@ sub prepare {
   my $self = shift;
   $self->{options}->{nologfilenocry} = 1;
 }
-    
+
 sub analyze_situation {
   my $self = shift;
-  $self->{logmodified} = 1; 
+  $self->{logmodified} = 1;
 }
 
 sub collectfiles {
@@ -41,7 +45,11 @@ sub collectfiles {
   my @rotatedfiles = ();
   my $fh = new IO::File;
   if ($self->getfileisexecutable($self->{logfile})) {
-    my $cmdline = $self->{logfile}." --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
+    my $cmdline = $self->{logfile};
+    if ($self->{journaldunit}) {
+      $cmdline = $cmdline." --unit '".$self->{journaldunit}."'";
+    }
+    $cmdline = $cmdline." --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
     if ($fh->open($cmdline)) {
       push(@{$self->{relevantfiles}},
         { filename => $self->{logfile},

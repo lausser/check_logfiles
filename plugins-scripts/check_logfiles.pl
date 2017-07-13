@@ -219,7 +219,7 @@ my @params = (
 if (! GetOptions(\%commandline, @params)) {
   print_help();
   exit $ERRORS{UNKNOWN};
-} 
+}
 
 if (exists $commandline{version}) {
   print_version();
@@ -237,7 +237,7 @@ if (exists $commandline{config}) {
   $enough_info = 1;
 } elsif (exists $commandline{logfile}) {
   $enough_info = 1;
-} elsif (exists $commandline{type} && $commandline{type} =~ /^(eventlog|errpt|ipmitool|wevtutil|executable|dumpel)/) {
+} elsif (exists $commandline{type} && $commandline{type} =~ /^(eventlog|errpt|ipmitool|wevtutil|executable|dumpel|journald)/) {
   $enough_info = 1;
 } elsif (exists $commandline{deinstall}) {
   $commandline{type} = 'dummy';
