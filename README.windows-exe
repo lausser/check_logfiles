@@ -39,7 +39,7 @@ check_logfiles.exe
 
 5) Compile the plugin
    cd plugins-scripts
-   pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::NetResource -M Win32::Daemon -M Time::Piece -M Time::Local -M Win32::EventLog -M Win32::TieRegistry -M Win32::WinError -M Date::Manip -o check_logfiles.exe check_logfiles
+   pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::NetResource -M Win32::Daemon -M Time::Piece -M Time::Local -M Win32::EventLog -M Win32::TieRegistry -M Win32::WinError -M Date::Manip -M Win32::OLE -o check_logfiles.exe check_logfiles
    (maybe you need to install Win32::NetResource and Win32::Daemon)
    (Win32::Service is useful, too)
 

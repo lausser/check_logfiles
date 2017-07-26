@@ -1416,7 +1416,12 @@ sub system_tempdir {
 
 sub construct_pidfile {
   my $self = shift;
-  $self->{pidfilebase} = $self->{abscfgfile};
+  if (exists $self->{abscfgfile}) {
+    $self->{pidfilebase} = $self->{abscfgfile};
+  } else {
+    $self->{pidfilebase} = $self->{tag};
+    $self->{pidfilebase} .= $self->{logfile};
+  }
   $self->{pidfilebase} =~ s/\//_/g;
   $self->{pidfilebase} =~ s/\\/_/g; 
   $self->{pidfilebase} =~ s/:/_/g;
@@ -1476,30 +1481,55 @@ sub check_pidfile {
       return 0;
     } else {
       $self->trace("Found pidfile %s with pid %d", $self->{pidfile}, $pid);
-      kill 0, $pid;
-      if ($! == Errno::ESRCH) {
+      my $pidfile_status = 0;
+      # 0=no such pid
+      # 1=held by check_logfiles
+      # 2=held by other
+      if ($^O =~ /MSWin/) {
+        eval "require Win32::OLE;";
+        if (defined(&Win32::OLE::GetObject)) {
+          import Win32::Daemon;
+          my $objWMI = Win32::OLE->GetObject('winmgmts://./root/cimv2');
+          foreach my $p (Win32::OLE::in ($objWMI->InstancesOf("Win32_Process")) ) {
+            if ($pid == $p->ProcessID) {
+              if ($p->Name =~ /.*check_logfiles.*/) {
+                $pidfile_status = 1;
+              } else {
+                $pidfile_status = 2;
+              }
+            }
+          }
+        } else {
+          die "get Win32::OLE first";
+        }
+      } else {
+        kill 0, $pid;
+        if ($! == Errno::ESRCH) {
+          $pidfile_status = 0;
+        } else {
+          $pidfile_status = 2;
+          open(KILL, "/bin/ps -o args -e|");
+          while (<KILL>) {
+            if (/^(\d+)\s+.*check_logfiles.*/) {
+              if ($1 == $pid) {
+                $pidfile_status = 1;
+              }
+            }
+          }
+          close KILL;
+        }
+      }
+      if ($pidfile_status == 0) {
         $self->trace("This pidfile is stale. Writing a new one");
         $self->write_pidfile();
         return 1;
+      } elsif ($pidfile_status == 1) {
+        $self->trace("This pidfile is held by a running process. Exiting");
+        return 0;
       } else {
-        my $is_a_check_logfiles = 0;
-        open(KILL, "/bin/ps -o args -e|");
-        while (<KILL>) {
-          if (/^(\d+)\s+.*check_logfiles.*/) {
-            if ($1 == $pid) {
-              $is_a_check_logfiles = 1;
-            }
-          }
-        }
-        close KILL;
-        if ($is_a_check_logfiles) {
-          $self->trace("This pidfile is held by a running process. Exiting");
-          return 0;
-        } else {
-          $self->trace("This pidfile is held by some other process. Writing a new one");
-          $self->write_pidfile();
-          return 1;
-        }
+        $self->trace("This pidfile is held by some other process. Writing a new one");
+        $self->write_pidfile();
+        return 1;
       }
     }
   } else {
