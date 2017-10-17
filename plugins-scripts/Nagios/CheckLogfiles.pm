@@ -1296,6 +1296,12 @@ sub getfilefingerprint {
             $b->[1] <=> $a->[1]
         } grep {
             substr($file, 0, $_->[1]) eq $_->[0];
+        } grep {
+            # add an extra filter for nfs, because we had this one:
+            # /etc/auto.direct /pgm autofs rw,relatime....
+            # nasxy.customer:/vol/zrxwfzx/schnorch_orga1 /pgm nfs
+            # the first line was found -> no nfs -> dev jumped -> critical
+            $_->[2] eq "nfs";
         } map {
             my ($dev, $mountpoint, $fstype, $rest) = split(/\s+/, $_);
             # printf STDERR "line: %s,%s,%s\n", $dev, $mountpoint, $fstype;
