@@ -1302,12 +1302,12 @@ sub getfilefingerprint {
             # nasxy.customer:/vol/zrxwfzx/schnorch_orga1 /pgm nfs
             # the first line was found -> no nfs -> dev jumped -> critical
             $_->[2] eq "nfs";
-        } map {
-            my ($dev, $mountpoint, $fstype, $rest) = split(/\s+/, $_);
-            # printf STDERR "line: %s,%s,%s\n", $dev, $mountpoint, $fstype;
-            [$mountpoint, length($mountpoint), $fstype];
-        } @mtab;
-        if (substr($mountpoints[0][2], 0, 3) eq "nfs") {
+            # brauchts seit issue #33 eigentlich nicht mehr, weil in dieser
+            # schleife hier eh @nfsmounts und nicht mehr mtab durchlaufen wird,
+            # aber als mahnmal fuer schlamperei und wegen des schoenen
+            # beispiel-mounts bleibt das stehen.
+        } @nfsmounts;
+        if (scalar(@mountpoints) && substr($mountpoints[0][2], 0, 3) eq "nfs") {
           # At least under RedHat 5 we saw a strange phenomenon:
           # The device number of an nfs-mounted volume changed from time 
           # to time, and so did the logfile fingerprint.
