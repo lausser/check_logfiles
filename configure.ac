@@ -1,6 +1,6 @@
 AC_REVISION ($Revision: 1.150 $)
 AC_PREREQ(2.58)
-AC_INIT(check_logfiles,3.8.1.3)
+AC_INIT(check_logfiles,3.8.1.4)
 AM_MAINTAINER_MODE([disable])
 AM_INIT_AUTOMAKE
 AC_CANONICAL_HOST

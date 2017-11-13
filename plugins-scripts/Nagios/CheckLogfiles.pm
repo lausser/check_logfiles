@@ -3038,7 +3038,7 @@ sub scan {
               if ($self->{options}->{capturegroups}) {
                 $line =~ /$pattern/;
                 no strict 'refs';
-                foreach (1..10) {
+                foreach (1..20) {
                   $self->{macros}->{CL_CAPTURE_GROUPS} = $_ if (defined ${$_});
                   $self->{macros}->{'CL_CAPTURE_GROUP'.$_} = ${$_} if (defined ${$_});
                 }
