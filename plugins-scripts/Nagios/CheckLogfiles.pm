@@ -1514,7 +1514,7 @@ sub check_pidfile {
           $pidfile_status = 0;
         } else {
           $pidfile_status = 2;
-          open(KILL, "/bin/ps -o args -e|");
+          open(KILL, "/bin/ps -o pid,args -e|");
           while (<KILL>) {
             if (/^(\d+)\s+.*check_logfiles.*/) {
               if ($1 == $pid) {
