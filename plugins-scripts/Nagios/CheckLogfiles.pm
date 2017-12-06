@@ -74,6 +74,10 @@ sub init {
   $self->{warning} = $params->{warning} || 0;
   $self->{critical} = $params->{critical} || 0;
   $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
+  
+  $self->{multiline} = $params->{multiline} || 0;
+  $self->{multilinestartpattern} = $params->{multilinestartpattern} || "\n";
+  
   $self->init_macros;
   $self->default_options({ prescript => 1, smartprescript => 0,
       supersmartprescript => 0, postscript => 1, smartpostscript => 0,
@@ -2013,6 +2017,10 @@ sub init {
   $self->{likeavirgin} = 0;
   $self->{linesread} = 0;
   $self->{linenumber} = 0; # used for context
+  
+  $self->{multiline} = $params->{multiline} || 0;
+  $self->{multilinestartpattern} = $params->{multilinestartpattern} || "\n";
+    
     $self->{perfdata} = "";
   $self->{max_readsize} = 1024 * 1024 * 128;
   # sysread can only read SSIZE_MAX bytes in one operation.
@@ -2898,7 +2906,45 @@ sub scan {
       $self->trace("fake seek positioned at offset %u", $logfile->{offset});
     }
 
-    while (my $line = $logfile->{fh}->getline()) {
+    # use the following negative look-ahead pattern to get multiline output chunks
+    # each chunk then represents a log message which can be processed
+    #
+    my $multilinePattern = $self->{multilinestartpattern} . "(.(?!" . $self->{multilinestartpattern} . "))+";
+    
+    my $remainder = "";
+    my $line;
+    
+    while ( ( $line = $remainder ) ne "" || ( $line = $logfile->{fh}->getline() ) ) {
+        
+      # multiline parsing works like this:
+      # concat line after line in logfile until concatted lines do not match anymore
+      # (checked by negative look-ahead pattern described above)
+      # treat the result as one log message
+      #
+      if ( $self->{multiline} ) {
+            
+        $remainder = "";
+          
+        # read until the multiline-pattern does not match anymore
+        #
+        while ( ( $line =~ /^$multilinePattern$/s ) && ( my $nextLine = $logfile->{fh}->getline() ) ) {
+             
+          # stop if lines + nextLine would not match multiline pattern anymore
+          #
+          if ( ( $line . $nextLine ) =~ /^$multilinePattern$/s ) {
+                    
+            $line .= $nextLine;
+                  
+          } else {
+                  
+            # keep this line for the next loop
+            #
+            $remainder = $nextLine;
+            last;
+          }
+        }
+      }
+
       if ($self->{timedout}) {
         $self->trace(sprintf "leaving the scan loop after %d lines",
             $self->{linesread});
@@ -2913,7 +2959,9 @@ sub scan {
             Encode::decode($self->{options}->{encoding}, $line));
         # the input stream is somewhat binary, so chomp doesn't know
         # it neads to remove \r\n on windows.
-        $line =~ s/$1/\n/g if $line =~ /(\r\n?|\n\r?)/;
+        if ( ! $self->{multiline} ) {
+            $line =~ s/$1/\n/g if $line =~ /(\r\n?|\n\r?)/;
+        }
       }
       chomp($line);
       #
