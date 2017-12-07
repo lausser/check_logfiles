@@ -274,7 +274,7 @@ sub init_from_file {
     }
     # We might need this for a pidfile
   }
-
+  
   $self->merge_macros($MACROS); # merge the defaultmacros with macros from the file
   $seekfilesdir ||= $self->{seekfilesdir};
   $protocolsdir ||= $self->{protocolsdir};
@@ -3076,6 +3076,7 @@ sub scan {
               $self->{macros}->{CL_SERVICEOUTPUT} = $line;
               $self->{macros}->{CL_PATTERN_PATTERN} = $pattern;
               $self->{macros}->{CL_PATTERN_NUMBER} = $patcnt;
+              $self->{macros}->{CL_MATCHEDOUTPUT} = $line;
               if (exists $self->{patternkeys}->{$level}->{$pattern} &&
                   defined $self->{patternkeys}->{$level}->{$pattern}) {
                 $self->{macros}->{CL_PATTERN_KEY} = 
