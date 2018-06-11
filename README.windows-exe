@@ -9,7 +9,11 @@ check_logfiles.exe
 
 2) Prepare your environment so that strawberry perl
    is the preferred perl interpreter.
-   set PATH=C:\strawberry\c\bin;C:\strawberry\perl\bin;%PATH%
+   $env:STRAWDIR = "C:\Users\lausser\Documents\Software\strawberry-perl-5.26.2.1-64bit-portable"
+   $env:Path = $env:STRAWDIR + '\perl\bin;' + $env:Path
+   $env:Path = $env:STRAWDIR + '\perl\site\bin;' + $env:Path
+   $env:Path = $env:STRAWDIR + '\c\bin;' + $env:Path
+   $env:Path = $env:STRAWDIR + '\perl\site\bin;' + $env:Path
    Better: Deinstall ActiveState Perl and any other Perl packages you can find.
 
 3) Install PAR::Packer 

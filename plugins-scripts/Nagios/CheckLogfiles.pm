@@ -2039,6 +2039,7 @@ sub init {
       protocolfileerror => 'ok',
       archivedirregexp => 0, 
       capturegroups => 0,
+      maxage => 0,
   });
   $self->refresh_options($params->{options});
   #
@@ -2406,7 +2407,6 @@ sub run {
   if ($self->{hasinversepat} || scalar(@{$self->{relevantfiles}})) {
     $self->scan();
   } else {
-    $self->trace("nothing to do");
     # $state keeps the old values
     foreach (keys %{$self->{laststate}}) {
       $self->{newstate}->{$_} = $self->{laststate}->{$_};
@@ -2414,9 +2414,33 @@ sub run {
     $self->trace("keeping %s", $self->{newstate}->{servicestateid}) 
         if $self->{newstate}->{servicestateid}; # maybe this was the 1st time
   }
+  $self->check_if_too_old();
   $self->savestate();
   $self->finish();
   $self->formulate_perfdata();
+}
+
+sub check_if_too_old {
+  my $self = shift;
+  return if ! $self->get_option("maxage");
+  my $maxage;
+  if ($self->get_option("maxage") =~ /(\d+)s/) {
+    $maxage = $1;
+  } elsif ($self->get_option("maxage") =~ /(\d+)m/) {
+    $maxage = $1 * 60;
+  } elsif ($self->get_option("maxage") =~ /(\d+)h/) {
+    $maxage = $1 * 60 * 60;
+  } elsif ($self->get_option("maxage") =~ /(\d+)d/) {
+    $maxage = $1 * 60 * 60 * 24;
+  }
+  my $max_time = time - $maxage;
+  if ($self->{newstate}->{logtime} &&
+      $self->{newstate}->{logtime} <= $max_time) {
+    $self->addevent(CRITICAL, sprintf "logfile %s is too old (> %s)",
+        $self->{logfile}, $self->get_option("maxage"));
+    return 1;
+  }
+  return 0;
 }
 
 =item loadstate()
