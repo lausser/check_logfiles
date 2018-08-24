@@ -3093,7 +3093,6 @@ sub scan {
             if ($self->{tivoli}->{object}) {
               delete $self->{privatestate}->{tivolimatch};
             }
-          #}
         }
         #  count patterns which raise an alert only if they were not found.
         my $patcnt = -1;
