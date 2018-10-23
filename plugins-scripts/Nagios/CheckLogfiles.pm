@@ -3806,6 +3806,9 @@ sub prepare {
   } elsif ("DEBIAN" eq uc($self->{rotation})) {
     $self->{filenamepattern} = sprintf "%s.0|%s.*[0-9]*.gz",
         $self->{logbasename}, $self->{logbasename};
+  } elsif ("UBUNTU" eq uc($self->{rotation})) {
+    $self->{filenamepattern} = sprintf "%s.1|%s.*[0-9]*.gz",
+        $self->{logbasename}, $self->{logbasename};        
   } elsif ("QMAIL" eq uc($self->{rotation})) {
     $self->{filenamepattern} = "\@.*";
   } elsif ("LOGROTATE" eq uc($self->{rotation})) {
