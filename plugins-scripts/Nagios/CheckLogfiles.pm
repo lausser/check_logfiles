@@ -1514,9 +1514,9 @@ sub check_pidfile {
           $pidfile_status = 0;
         } else {
           $pidfile_status = 2;
-          open(KILL, "/bin/ps -o args -e|");
+          open(KILL, "/bin/ps -o pid,args -e|");
           while (<KILL>) {
-            if (/^(\d+)\s+.*check_logfiles.*/) {
+            if (/^\s*(\d+)\s+.*check_logfiles.*/) {
               if ($1 == $pid) {
                 $pidfile_status = 1;
               }
@@ -1554,6 +1554,22 @@ sub cleanup_pidfile {
   } else {
     $self->trace("Not running with a pidfile");
   }
+}
+
+sub under_systemctl {
+  my $self = shift;
+  return 0 if $^O !~ /linux/;
+  my $systemctl = 0;
+  if (-x "/usr/bin/systemctl" || -x "/bin/systemctl") {
+    open(SYSTEMCTL, "systemctl status $$|");
+    while (<SYSTEMCTL>) {
+      if (/Main PID: (\d+)\s/) {
+        $systemctl = 1 if $1 == $$;
+      }
+    }
+    close SYSTEMCTL;
+  }
+  return $systemctl;
 }
 
 sub run_as_daemon {
@@ -1651,8 +1667,11 @@ sub run_as_daemon {
     }
     $self->set_memory_limit();
     chdir '/';
-    exit if (fork());
-    exit if (fork());
+    my $under_systemctl = $self->under_systemctl();
+    if (! $under_systemctl) {
+      exit if (fork());
+      exit if (fork());
+    }
     $self->write_pidfile();
     open STDIN, '+>/dev/null';
     open STDOUT, '+>&STDIN';
