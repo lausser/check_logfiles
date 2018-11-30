@@ -259,7 +259,9 @@ if (exists $commandline{daemon}) {
       push(@newargv, sprintf "--%s", $option);
     }
   }
-  $0 = 'check_logfiles '.join(' ', @newargv);
+  #$0 = 'check_logfiles '.join(' ', @newargv);
+  # SNMP shows a hwSWRunStatus 4 if there are blanks in /proc/pid/comm
+  $0 = "check_logfiles\0".join("\0", @newargv);
   if (! $commandline{daemon}) {
     $commandline{daemon} = 300;
   }
