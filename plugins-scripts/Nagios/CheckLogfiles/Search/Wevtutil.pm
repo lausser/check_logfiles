@@ -169,8 +169,18 @@ sub TIEHANDLE {
     trace("calling %s", $exec);
     my $fh = new IO::File;
     if ($fh->open($exec)) {
-      trace("calling %s", $exec);
+      my @complete_lines = ();
+      my $tmp_line = "";
       while (my $line = $fh->getline()) {
+        $tmp_line .= $line;
+        if ($tmp_line =~ /<\/Event>/) {
+          $tmp_line =~ s/\n/___/g;
+          push(@complete_lines, $tmp_line);
+          $tmp_line = "";
+        }
+      }
+      $fh->close();
+      foreach my $line (@complete_lines) {
         my $event = transform($line);
         next if ! defined $event->{EventType};
         if (included($event, $eventlog->{include}) &&
@@ -191,7 +201,6 @@ sub TIEHANDLE {
            #printf STDERR "blocked by filter %s\n", Data::Dumper::Dumper($event);
         }
       }
-      $fh->close();
     } else {
       # haette in schritt 3 gefunden werden muessen
       trace("cannot execute wevtutil");
@@ -242,6 +251,14 @@ sub transform {
   $event->{TimeCreated} = UnixDate($t, "%s");
   $event->{Timewritten} = $event->{TimeCreated};
   $event->{TimeGenerated} = $event->{TimeCreated};
+  if (! $event->{Message}) {
+    $xml =~ /<EventData><Data>(.+)<\/Data>/; $event->{Message} = $1;
+    # kann aus mehreren <Data>-Bloecken bestehen.
+    $event->{Message} =~ s/<Data>/, /g;
+    $event->{Message} =~ s/<\Data>//g;
+  } else {
+    $event->{Message} =~ s/___.*//;
+  }
   if (! defined $event->{EventType}) {
     # ignore broken events
     return;
