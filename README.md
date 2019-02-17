@@ -1,5 +1,7 @@
-**Komm nach Braunschweig und triff die Leute, die sich mit genau demselben Kram beschäftigen wie du!**
-<a href="https://monitors-2018.tu-braunschweig.de/dokuwiki/doku.php"><img src="https://labs.consol.de/assets/images/braunschweig-banner.gif"></a>
+Meet me at...
+=============
+<div><a href="https://monitors2019.consol.de/wiki/doku.php?id=workshop:2019:start" target="_blank"><img src="https://labs.consol.de/assets/images/muenchen-banner.png" alt="Monitoring-Workshop 2019" style="height: auto !important;width: auto !important;" ></a></div>
+
 
 Description
 ===========
