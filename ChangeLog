@@ -1,3 +1,5 @@
+* 3.11 2019-02-22
+  resolve path before do (pull request #46 datamuc)
 * 3.10 2018-11-30
   detect systemctl
   improve message parsing for type wevtutil
