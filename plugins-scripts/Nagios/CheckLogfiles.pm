@@ -2166,6 +2166,10 @@ sub init {
       if ($@) {
         printf STDERR "%s\n", $@;
         $self->addevent(3, $@);
+      } elsif ($!) {
+        my $error = "cannot read $patternfile: $!";
+        printf STDERR "%s\n", $error;
+        $self->addevent(3, $error);
       } else {
         my $filepatterns = {};
         $filepatterns->{criticalpatterns} = $criticalpatterns
@@ -2502,6 +2506,10 @@ sub loadstate {
       chomp $self->{laststate}->{logtime} if $self->{laststate}->{logtime};
       chomp $self->{laststate}->{devino} if $self->{laststate}->{devino};
       $seekfh->close();
+    } elsif ($!) {
+      my $error = "cannot read $absseekfile: $!";
+      printf STDERR "%s\n", $error;
+      $self->addevent(3, $error)
     } else {
       # found a new format seekfile
       $self->{laststate} = $state;
