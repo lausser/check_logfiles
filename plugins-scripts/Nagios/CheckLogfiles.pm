@@ -2159,7 +2159,9 @@ sub init {
       ($criticalpatterns, $warningpatterns,
           $criticalexceptions, $warningexceptions) = (undef, undef, undef, undef);
       eval {
-        do $patternfile;
+        my $abspatternfile = File::Spec->file_name_is_absolute($patternfile) ?
+            $patternfile : File::Spec->rel2abs($patternfile);
+        do $abspatternfile;
       };
       if ($@) {
         printf STDERR "%s\n", $@;
@@ -2480,8 +2482,10 @@ sub loadstate {
     $self->{likeavirgin} = 0;
     $self->trace(sprintf "found seekfile %s", $self->{seekfile});
     our $state = {};
+    my $absseekfile = File::Spec->file_name_is_absolute($self->{seekfile}) ?
+        $self->{seekfile} : File::Spec->rel2abs($self->{seekfile});
     #eval {
-      do $self->{seekfile};
+      do $absseekfile;
     #};
     if ($@) {
       # found a seekfile with the old syntax
