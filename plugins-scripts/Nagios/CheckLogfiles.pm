@@ -2159,11 +2159,17 @@ sub init {
       ($criticalpatterns, $warningpatterns,
           $criticalexceptions, $warningexceptions) = (undef, undef, undef, undef);
       eval {
-        do $patternfile;
+        my $abspatternfile = File::Spec->file_name_is_absolute($patternfile) ?
+            $patternfile : File::Spec->rel2abs($patternfile);
+        do $abspatternfile;
       };
       if ($@) {
         printf STDERR "%s\n", $@;
         $self->addevent(3, $@);
+      } elsif ($!) {
+        my $error = "cannot read $patternfile: $!";
+        printf STDERR "%s\n", $error;
+        $self->addevent(3, $error);
       } else {
         my $filepatterns = {};
         $filepatterns->{criticalpatterns} = $criticalpatterns
@@ -2480,8 +2486,10 @@ sub loadstate {
     $self->{likeavirgin} = 0;
     $self->trace(sprintf "found seekfile %s", $self->{seekfile});
     our $state = {};
+    my $absseekfile = File::Spec->file_name_is_absolute($self->{seekfile}) ?
+        $self->{seekfile} : File::Spec->rel2abs($self->{seekfile});
     #eval {
-      do $self->{seekfile};
+      do $absseekfile;
     #};
     if ($@) {
       # found a seekfile with the old syntax
@@ -2498,6 +2506,10 @@ sub loadstate {
       chomp $self->{laststate}->{logtime} if $self->{laststate}->{logtime};
       chomp $self->{laststate}->{devino} if $self->{laststate}->{devino};
       $seekfh->close();
+    } elsif ($!) {
+      my $error = "cannot read $absseekfile: $!";
+      printf STDERR "%s\n", $error;
+      $self->addevent(3, $error)
     } else {
       # found a new format seekfile
       $self->{laststate} = $state;
