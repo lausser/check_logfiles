@@ -716,7 +716,25 @@ sub init_macros {
     $DEFAULTMACROS->{CL_USERNAME} = scalar getpwuid $>;
     $DEFAULTMACROS->{CL_HAS_WIN32} = 0;
   }
-  if (defined(&Net::Domain::hostname)) {
+  if ($ENV{HOSTNAME} && $ENV{HOSTNAME} =~ /([^\.]+)\.(.+)/) {
+    # Wenn im Hostnamen ein Punkt vorkommt, dann haengt sich das u.g.
+    # Net::Domain::hostname gerne auf. Beispiel:
+    # hostname -> hostxy.deppen.net
+    # domainname -> (none)
+    # Net::Domain::hostdomain schaut in /etc/resolv.conf und findet
+    # search americadc.deppen.com und anstatt den Krempel nach dem
+    # Punkt im Hostnamen wegzuwerfen, pappt es den Hostnamen und die
+    # erste Domain aus der search-Zeile zusammen und fragt beim Resolver
+    # nach hostxy.deppen.net.americadc.deppen.com und das rennt von
+    # Timeout zu Retry und nochmal und fuenfmal im Kreis.
+    # Und irgendwann wird's dem Naemon zu bloed und der knallt check_logfiles
+    # weg und der Lausser darf sich durch den ganzen Perl-Kack wuehlen,
+    # obwohl er lieber Bauer sucht Frau anschauen wuerde.
+    # Deshalb also diese folgenden drei Zeilen.
+    $DEFAULTMACROS->{CL_HOSTNAME} = $1;
+    $DEFAULTMACROS->{CL_DOMAIN} = $2;
+    $DEFAULTMACROS->{CL_FQDN} = $ENV{HOSTNAME};
+  } elsif (defined(&Net::Domain::hostname)) {
     $DEFAULTMACROS->{CL_HOSTNAME} = &Net::Domain::hostname();
     $DEFAULTMACROS->{CL_DOMAIN} = &Net::Domain::hostdomain();
     $DEFAULTMACROS->{CL_FQDN} = &Net::Domain::hostfqdn();
