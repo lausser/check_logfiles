@@ -11,6 +11,7 @@ use Data::Dumper;
 #use Net::Domain qw(hostname hostdomain hostfqdn);
 use Socket;
 use POSIX qw(strftime);
+use Sys::Hostname qw(hostname);
 use IPC::Open2;
 use Errno;
 
@@ -716,7 +717,7 @@ sub init_macros {
     $DEFAULTMACROS->{CL_USERNAME} = scalar getpwuid $>;
     $DEFAULTMACROS->{CL_HAS_WIN32} = 0;
   }
-  if ($ENV{HOSTNAME} && $ENV{HOSTNAME} =~ /([^\.]+)\.(.+)/) {
+  if ($^O eq "linux" && hostname() =~ /([^\.]+)\.(.+)/) {
     # Wenn im Hostnamen ein Punkt vorkommt, dann haengt sich das u.g.
     # Net::Domain::hostname gerne auf. Beispiel:
     # hostname -> hostxy.deppen.net
@@ -731,6 +732,7 @@ sub init_macros {
     # weg und der Lausser darf sich durch den ganzen Perl-Kack wuehlen,
     # obwohl er lieber Bauer sucht Frau anschauen wuerde.
     # Deshalb also diese folgenden drei Zeilen.
+    # Vorerst nur fuer Linux, denn hier ist der Schlamassel aufgetreten.
     $DEFAULTMACROS->{CL_HOSTNAME} = $1;
     $DEFAULTMACROS->{CL_DOMAIN} = $2;
     $DEFAULTMACROS->{CL_FQDN} = $ENV{HOSTNAME};
