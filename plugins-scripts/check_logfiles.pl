@@ -128,6 +128,8 @@ Usage: check_logfiles [-t timeout] -f <configfile> [--searches=tag1,tag2,...]
 EOTXT
 }
 
+my @originalArguments = @ARGV;
+
 %commandline = ();
 my @params = (
     "timeout|t=i",
@@ -358,6 +360,8 @@ if ($^O eq "hpux") {
 
 if (my $cl = Nagios::CheckLogfiles->new({
     cfgfile => $commandline{config} ? $commandline{config} : undef,
+    configdir => $commandline{configdir} ? $commandline{configdir} : undef,
+    commandlineargs => \@originalArguments,
     searches => [ 
         map {
           if (exists $commandline{type} && $commandline{type} eq 'rotating::uniform') {
