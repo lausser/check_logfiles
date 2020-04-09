@@ -2367,6 +2367,7 @@ sub construct_seekfile {
   # since 2.0 the complete path to the logfile is mapped to the seekfilename
   if ($self->{logfile} ne $self->{logfile_before_resolving}) {
     $self->{seekfilebase} = $self->{logfile_before_resolving};
+    $self->resolve_macros(\$self->{seekfilebase});
     $self->{seekfilebase} =~ s/\$/_/g;
   } else {
     $self->{seekfilebase} = $self->{logfile};

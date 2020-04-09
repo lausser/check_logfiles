@@ -423,6 +423,8 @@ if (my $cl = Nagios::CheckLogfiles->new({
             $commandline{noprotocol} ? "noprotocol" : undef,
             $commandline{nocase} ? "nocase" : undef,
             $commandline{noperfdata} ? "noperfdata" : undef,
+            $commandline{nosavethresholdcount} ? "nosavethresholdcount" : undef,
+            $commandline{thresholdexpiry} ? "thresholdexpiry=".$commandline{thresholdexpiry} : undef,
             $commandline{winwarncrit} ? "winwarncrit" : undef,
             $commandline{nologfilenocry} ? "nologfilenocry" : undef,
             $commandline{logfilemissing} ? "logfilemissing=".$commandline{logfilemissing} : undef,
