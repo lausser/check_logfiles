@@ -1,3 +1,5 @@
+* 3.12 2020-06-01
+  update stdout redirection
 * 3.11.0.3 2020-04-09
   add --nosavethresholdcount and --thresholdexpiry to the command line parameters
 * 3.11.0.2 2019-03-05

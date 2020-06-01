@@ -1055,14 +1055,14 @@ sub action {
       }
     }
     my $stdoutvar;
-    *SAVEOUT = *STDOUT;
+    open (my $SAVEOUT, '>&', STDOUT);
+    close STDOUT;
     eval {
       our $CHECK_LOGFILES_PRIVATESTATE = $privatestate;
-      open OUT ,'>',\$stdoutvar;
-      *STDOUT = *OUT;
+      open(STDOUT, ">", \$stdoutvar);
       $exitvalue = &{$script}($scriptparams, $scriptstdin);
     };
-    *STDOUT = *SAVEOUT;
+    open (STDOUT, '>&', $SAVEOUT);
     if ($@) {
       $output = $@;
       $success = 0;

@@ -1,9 +1,0 @@
-
-echo i am the script with "$*"
-if [ "$1" = "-H" ] && [ "$2" = "nagios.dierichs.de" ] && [ "$3" = "-p" ] && [ "$4" = "5555" ]; then
-echo good
-exit 0;
-else
-echo bad
-exit 2
-fi
