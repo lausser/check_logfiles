@@ -6,7 +6,7 @@ use File::Basename;
 use File::Find;
 use Getopt::Long;
 
-#import Devel::TraceMethods qw( 
+#import Devel::TraceMethods qw(
 #    Nagios::CheckLogfiles
 #    Nagios::CheckLogfiles::Search
 #    Nagios::CheckLogfiles::Search::Simple
@@ -482,6 +482,11 @@ if (my $cl = Nagios::CheckLogfiles->new({
   # Escape | character to not break perfdata
   $exitmessage         =~ s/\|/\/\//g;
   my $long_exitmessage = $cl->{long_exitmessage} ? $cl->{long_exitmessage}."\n" : "";
+
+  # Remove html tags from the strings to not break frontends or insert scripts
+  $exitmessage =~ s/<[a-zA-Z\/][^>]*>/ /g;
+  $cl->{perfdata} =~ s/<[a-zA-Z\/][^>]*>/ /g;
+  $long_exitmessage =~ s/<[a-zA-Z\/][^>]*>/ /g;
   printf "%s%s\n%s", $exitmessage,
       $cl->{perfdata} ? "|".$cl->{perfdata} : "",
       $long_exitmessage;
