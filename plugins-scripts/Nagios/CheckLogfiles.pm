@@ -54,6 +54,7 @@ sub init {
   my $params = shift;
   my($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0, 1, 2, 3, 4, 5];
   $year += 1900; $mon += 1;
+  $self->{commandlineargs} = $params->{commandlineargs} || [];
   $self->{tracefile} = $self->system_tempdir().'/check_logfiles.trace';
   $self->{trace} = -e $self->{tracefile} ? 1 : 0;
   $self->{verbose} = $params->{verbose} || 0;
@@ -84,6 +85,9 @@ sub init {
       maxmemsize => 0, rotatewait => 0, htmlencode => 0,
       outputhitcount => 1, rununique => 0, preview => 1,
   });
+  if ($params->{configdir}) {
+      $self->{configdir} = $params->{configdir};
+  }
   if ($params->{cfgfile}) {
     if (ref($params->{cfgfile}) eq "ARRAY") {
       # multiple cfgfiles found in a config dir
@@ -1447,6 +1451,9 @@ sub construct_pidfile {
   } else {
     $self->{pidfilebase} = $self->{tag};
     $self->{pidfilebase} .= $self->{logfile};
+  }
+  if (exists $self->{configdir}) {
+    $self->{pidfilebase} = "check_lockfiles_" . join( "_", @{$self->{commandlineargs}} ) ;
   }
   $self->{pidfilebase} =~ s/\//_/g;
   $self->{pidfilebase} =~ s/\\/_/g; 
