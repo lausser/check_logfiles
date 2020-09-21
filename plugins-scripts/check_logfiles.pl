@@ -128,6 +128,15 @@ Usage: check_logfiles [-t timeout] -f <configfile> [--searches=tag1,tag2,...]
 EOTXT
 }
 
+sub decode_rfc3986 {
+  my ($str) = @_;
+  if ($str && $str =~ /^rfc3986:\/\/(.*)/) {
+    $str = $1;
+    $str =~ s/%([A-Za-z0-9]{2})/chr(hex($1))/seg;
+  }
+  return $str;
+}
+
 %commandline = ();
 my @params = (
     "timeout|t=i",
@@ -356,6 +365,9 @@ if ($^O eq "hpux") {
   $ENV{PATH} = $ENV{PATH}.":/usr/contrib/bin";
 }
 
+foreach my $key (keys %commandline) {
+  $commandline{$key} = decode_rfc3986($commandline{$key});
+}
 if (my $cl = Nagios::CheckLogfiles->new({
     cfgfile => $commandline{config} ? $commandline{config} : undef,
     searches => [ 
