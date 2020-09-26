@@ -467,7 +467,9 @@ sub run {
             $self->{lastmsg}->{$_} = $search->{lastmsg}->{$_};
           }
           foreach my $searchmatch (@{$search->{matchlines}->{$_}}) {
-            unshift(@{$self->{matchlines}->{$_}}, $searchmatch);
+            if (defined($searchmatch)) {
+              unshift(@{$self->{matchlines}->{$_}}, $searchmatch);
+            }
           }
           while (scalar(@{$self->{matchlines}->{$_}}) >
               $self->get_option("preview")) {
@@ -552,7 +554,7 @@ sub formulate_result {
       } else {
         $preview = join(", ", @{$self->{matchlines}->{$level}});
       }
-      $continue = scalar(@{$self->{matchlines}->{$level}}) <=
+      $continue = $self->{allerrors}->{$level} <=
           $self->get_option("preview") ? "" : "...";
     } else {
       $preview = $self->{lastmsg}->{$level};
@@ -2684,6 +2686,11 @@ sub savestate {
   if ($self->{options}->{sticky}) {
     if ($self->get_option('report') ne 'short') {
       $self->{newstate}->{matchlines} = $self->{matchlines};
+    } else {
+      delete($self->{newstate}->{matchcounters});
+      foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
+        $self->{newstate}->{matchcounters}->{$level} = scalar(@{$self->{matchlines}->{$level}});
+      }
     }
     if ($self->{laststate}->{servicestateid}) {
       $self->trace("an error level of %s is sticking at me",
@@ -2706,6 +2713,13 @@ sub savestate {
         } else {
           $self->addfirstevent($self->{laststate}->{servicestateid},
               $self->{laststate}->{serviceoutput});
+          foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
+            $self->{newstate}->{matchcounters}->{$level} += $self->{laststate}->{matchcounters}->{$level};
+            if ((qw(OK WARNING CRITICAL UNKNOWN))[$self->{laststate}->{servicestateid}] eq $level) {
+              $self->{laststate}->{matchcounters}->{$level}--;
+            }
+            unshift @{$self->{matchlines}->{$level}}, (undef) x $self->{laststate}->{matchcounters}->{$level};
+          }
         }
         if (($self->{newstate}->{servicestateid} == 1) && 
             ($self->{laststate}->{servicestateid} == 2)) {
@@ -2761,6 +2775,13 @@ sub savestate {
             } else {
               $self->addevent($self->{newstate}->{servicestateid},
                   $self->{newstate}->{serviceoutput});
+              foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
+                $self->{newstate}->{matchcounters}->{$level} += $self->{laststate}->{matchcounters}->{$level};
+                if ((qw(OK WARNING CRITICAL UNKNOWN))[$self->{laststate}->{servicestateid}] eq $level) {
+                  $self->{laststate}->{matchcounters}->{$level}--;
+                }
+                unshift @{$self->{matchlines}->{$level}}, (undef) x $self->{laststate}->{matchcounters}->{$level};
+              }
             }
           }          
         }
