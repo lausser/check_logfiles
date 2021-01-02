@@ -56,7 +56,7 @@ diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 2, 0, 2));
 
-# 3 no error messages but still critical (inherited the last one)
+# 3 no error messages but still critical (inherited the previous counters)
 $door->trace(sprintf "+----------------------- test %d ------------------", 3);
 $cl->reset();
 $door->loggercrap(undef, undef, 100);
@@ -69,7 +69,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 #printf "%s\n", Data::Dumper::Dumper($door->{newstate});
-ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->expect_result(0, 0, 2, 0, 2));
 
 # 4 nothing happens but the error sticks like shit
 $door->trace(sprintf "+----------------------- test %d ------------------", 4);
@@ -79,7 +79,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 #printf "%s\n", Data::Dumper::Dumper($door->{newstate});
-ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->expect_result(0, 0, 2, 0, 2));
 
 # 5 a new error appears
 $door->trace(sprintf "+----------------------- test %d ------------------", 5);
@@ -91,7 +91,7 @@ sleep 2;
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 2, 0, 2));
+ok($cl->expect_result(0, 0, 3, 0, 2));
 
 # 6 one more time. still critical
 $door->trace(sprintf "+----------------------- test %d ------------------", 6);
@@ -102,7 +102,7 @@ sleep 2;
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->expect_result(0, 0, 3, 0, 2));
 
 # 7 enough. send a remedy pattern
 $door->trace(sprintf "+----------------------- test %d ------------------", 7);
@@ -248,7 +248,7 @@ sleep 5;
 $cl->run(); # still 10
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2)); #the sticky error
+ok($cl->expect_result(0, 0, 2, 0, 2)); #the sticky error
 
 # 19 still sticky. let 12 seconds pass. now it expires
 $door->trace(sprintf "+----------------------- test %d ------------------", 19);
@@ -508,13 +508,13 @@ diag($cl->{exitmessage});
 ok($cl->expect_result(0, 1, 1, 0, 2)); #
 
 #
-# then an empty run and we should see the 1 critical
+# then an empty run and we should see the 1 warning and 1 critical
 $cl->reset();
 $door->loggercrap(undef, undef, 10);
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2)); #
+ok($cl->expect_result(0, 1, 1, 0, 2)); #
 
 #
 # another warning and another critical
@@ -526,15 +526,15 @@ $door->logger(undef, undef, 1, "the window open");
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 1, 2, 0, 2)); #
+ok($cl->expect_result(0, 2, 2, 0, 2)); #
 
 #
-# then ther should only be the first critical left
+# then we should still see 2 warnings and 2 criticals
 $cl->reset();
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2)); #
+ok($cl->expect_result(0, 2, 2, 0, 2)); #
 
 
 

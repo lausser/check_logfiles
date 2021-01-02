@@ -450,7 +450,9 @@ sub run {
                   $self->{protocolfh}->print(sprintf "%s Errors in %s (tag %s)\n",
                       $_, $search->{logbasename}, $search->{tag});
                   foreach (@{$search->{matchlines}->{$_}}) {
-                    $self->{protocolfh}->printf("%s\n", $_);
+                    if (defined($_)) {
+                      $self->{protocolfh}->printf("%s\n", $_);
+                    }
                   }
                 }
               }
