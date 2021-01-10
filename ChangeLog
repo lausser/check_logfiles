@@ -1,3 +1,7 @@
+* 4.0.1 2021-01-09
+  sticky errors are numbered but not saved.
+* 4.0 2021-01-08
+  rewrote the sticky code, matches expire now based on individual timestamps
 * 3.13 2020-09-21
   command line arguments containing special characters can be encoded with rfc3986://encoded_string
 * 3.12 2020-06-01

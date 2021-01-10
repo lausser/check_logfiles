@@ -48,12 +48,14 @@ diag(`/bin/ls -li $ssh->{logfile}`);
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 2, 0, 2));
+diag($ssh->{seekfile});
+
 $cl->trace("now run 3");
 diag("now run 3");
 $cl->reset();
 $cl->run();
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->expect_result(0, 0, 2, 0, 2));
 
 $ssh->logger(undef, undef, 2, "bla");
 sleep 5;

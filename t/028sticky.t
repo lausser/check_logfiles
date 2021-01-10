@@ -6,7 +6,7 @@
 #
 
 use strict;
-use Test::More tests => 39;
+use Test::More tests => 116;
 use Cwd;
 use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
@@ -48,15 +48,17 @@ ok($cl->expect_result(0, 0, 0, 0, 0));
 $door->trace(sprintf "+----------------------- test %d ------------------", 2);
 $cl->reset();
 $door->loggercrap(undef, undef, 10);
-$door->logger(undef, undef, 2, "the door open");
+$door->logger(undef, undef, 1, "the door open1");
+$door->logger(undef, undef, 1, "the door open2");
 $door->loggercrap(undef, undef, 10);
 sleep 1;
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 2, 0, 2));
+ok($cl->{exitmessage} =~ /2 errors in/);
 
-# 3 no error messages but still critical (inherited the last one)
+# 3 no error messages but still critical (inherited the last ones)
 $door->trace(sprintf "+----------------------- test %d ------------------", 3);
 $cl->reset();
 $door->loggercrap(undef, undef, 100);
@@ -69,7 +71,8 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 #printf "%s\n", Data::Dumper::Dumper($door->{newstate});
-ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->expect_result(0, 0, 2, 0, 2));
+ok($cl->{exitmessage} =~ /2 errors in/);
 
 # 4 nothing happens but the error sticks like shit
 $door->trace(sprintf "+----------------------- test %d ------------------", 4);
@@ -79,19 +82,21 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 #printf "%s\n", Data::Dumper::Dumper($door->{newstate});
-ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->expect_result(0, 0, 2, 0, 2));
+ok($cl->{exitmessage} =~ /2 errors in/);
 
 # 5 a new error appears
 $door->trace(sprintf "+----------------------- test %d ------------------", 5);
 $cl->reset();
 $door->loggercrap(undef, undef, 10);
-$door->logger(undef, undef, 1, "the window open");
+$door->logger(undef, undef, 1, "the window open3");
 $door->loggercrap(undef, undef, 10);
 sleep 2;
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 2, 0, 2));
+ok($cl->expect_result(0, 0, 3, 0, 2));
+ok($cl->{exitmessage} =~ /3 errors in.*open3 \.\.\./);
 
 # 6 one more time. still critical
 $door->trace(sprintf "+----------------------- test %d ------------------", 6);
@@ -102,7 +107,8 @@ sleep 2;
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->expect_result(0, 0, 3, 0, 2));
+ok($cl->{exitmessage} =~ /3 errors in.*open3 \.\.\./);
 
 # 7 enough. send a remedy pattern
 $door->trace(sprintf "+----------------------- test %d ------------------", 7);
@@ -115,6 +121,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
+ok($cl->{exitmessage} =~ /no errors/);
 
 # 8 really over?
 $door->trace(sprintf "+----------------------- test %d ------------------", 8);
@@ -139,6 +146,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 1, 0, 2)); # 15 left
+ok($cl->{exitmessage} =~ /1 errors in.*open\s*$/);
 
 # 10 still stick. 5 seconds pass.
 $door->trace(sprintf "+----------------------- test %d ------------------", 10);
@@ -150,6 +158,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 1, 0, 2)); # 10 left
+ok($cl->{exitmessage} =~ /1 errors in.*open\s*$/);
 
 # 11 still sticky. let 11 seconds pass.
 $door->trace(sprintf "+----------------------- test %d ------------------", 11);
@@ -174,6 +183,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
+ok($cl->{exitmessage} =~ /no errors/);
 
 
 ########### next test is the same, but one time a new error message prolongs the stickytime
@@ -205,7 +215,7 @@ ok($cl->expect_result(0, 0, 0, 0, 0));
 $door->trace(sprintf "+---------------------- test %d ------------------", 15);
 $cl->reset();
 $door->loggercrap(undef, undef, 10);
-$door->logger(undef, undef, 1, "the window open");
+$door->logger(undef, undef, 1, "the window open1");
 $door->loggercrap(undef, undef, 10);
 $door->{maxstickytime} = 15;
 sleep 2;
@@ -213,6 +223,7 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 1, 0, 2)); # sticking starts. 15 seconds left.
+ok($cl->{exitmessage} =~ /1 errors.*open1\s*$/);
 
 # 16 still stick. 
 $door->trace(sprintf "+----------------------- test %d ------------------", 16);
@@ -225,18 +236,21 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 1, 0, 2)); # 5 seconds left
+ok($cl->{exitmessage} =~ /1 errors.*open1\s*$/);
 
 # 17 prolong for another 15 secs
 $door->trace(sprintf "+----------------------- test %d ------------------", 15);
 $cl->reset();
 $door->loggercrap(undef, undef, 10);
-$door->logger(undef, undef, 1, "the window open");
+$door->logger(undef, undef, 1, "the window open2");
 $door->loggercrap(undef, undef, 10);
 sleep 2; 
 $cl->run(); # again 15 seconds
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 2, 0, 2)); #the sticky + the new error
+ok($cl->{exitmessage} =~ /2 errors.*open2 \.\.\.*$/);
+ok(scalar(@{$door->{newstate}->{matchlines}->{CRITICAL}}) == 1);
 
 # 18 still sticky. let 5 seconds pass. 
 $door->trace(sprintf "+----------------------- test %d ------------------", 18);
@@ -249,6 +263,7 @@ $cl->run(); # still 10
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 1, 0, 2)); #the sticky error
+ok($cl->{exitmessage} =~ /1 errors.*open2\s*$/);
 
 # 19 still sticky. let 12 seconds pass. now it expires
 $door->trace(sprintf "+----------------------- test %d ------------------", 19);
@@ -261,7 +276,6 @@ $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
-
 
 
 
@@ -514,19 +528,19 @@ $door->loggercrap(undef, undef, 10);
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 0, 1, 0, 2)); #
+ok($cl->expect_result(0, 1, 1, 0, 2)); #
 
 #
 # another warning and another critical
 $cl->reset();
 $door->loggercrap(undef, undef, 10);
-$door->logger(undef, undef, 1, "the window unlocked");
+$door->logger(undef, undef, 1, "the window unlocked2");
 $door->loggercrap(undef, undef, 10);
-$door->logger(undef, undef, 1, "the window open");
+$door->logger(undef, undef, 1, "the window open2");
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
-ok($cl->expect_result(0, 1, 2, 0, 2)); #
+ok($cl->expect_result(0, 2, 2, 0, 2)); #
 
 #
 # then ther should only be the first critical left
@@ -534,18 +548,503 @@ $cl->reset();
 $cl->run();
 diag($cl->has_result());
 diag($cl->{exitmessage});
+ok($cl->expect_result(0, 2, 2, 0, 2)); #
+
+
+
+
+
+
+
+
+
+
+
+
+
+diag("test block 4");
+# sticky=15
+# critical sticky
+# sleep 10
+# then comes a warning
+# and the result must still be sticky critical with the critical message
+# sleep 6
+# and the result must still be sticky warning
+# sleep 4
+# and the result must still be sticky warning
+# sleep 6
+# ok
+
+$cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
+        seekfilesdir => TESTDIR."/var/tmp",
+        searches => [
+            {
+              tag => "door",
+              logfile => TESTDIR."/var/adm/messages",
+              criticalpatterns => ["door open", "window open"],
+              warningpatterns => ["door unlocked", "window unlocked"],
+              okpatterns => ["door closed", "window closed"],
+              options => "sticky=15,noprotocol",
+            }
+        ]    });
+$door = $cl->get_search_by_tag("door");
+$door->delete_logfile();
+$door->delete_seekfile();
+$door->trace("deleted logfile and seekfile");
+
+#
+# first initialize
+#
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag(sprintf "sticky is %d", $door->{options}->{sticky});
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($door->{options}->{sticky} == 1);
+ok($cl->expect_result(0, 0, 0, 0, 0)); #
+
+
+
+#
+# first a critical
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window open");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 1, 0, 2)); #
 
+#
+# then an empty run
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2)); #
+sleep 10;
+#
+# now the warning
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window unlocked");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 1, 0, 2)); #
+
+#
+# then an empty run and we should see the 1 critical + 1 warning
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 1, 0, 2)); #
+sleep 6;
+#
+# the critical should have expired, but a second warning came
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window unlocked2");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 2, 0, 0, 1)); #
+sleep 4;
+#
+# warning1 is 10 seconds old, warning2 4 seconds
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 2, 0, 0, 1)); #
+ok($cl->{exitmessage} =~ /unlocked2 \.\.\./);
+diag("now we should see expiry in the trace");
+sleep 6;
+#
+# warning1 is 16 seconds old, expired. warning2 is 10 seconds old
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 0, 0, 1)); #
+diag("---".$cl->{exitmessage}."--");
+ok($cl->{exitmessage} =~ /unlocked2\s*$/);
+diag("sleep 6");
+sleep 6;
+#
+# then everything has expired
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0)); #
+
+
+
+diag("test block 5");
+# sticky=15
+# critical sticky
+# sleep 10
+# then comes a warning
+# and the result must still be sticky critical with the critical message
+# sleep 6
+# and the result must still be sticky warning
+# sleep 4
+# and the result must still be sticky warning
+# sleep 6
+# ok
+
+$cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
+        seekfilesdir => TESTDIR."/var/tmp",
+	options => "report=long",
+        searches => [
+            {
+              tag => "door",
+              logfile => TESTDIR."/var/adm/messages",
+              criticalpatterns => ["door open", "window open"],
+              warningpatterns => ["door unlocked", "window unlocked"],
+              okpatterns => ["door closed", "window closed"],
+              options => "sticky=15,noprotocol",
+            }
+        ]    });
+$door = $cl->get_search_by_tag("door");
+$door->delete_logfile();
+$door->delete_seekfile();
+$door->trace("deleted logfile and seekfile");
+
+#
+# first initialize
+#
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag(sprintf "sticky is %d", $door->{options}->{sticky});
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($door->{options}->{sticky} == 1);
+ok($cl->expect_result(0, 0, 0, 0, 0)); #
+
+
+
+#
+# first a critical
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window open");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2)); #
+
+#
+# then an empty run
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2)); #
+sleep 10;
+#
+# now the warning
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window unlocked1");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 1, 0, 2)); #
+
+#
+# then an empty run and we should see the 1 critical + 1 warning
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+diag($cl->{long_exitmessage});
+ok($cl->expect_result(0, 1, 1, 0, 2)); #
+sleep 6;
+#
+# the critical should have expired, but a second warning came
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window unlocked2");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 2, 0, 0, 1)); #
+sleep 4;
+#
+# warning1 is 10 seconds old, warning2 4 seconds
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 2, 0, 0, 1)); #
+ok($cl->{exitmessage} =~ /unlocked2 \.\.\./);
+diag($cl->{long_exitmessage});
+ok($cl->{long_exitmessage} =~ /tag door WARNING/);
+ok($cl->{long_exitmessage} =~ /unlocked1/);
+ok($cl->{long_exitmessage} =~ /unlocked2/);
+diag("now we should see expiry in the trace");
+sleep 6;
+#
+# warning1 is 16 seconds old, expired. warning2 is 10 seconds old
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 0, 0, 1)); #
+ok($cl->{exitmessage} =~ /unlocked2\s*$/);
+diag($cl->{long_exitmessage});
+ok($cl->{long_exitmessage} =~ /tag door WARNING/);
+ok($cl->{long_exitmessage} !~ /unlocked1/);
+ok($cl->{long_exitmessage} =~ /unlocked2/);
+diag("sleep 6");
+sleep 6;
+#
+# then everything has expired
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0)); #
 
 
 
 
+ok($door->{options}->{report} eq "long");
 
 
 
 
+diag("okpatterns");
+#
+# first initialize
+#
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag(sprintf "sticky is %d", $door->{options}->{sticky});
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($door->{options}->{sticky} == 1);
+ok($cl->expect_result(0, 0, 0, 0, 0)); #
+
+# a new error appears
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window open1");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2));
+
+# one more time. still critical
+$door->trace(sprintf "+----------------------- test %d ------------------", 6);
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->loggercrap(undef, undef, 10);
+sleep 2;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2));
+
+# enough. send a remedy pattern
+$door->trace(sprintf "+----------------------- test %d ------------------", 7);
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window open2");
+$door->logger(undef, undef, 1, "window closed");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
+
+# confirm
+$cl->reset();
+$cl->run();
+ok($cl->expect_result(0, 0, 0, 0, 0)); #
+
+# a new error appears
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window open1");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->{exitmessage} =~ /open1/);
+
+# enough. send a remedy pattern
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "window closed");
+$door->logger(undef, undef, 1, "the window open2");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->{exitmessage} =~ /open2/);
+
+diag("expire old events with report=short, check the numbers");
+$cl = Nagios::CheckLogfiles::Test->new({
+        protocolsdir => TESTDIR."/var/tmp",
+        seekfilesdir => TESTDIR."/var/tmp",
+        options => "report=short",
+        searches => [
+            {
+              tag => "door",
+              logfile => TESTDIR."/var/adm/messages",
+              criticalpatterns => ["door open", "window open"],
+              warningpatterns => ["door unlocked", "window unlocked"],
+              okpatterns => ["door closed", "window closed"],
+              options => "sticky=15,noprotocol",
+            }
+        ]    });
+$door = $cl->get_search_by_tag("door");
+$door->delete_logfile();
+$door->delete_seekfile();
+$door->trace("deleted logfile and seekfile");
+
+#
+# first initialize
+#
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0)); #
+
+# a new error appears
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window open1");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 1, 0, 2));
+ok($cl->{exitmessage} =~ /\(1 errors\).*open1\s*$/);
+
+# 5s later, another two
+sleep 5;
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window open2");
+$door->logger(undef, undef, 10, "the window open3");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 12, 0, 2));
+ok($cl->{exitmessage} =~ /\(12 errors\).*open3 \.\.\./);
+
+# 5s later, another one
+sleep 5;
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the window unlocked1");
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 12, 0, 2));
+ok($cl->{exitmessage} =~ /\(12 errors, 1 warnings\).*open3 \.\.\./);
+
+# one more time. still critical
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->loggercrap(undef, undef, 10);
+sleep 2;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 12, 0, 2));
+ok($cl->{exitmessage} =~ /\(12 errors, 1 warnings\).*open3 \.\.\./);
+
+# first critical expires
+sleep 5;
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 11, 0, 2));
+ok($cl->{exitmessage} =~ /\(11 errors, 1 warnings\).*open3 \.\.\./);
+ok(scalar(@{$door->{newstate}->{matchlines}->{CRITICAL}}) == 1);
+ok(scalar(@{$door->{newstate}->{matchlines}->{WARNING}}) == 1);
+
+# eleven critical expire
+sleep 5;
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 0, 0, 1));
+ok($cl->{exitmessage} =~ /\(1 warnings\).*unlocked1\s*$/);
+ok(scalar(@{$door->{newstate}->{matchlines}->{CRITICAL}}) == 0);
+ok(scalar(@{$door->{newstate}->{matchlines}->{WARNING}}) == 1);
+
+my $matchlines = {
+    "OK" => [],
+    "WARNING" => [],
+    "CRITICAL" => [],
+    "UNKNOWN" => [],
+};
+foreach my $event (@{$door->{newstate}->{matchlines}->{WARNING}}) {
+  push(@{$matchlines->{WARNING}}, $event->[1]);
+  $door->{newstate}->{laststicked} = $event->[0];
+}
+$door->{newstate}->{matchlines} = $matchlines;
+my $seekfh = new IO::File;
+if ($seekfh->open($door->{seekfile}, "w")) {
+  my $dumpstate = Data::Dumper->new([$door->{newstate}], [qw(state)]);
+  #printf("save %s\n", $dumpstate->Dump());
+  $dumpstate = Data::Dumper->new([$door->{newstate}], [qw(state)]);
+  $seekfh->printf("%s\n", $dumpstate->Dump());
+  $seekfh->printf("\n1;\n");
+  $seekfh->close();
+}
 
 
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 1, 0, 0, 1));
+ok($cl->{exitmessage} =~ /\(1 warnings\).*unlocked1\s*$/);
+ok(scalar(@{$door->{newstate}->{matchlines}->{CRITICAL}}) == 0);
+ok(scalar(@{$door->{newstate}->{matchlines}->{WARNING}}) == 1);
 
-
+sleep 16;
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
 

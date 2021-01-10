@@ -158,7 +158,7 @@ diag($cl->{exitmessage});
 diag(Data::Dumper::Dumper($ssh->{matchlines}));
 diag(Data::Dumper::Dumper($ssh->{lastmsg}));
 ok($cl->expect_result(0, 0, 2, 1, 2));
-ok($ssh->{matchlines}->{UNKNOWN}->[0] =~ /cannot write protocol file/);
+ok($ssh->{matchlines}->{UNKNOWN}->[0]->[1] =~ /cannot write protocol file/);
 
 @prots = glob(TESTDIR."/prots/check_logfiles.protocol*");
 ok(scalar(@prots) == 0);

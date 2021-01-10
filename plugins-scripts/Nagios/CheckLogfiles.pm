@@ -437,19 +437,19 @@ sub run {
       if ($search->{options}->{protocol}) {
         # must write protocol
         if ($protocol_had_error) {
-          $search->addevent($self->get_option('protocolfileerror'),
+          $search->addmatch($self->get_option('protocolfileerror'),
               sprintf "cannot write protocol file %s! check your filesystem (permissions/usage/integrity) and disk devices", $self->{protocolsdir})
               if lc $self->get_option('protocolfileerror') ne 'ok';
         } else {
-          if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
-              scalar(@{$search->{matchlines}->{WARNING}}) ||
-              scalar(@{$search->{matchlines}->{UNKNOWN}})) {
+          if ($search->getmatches("CRITICAL") ||
+              $search->getmatches("WARNING") ||
+              $search->getmatches("UNKNOWN")) {
             if ($self->{protocolfh}->open($self->{protocolfile}, "a")) {
               foreach (qw(CRITICAL WARNING UNKNOWN)) {
-                if (@{$search->{matchlines}->{$_}}) {
+                if ($search->getmatches($_)) {
                   $self->{protocolfh}->print(sprintf "%s Errors in %s (tag %s)\n",
                       $_, $search->{logbasename}, $search->{tag});
-                  foreach (@{$search->{matchlines}->{$_}}) {
+                  foreach ($search->getmatchmessages($_)) {
                     $self->{protocolfh}->printf("%s\n", $_);
                   }
                 }
@@ -462,18 +462,15 @@ sub run {
       }
       if ($search->{options}->{count}) {
         foreach (qw(OK WARNING CRITICAL UNKNOWN)) {
-          $self->{allerrors}->{$_} += scalar(@{$search->{matchlines}->{$_}});
+          $self->{allerrors}->{$_} += $search->countmatches($_);
           if ($search->{lastmsg}->{$_}) {
             $self->{lastmsg}->{$_} = $search->{lastmsg}->{$_};
           }
-          foreach my $searchmatch (@{$search->{matchlines}->{$_}}) {
-            if (defined($searchmatch)) {
-              unshift(@{$self->{matchlines}->{$_}}, $searchmatch);
-            }
+          foreach my $searchmatch ($search->getmatches($_)) {
+            $self->addfirstmatch($_, $searchmatch->[1], $searchmatch->[0]);
           }
-          while (scalar(@{$self->{matchlines}->{$_}}) >
-              $self->get_option("preview")) {
-            my $runter = pop(@{$self->{matchlines}->{$_}});
+          while (scalar($self->getmatches($_)) > $self->get_option("preview")) {
+            $self->removelastmatch($_);
           }
         }
       }
@@ -548,13 +545,13 @@ sub formulate_result {
     my $preview;
     my $continue;
     if ($self->get_option("preview") > 1) {
-      if (scalar(@{$self->{matchlines}->{$level}}) <
+      if (scalar($self->getmatches($level)) <
           $self->get_option("preview")) {
-        $preview = join(", ", @{$self->{matchlines}->{$level}});
+        $preview = join(", ", $self->getmatchmessages($level));
       } else {
-        $preview = join(", ", @{$self->{matchlines}->{$level}});
+        $preview = join(", ", $self->getmatchmessages($level));
       }
-      $continue = $self->{allerrors}->{$level} <=
+      $continue = scalar($self->getmatches($level)) <=
           $self->get_option("preview") ? "" : "...";
     } else {
       $preview = $self->{lastmsg}->{$level};
@@ -593,23 +590,23 @@ sub formulate_long_result {
    
   foreach my $search (@{$self->{searches}}) {
     next if $search->{tag} eq 'postscript';
-    if (scalar(@{$search->{matchlines}->{CRITICAL}}) ||
-        scalar(@{$search->{matchlines}->{WARNING}}) ||
-        scalar(@{$search->{matchlines}->{UNKNOWN}})) {
+    if ($search->getmatches("CRITICAL") ||
+        $search->getmatches("WARNING") ||
+        $search->getmatches("UNKNOWN")) {
       if ($self->get_option('report') eq "html") {
         $line =
             sprintf "<tr valign=\"top\"><td class=\"service%s\">tag %s</td></tr>",
-                ((scalar(@{$search->{matchlines}->{CRITICAL}}) && "CRITICAL") ||
-                 (scalar(@{$search->{matchlines}->{WARNING}}) && "WARNING") ||
-                 (scalar(@{$search->{matchlines}->{UNKNOWN}}) && "UNKNOWN")),
+                (($search->getmatches("CRITICAL") && "CRITICAL") ||
+                 ($search->getmatches("WARNING") && "WARNING") ||
+                 ($search->getmatches("UNKNOWN") && "UNKNOWN")),
                 $search->{tag};
       } else {
         $line =
             sprintf "tag %s %s\n",
                 $search->{tag},
-                ((scalar(@{$search->{matchlines}->{CRITICAL}}) && "CRITICAL") ||
-                 (scalar(@{$search->{matchlines}->{WARNING}}) && "WARNING") ||
-                 (scalar(@{$search->{matchlines}->{UNKNOWN}}) && "UNKNOWN"));
+                (($search->getmatches("CRITICAL") && "CRITICAL") ||
+                 ($search->getmatches("WARNING") && "WARNING") ||
+                 ($search->getmatches("UNKNOWN") && "UNKNOWN"));
       }
       if ($messagelen + length($line) < $maxlength) {
         $self->{long_exitmessage} .= $line;
@@ -618,7 +615,7 @@ sub formulate_long_result {
         last;
       }
       foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
-        foreach my $message (@{$search->{matchlines}->{$level}}) {
+        foreach my $message ($search->getmatchmessages($level)) {
           if ($self->get_option('report') eq "html") {
             $message =~ s/</&lt;/g;
             $message =~ s/>/&gt;/g;
@@ -1904,6 +1901,73 @@ sub relocate_dir {
   }
 }
 
+sub countmatches {
+  my $self = shift;
+  my $level = shift;
+# if report short and sticky count also matchlines XXXcount
+  if ($self->get_option('sticky') and $self->get_option("report") eq "short") {
+    my $matches = 0;
+    map {
+      $matches += $self->{matchlines}->{$level."count"}->{$_};
+    } keys %{$self->{matchlines}->{$level."count"}};
+    return $matches;
+  } else {
+    return scalar(@{$self->{matchlines}->{$level}});
+  }
+}
+
+sub getmatches {
+  my $self = shift;
+  my $level = shift;
+  return @{$self->{matchlines}->{$level}};
+}
+
+sub getmatchmessages {
+  my $self = shift;
+  my $level = shift;
+  if ($level =~ /^\d/) {
+    $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
+  } else {
+    $level = uc $level;
+  }
+  return map { $_->[1] } @{$self->{matchlines}->{$level}};
+}
+
+sub getlastmatchmessage {
+  my $self = shift;
+  my $level = shift;
+  if ($level =~ /^\d/) {
+    $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
+  } else {
+    $level = uc $level;
+  }
+  return @{$self->{matchlines}->{$level}}[$#{$self->{matchlines}->{$level}}]->[1];
+}
+
+sub addfirstmatch {
+  my $self = shift;
+  my $level = shift;
+  my $errormessage = shift;
+  my $when = shift // time;
+  if ($level =~ /^\d/) {
+    $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
+  }
+  unshift(@{$self->{matchlines}->{$level}}, [$when, $errormessage]);
+  $self->{lastmsg}->{$level} = 
+      ${$self->{matchlines}->{$level}}[$#{$self->{matchlines}->{$level}}]->[1];
+}
+
+sub removelastmatch {
+  my $self = shift;
+  my $level = shift;
+  if ($level =~ /^\d/) {
+    $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
+  }
+  my $runter = pop(@{$self->{matchlines}->{$level}});
+  $self->{lastmsg}->{$level} = 
+      ${$self->{matchlines}->{$level}}[$#{$self->{matchlines}->{$level}}]->[1];
+}
+
 
 package Nagios::CheckLogfiles::Search;
 
@@ -2187,11 +2251,11 @@ sub init {
       };
       if ($@) {
         printf STDERR "%s\n", $@;
-        $self->addevent(3, $@);
+        $self->addmatch(3, $@);
       } elsif ($!) {
         my $error = "cannot read $patternfile: $!";
         printf STDERR "%s\n", $error;
-        $self->addevent(3, $error);
+        $self->addmatch(3, $error);
       } else {
         my $filepatterns = {};
         $filepatterns->{criticalpatterns} = $criticalpatterns
@@ -2418,10 +2482,11 @@ sub rewind {
   my $self = shift;
   $self->prepare();
   $self->loadstate();
+  $self->{laststate}->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }
-  $self->addevent(0, "reset");
+  $self->addmatch(0, "reset");
   $self->{newstate}->{logoffset} = 0;
   $self->{newstate}->{logtime} = 0;
   $self->savestate();
@@ -2435,9 +2500,9 @@ sub unstick {
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }
-  $self->addevent(0, "unstick");
+  $self->addmatch(0, "unstick");
   $self->trace("remove the sticky error with --unstick");
-  $self->{laststate}->{laststicked} = 0;
+  $self->{laststate}->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->savestate();
   return $self;
 }
@@ -2446,6 +2511,7 @@ sub run {
   my $self = shift;
   $self->trace(sprintf "==================== %s ==================", $self->{logfile});
   $self->prepare();
+  $self->{ticktack} = time;
   $self->loadstate();
   $self->analyze_situation();
   if ($self->{logrotated} || $self->{logmodified} || $self->{hasinversepat}) {
@@ -2484,7 +2550,7 @@ sub check_if_too_old {
   my $max_time = time - $maxage;
   if ($self->{newstate}->{logtime} &&
       $self->{newstate}->{logtime} <= $max_time) {
-    $self->addevent(CRITICAL, sprintf "logfile %s is too old (> %s)",
+    $self->addmatch(CRITICAL, sprintf "logfile %s is too old (> %s)",
         $self->{logfile}, $self->get_option("maxage"));
     return 1;
   }
@@ -2532,10 +2598,11 @@ sub loadstate {
     } elsif ($!) {
       my $error = "cannot read $absseekfile: $!";
       printf STDERR "%s\n", $error;
-      $self->addevent(3, $error)
+      $self->addmatch(3, $error)
     } else {
       # found a new format seekfile
       $self->{laststate} = $state;
+      #printf STDERR "LOADED %s\n", Data::Dumper::Dumper($self->{laststate}->{matchlines});
     }
     if (! $self->{laststate}->{logfile}) {
       $self->{laststate}->{logfile} = $self->{logfile};
@@ -2556,6 +2623,7 @@ sub loadstate {
     if (! $self->{laststate}->{serviceoutput}) {
       $self->{laststate}->{serviceoutput} = "OK";
     }
+    my $now = time;
     foreach my $level (qw(CRITICAL WARNING UNKNOWN)) {
       if ($self->get_option('thresholdexpiry')) {
         if (exists $self->{laststate}->{thresholdcnt}->{$level}) {
@@ -2578,6 +2646,52 @@ sub loadstate {
           $self->{thresholdcnt}->{$level} =
               $self->{laststate}->{thresholdcnt}->{$level};
         } 
+      }
+      if ($self->get_option('sticky')) {
+        $self->{matchlines}->{$level} = [];
+        if ($self->get_option("report") eq "short") {
+          if (exists $self->{laststate}->{matchlines}->{$level."count"}) {
+            my @seconds = keys %{$self->{laststate}->{matchlines}->{$level."count"}};
+            foreach my $second (@seconds) {
+              if (($now - $second) <= $self->{maxstickytime}) {
+                $self->{matchlines}->{$level."count"}->{$second} =
+                    $self->{laststate}->{matchlines}->{$level."count"}->{$second};
+              } else {
+                $self->trace(sprintf "%d sticky %ss expired: [%s]",
+                    $self->{laststate}->{matchlines}->{$level."count"}->{$second}, $level, scalar localtime $second);
+              }
+            }
+          } else {
+            $self->{matchlines}->{$level."count"} = {};
+          }
+        }
+        if (exists $self->{laststate}->{matchlines} and
+            exists $self->{laststate}->{matchlines}->{$level} and
+            scalar($self->{laststate}->{matchlines}->{$level})) {
+          # reusing the old matchlines is not enough, we must run addmatch
+          # in order to create lastmatch etc.
+          foreach my $event (@{$self->{laststate}->{matchlines}->{$level}}) {
+            if (ref($event) ne "ARRAY") {
+              # old format (< 3.2), when sticky events had no individual times
+              $event = [$self->{laststate}->{laststicked}, $event];
+            }
+            if (($now - $event->[0]) <= $self->{maxstickytime}) {
+              $self->trace(sprintf "sticky match reused [%s] %s",
+                  scalar localtime $event->[0], $event->[1]);
+              $self->addmatch($level, $event->[1], $event->[0]);
+              if ($self->get_option("report") eq "short") {
+                if (exists $self->{matchlines}->{$level."count"}->{$event->[0]}) {
+                  $self->{matchlines}->{$level."count"}->{$event->[0]} -= 1;
+                } else {
+                  $self->{matchlines}->{$level."count"}->{$event->[0]} = 0;
+                }
+              }
+            } else {
+              $self->trace(sprintf "sticky match expired: [%s] %s",
+                  scalar localtime $event->[0], $event->[1]);
+            }
+          }
+        }
       }
     }
     $self->trace("LS lastlogfile = %s", $self->{laststate}->{logfile});
@@ -2684,43 +2798,14 @@ sub savestate {
   $@ = undef; # reset this. when a pre-3.0 statefile was read, this is set
   $self->searchresult(); # calculate servicestateid and serviceoutput
   if ($self->{options}->{sticky}) {
-    if ($self->get_option('report') ne 'short') {
-      $self->{newstate}->{matchlines} = $self->{matchlines};
-    } else {
-      delete($self->{newstate}->{matchcounters});
-      foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
-        $self->{newstate}->{matchcounters}->{$level} = scalar(@{$self->{matchlines}->{$level}});
-      }
-    }
+    $self->{newstate}->{matchlines} = $self->{matchlines};
     if ($self->{laststate}->{servicestateid}) {
       $self->trace("an error level of %s is sticking at me",
           $self->{laststate}->{servicestateid});
       $self->trace("and now i have %s",
           $self->{newstate}->{servicestateid});
       if ($self->{newstate}->{servicestateid}) {
-        $self->{newstate}->{laststicked} = $now;
-        $self->trace("refresh laststicked");
-        # dont forget to count the sticky error
-        if ($self->get_option('report') ne 'short') {
-          foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
-            my $servicestateid =
-                {'OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3}->{$level};
-            foreach my $event (
-                reverse @{$self->{laststate}->{matchlines}->{$level}}) {
-              $self->addfirstevent($servicestateid, $event);
-            }
-          }
-        } else {
-          $self->addfirstevent($self->{laststate}->{servicestateid},
-              $self->{laststate}->{serviceoutput});
-          foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
-            $self->{newstate}->{matchcounters}->{$level} += $self->{laststate}->{matchcounters}->{$level};
-            if ((qw(OK WARNING CRITICAL UNKNOWN))[$self->{laststate}->{servicestateid}] eq $level) {
-              $self->{laststate}->{matchcounters}->{$level}--;
-            }
-            unshift @{$self->{matchlines}->{$level}}, (undef) x $self->{laststate}->{matchcounters}->{$level};
-          }
-        }
+        # started with sticky errors and ends with (maybe additional) errors
         if (($self->{newstate}->{servicestateid} == 1) && 
             ($self->{laststate}->{servicestateid} == 2)) {
           # if this was a warning and we already have a sticky critical
@@ -2731,69 +2816,61 @@ sub savestate {
           $self->{newstate}->{serviceoutput} =
               $self->{laststate}->{serviceoutput};
         }
+        if ($self->get_option("report") eq "short") {
+          foreach my $level (qw(WARNING CRITICAL UNKNOWN)) {
+            my @matches = $self->getmatches($level);
+            foreach my $event (@matches) {
+              if (exists $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]}) {
+                $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]} += 1;
+              } else {
+                $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]} = 1;
+              }
+            }
+            if (@matches) {
+              $self->{newstate}->{matchlines}->{$level} = [
+                  pop(@matches)
+              ];
+            }
+          }
+        }
       } else {
         if ($self->{options}->{sticky} > 1) {
           # we had a stick error, then an ok pattern and no new error
           $self->trace("sticky error was resetted");
-          $self->{newstate}->{laststicked} = 0;
-          $self->{newstate}->{servicestateid} = 0;
-          $self->{newstate}->{serviceoutput} = "";
-          if ($self->get_option('report') ne 'short') {
-            delete $self->{newstate}->{matchlines};
-          }
         } else {
           # newstate is 0 because nothing happened in this scan
-          # after maxstickytime do not carry on with this error.
-          if (($now - $self->{laststate}->{laststicked}) >
-              $self->{maxstickytime}) {
-            $self->trace("maxstickytime %d expired", $self->{maxstickytime});
-            $self->{newstate}->{laststicked} = 0;
-            $self->{newstate}->{servicestateid} = 0;
-            $self->{newstate}->{serviceoutput} = "";
-            if ($self->get_option('report') ne 'short') {
-              delete $self->{newstate}->{matchlines};
-            }
-          } else {
-            $self->{newstate}->{laststicked} = 
-                $self->{laststate}->{laststicked};
-            $self->{newstate}->{servicestateid} = 
-                $self->{laststate}->{servicestateid};
-            $self->{newstate}->{serviceoutput} = 
-                $self->{laststate}->{serviceoutput};
-            $self->trace("stay sticky until %s", 
-                scalar localtime ($self->{newstate}->{laststicked}
-                + $self->{maxstickytime})); 
-            if ($self->get_option('report') ne 'short') {
-              foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
-                my $servicestateid =
-                  {'OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3}->{$level};
-                foreach my $event (
-                    reverse @{$self->{laststate}->{matchlines}->{$level}}) {
-                  $self->addfirstevent($servicestateid, $event);
-                }
-              }
-            } else {
-              $self->addevent($self->{newstate}->{servicestateid},
-                  $self->{newstate}->{serviceoutput});
-              foreach my $level (qw(OK WARNING CRITICAL UNKNOWN)) {
-                $self->{newstate}->{matchcounters}->{$level} += $self->{laststate}->{matchcounters}->{$level};
-                if ((qw(OK WARNING CRITICAL UNKNOWN))[$self->{laststate}->{servicestateid}] eq $level) {
-                  $self->{laststate}->{matchcounters}->{$level}--;
-                }
-                unshift @{$self->{matchlines}->{$level}}, (undef) x $self->{laststate}->{matchcounters}->{$level};
-              }
-            }
-          }          
+	  # 0 also means that none of the sticky errors were effective
+	  # they probably were discarded as expired during loadstate
+          $self->trace("maxstickytime %d expired", $self->{maxstickytime});
+        }
+        $self->{newstate}->{servicestateid} = 0;
+        $self->{newstate}->{serviceoutput} = "";
+        delete $self->{newstate}->{matchlines};
+        # delete $self->{matchlines}...count, which are used for the summary
+        foreach my $level (qw(WARNING CRITICAL UNKNOWN)) {
+          $self->{matchlines}->{$level."count"} = {} if
+              exists $self->{matchlines}->{$level."count"};
         }
       }
     } else {
       $self->trace("no sticky error from last run");
-      if ($self->{newstate}->{servicestateid}) {
-        $self->{newstate}->{laststicked} = $now;
-        $self->trace("stick until %s", 
-            scalar localtime ($self->{newstate}->{laststicked} + 
-            $self->{maxstickytime}));      
-      }      
+        if ($self->get_option("report") eq "short") {
+          foreach my $level (qw(WARNING CRITICAL UNKNOWN)) {
+            my @matches = $self->getmatches($level);
+            foreach my $event (@matches) {
+              if (exists $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]}) {
+                $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]} += 1;
+              } else {
+                $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]} = 1;
+              }
+            }
+            if (@matches) {
+              $self->{newstate}->{matchlines}->{$level} = [
+                  pop(@matches)
+              ];
+            }
+          }
+        }
     }
   }  
   # save threshold counts if a threshold exists for a level
@@ -2819,7 +2896,7 @@ sub savestate {
     };
   }
   if ($@ || ! -w $self->{seekfilesdir}) {
-    $self->addevent($self->get_option('seekfileerror'), 
+    $self->addmatch($self->get_option('seekfileerror'), 
         sprintf "cannot write status file %s! check your filesystem (permissions/usage/integrity) and disk devices", $self->{seekfile});
     return $self;
   }
@@ -2830,13 +2907,14 @@ sub savestate {
     $seekfh->printf("%s\n", $dumpstate->Dump());
     $seekfh->printf("\n1;\n");
     $seekfh->close();
+    #printf STDERR "SAVED %s\n", Data::Dumper::Dumper($self->{newstate}->{matchlines});
     $self->trace("keeping position %u and time %d (%s) for inode %s in mind", 
         $self->{newstate}->{logoffset}, $self->{newstate}->{logtime},
         scalar localtime($self->{newstate}->{logtime}), 
         $self->{newstate}->{devino});
   } else {
     $self->{options}->{count} = 1;
-    $self->addevent($self->get_option('seekfileerror'), 
+    $self->addmatch($self->get_option('seekfileerror'), 
         sprintf "cannot write status file %s! check your filesystem (permissions/usage/integrity) and disk devices", $self->{seekfile});
   }
   return $self;
@@ -2853,16 +2931,18 @@ sub formulate_perfdata {
     $self->{perfdata} = 
         sprintf "'%s_lines'=%d '%s_warnings'=%d '%s_criticals'=%d '%s_unknowns'=%d",
         $self->{perftag}, $self->{linesread},
-        $self->{perftag}, scalar(@{$self->{matchlines}->{WARNING}}),
-        $self->{perftag}, scalar(@{$self->{matchlines}->{CRITICAL}}),
-        $self->{perftag}, scalar(@{$self->{matchlines}->{UNKNOWN}});
+        $self->{perftag}, scalar($self->getmatches("WARNING")),
+        $self->{perftag}, scalar($self->getmatches("CRITICAL")),
+        $self->{perftag}, scalar($self->getmatches("UNKNOWN"));
   }
 }
 
-sub addevent {
+
+sub addmatch {
   my $self = shift;
   my $level = shift;
   my $errormessage = shift;
+  my $when = shift // time;
   if (! defined $errormessage || $errormessage eq '') {
     $errormessage = '_(null)_';
   }
@@ -2874,9 +2954,8 @@ sub addevent {
   } else {
     $level = uc $level;
   }
-  push(@{$self->{matchlines}->{$level}}, $errormessage);
-  $self->{lastmsg}->{$level} =
-      ${$self->{matchlines}->{$level}}[$#{$self->{matchlines}->{$level}}];
+  push(@{$self->{matchlines}->{$level}}, [$when, $errormessage]);
+  $self->{lastmsg}->{$level} = $errormessage;
 }
 
 sub update_context {
@@ -2886,17 +2965,6 @@ sub update_context {
   
 }
 
-sub addfirstevent {
-  my $self = shift;
-  my $level = shift;
-  my $errormessage = shift;
-  if ($level =~ /^\d/) {
-    $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
-  }
-  unshift(@{$self->{matchlines}->{$level}}, $errormessage);
-  $self->{lastmsg}->{$level} = 
-      ${$self->{matchlines}->{$level}}[$#{$self->{matchlines}->{$level}}];
-}
 
 #
 #  Read through all files found during analyze_situation and compare
@@ -2935,6 +3003,9 @@ sub scan {
 
   my $needfilter = scalar(@{$self->{preliminaryfilter}->{NEED}});
   my $skipfilter = scalar(@{$self->{preliminaryfilter}->{SKIP}});
+  my $knowsexceptions = scalar(@{$self->{exceptions}->{WARNING}}) +
+      scalar(@{$self->{exceptions}->{CRITICAL}}) +
+      scalar(@{$self->{exceptions}->{UNKNOWN}});
 
   if ($self->{options}->{encoding}) {
     $charsize = length(Encode::encode($self->{options}->{encoding},
@@ -3048,22 +3119,17 @@ sub scan {
         my $level = $nagioslevel; # because it needs to be modified
         my $outplayed = 0;
         $matches->{$level} = [];
-        foreach my $exception (@{$self->{exceptions}->{$level}}) {
-          if ($line =~ /$exception/) {
-            $self->trace("exception %s found. aborting.", $exception);
-            $outplayed = 1;
-            last;
+	if ($knowsexceptions) {
+          foreach my $exception (@{$self->{exceptions}->{$level}}) {
+            if ($line =~ /$exception/) {
+              $self->trace("exception %s found. aborting.", $exception);
+              $outplayed = 1;
+              last;
+            }
           }
-        }
+	}
         next if $outplayed;
         my $patcnt = -1;
-        #foreach my $pattern (@{$self->{patterns}->{$level}}) {          
-        #  $patcnt++;
-        #  printf STDERR "-->%s\n<<<%s\n", $line, $pattern;
-        #  if ($line =~ /$pattern/) {
-        #    push(@{$matches->{$level}}, $patcnt);
-        #  }
-        #}
         foreach my $patternfunc (@{$self->{patternfuncs}->{$level}}) {
           $patcnt++;
           if (&${patternfunc}($line)) {
@@ -3148,20 +3214,20 @@ sub scan {
                 # note the script failure. multiple failures will generate
                 # one single event in the end.
                 $actionfailed = 1;
-                $self->addevent($level, $line);
+                $self->addmatch($level, $line);
               } elsif ($self->{options}->{supersmartscript}) {
                 # completely replace the matched line with the script output
-                $self->addevent($actionrc, $actionoutput);
+                $self->addmatch($actionrc, $actionoutput);
               } elsif ($self->{options}->{smartscript}) {
                 # both matched line and script output are events
-                $self->addevent($level, $line);
-                $self->addevent($actionrc, $actionoutput);
+                $self->addmatch($level, $line);
+                $self->addmatch($actionrc, $actionoutput);
               } else {
                 # dumb scripts generate no events. only the matched line.
-                $self->addevent($level, $line);
+                $self->addmatch($level, $line);
               }
             } else {
-              $self->addevent($level, $line);
+              $self->addmatch($level, $line);
             }
             if ($self->{tivoli}->{object}) {
               delete $self->{privatestate}->{tivolimatch};
@@ -3231,17 +3297,17 @@ sub scan {
                 $self->{options}->{smartscript}, $self->{privatestate});
             if (! $actionsuccess) {
               $actionfailed = 1;
-              $self->addevent($level, sprintf("MISSING: %s", $pattern));
+              $self->addmatch($level, sprintf("MISSING: %s", $pattern));
             } elsif ($self->{options}->{supersmartscript}) {
-              $self->addevent($actionrc, $actionoutput);
+              $self->addmatch($actionrc, $actionoutput);
             } elsif ($self->{options}->{smartscript}) {
-              $self->addevent($level, sprintf("MISSING: %s", $pattern));
-              $self->addevent($actionrc, $actionoutput);
+              $self->addmatch($level, sprintf("MISSING: %s", $pattern));
+              $self->addmatch($actionrc, $actionoutput);
             } else {
-              $self->addevent($level, sprintf("MISSING: %s", $pattern));
+              $self->addmatch($level, sprintf("MISSING: %s", $pattern));
             }
           } else {
-            $self->addevent($level, sprintf("MISSING: %s", $pattern));
+            $self->addmatch($level, sprintf("MISSING: %s", $pattern));
           }
         }
       }
@@ -3277,8 +3343,9 @@ sub scan {
   }
   if ($actionfailed) {
     $self->{options}->{count} = 1;
-    push(@{$self->{matchlines}->{WARNING}},
-        sprintf "could not execute %s", $self->{script});
+    $self->addmatch(WARNING, sprintf "could not execute %s", $self->{script});
+    #push(@{$self->{matchlines}->{WARNING}},
+    #    sprintf "could not execute %s", $self->{script});
   }
 }
 
@@ -3295,25 +3362,21 @@ sub addfilter {
 
 sub searchresult {
   my $self = shift;
-  if (scalar @{$self->{matchlines}->{CRITICAL}}) {
+  my @criticals = $self->getmatches("CRITICAL");
+  my @warnings = $self->getmatches("WARNING");
+  my @unknowns = $self->getmatches("UNKNOWN");
+  if (scalar(@criticals)) {
     $self->{newstate}->{servicestateid} = 2;
-    $self->{newstate}->{serviceoutput} = 
-        ${$self->{matchlines}->{CRITICAL}}[$#{$self->{matchlines}->{CRITICAL}}];
-  } elsif (scalar @{$self->{matchlines}->{WARNING}}) {
+    $self->{newstate}->{serviceoutput} = $self->getlastmatchmessage("CRITICAL");
+  } elsif (scalar(@warnings)) {
     $self->{newstate}->{servicestateid} = 1;
-    $self->{newstate}->{serviceoutput} = 
-        ${$self->{matchlines}->{WARNING}}[$#{$self->{matchlines}->{WARNING}}];
-  } elsif (scalar @{$self->{matchlines}->{UNKNOWN}}) {
+    $self->{newstate}->{serviceoutput} = $self->getlastmatchmessage("WARNING");
+  } elsif (scalar(@unknowns)) {
     $self->{newstate}->{servicestateid} = 3;
-    $self->{newstate}->{serviceoutput} = 
-        ${$self->{matchlines}->{UNKNOWN}}[$#{$self->{matchlines}->{UNKNOWN}}];
+    $self->{newstate}->{serviceoutput} = $self->getlastmatchmessage("UNKNOWN");
   } else {
     $self->{newstate}->{servicestateid} = 0;
     $self->{newstate}->{serviceoutput} = "";
-  }
-  if ($self->{option}->{sticky} && $self->get_option('report') ne 'short') {
-    # damit long/html output erhalten bleibt und nicht nur der letzte treffer
-    $self->{newstate}->{matchlines} = $self->{matchlines};
   }
 }
 
@@ -3464,7 +3527,7 @@ sub collectfiles {
         #  permission problem
         $self->trace("insufficient permissions to open logfile %s",
             $self->{logfile});
-        $self->addevent($self->get_option('logfileerror'),
+        $self->addmatch($self->get_option('logfileerror'),
             sprintf "insufficient permissions to open logfile %s",
             $self->{logfile});
       } else {
@@ -3472,7 +3535,7 @@ sub collectfiles {
           # logfiles which are not rotated but deleted and re-created may be missing
           #  maybe a rotation situation, a typo in the configfile,...
           $self->trace("could not find logfile %s", $self->{logfile});
-          $self->addevent($self->get_option('logfilemissing'),
+          $self->addmatch($self->get_option('logfilemissing'),
               sprintf "could not find logfile %s",
               $self->{logfile});
         } else {
@@ -3779,7 +3842,7 @@ sub collectfiles {
         #  permission problem
         $self->trace("insufficient permissions to open logfile %s",
             $self->{logfile});
-        $self->addevent($self->get_option('logfileerror'),
+        $self->addmatch($self->get_option('logfileerror'),
             sprintf "insufficient permissions to open logfile %s", 
             $self->{logfile});
       } else {
@@ -3787,7 +3850,7 @@ sub collectfiles {
           # logfiles which are not rotated but deleted and re-created may be missing
           #  maybe a rotation situation, a typo in the configfile,...
           $self->trace("could not find logfile %s", $self->{logfile});
-          $self->addevent($self->get_option('logfilemissing'),
+          $self->addmatch($self->get_option('logfilemissing'),
               sprintf "could not find logfile %s",
               $self->{logfile});
         } else {
@@ -4074,13 +4137,13 @@ sub collectfiles {
       #  permission problem
         $self->trace("insufficient permissions to open logfile %s", 
             $self->{logfile});
-        $self->addevent($self->get_option('logfileerror'),
+        $self->addmatch($self->get_option('logfileerror'),
             sprintf "insufficient permissions to open logfile %s",
             $self->{logfile});
     } else {
       if ($self->get_option('logfilenocry')) {
         $self->trace("could not find logfile %s", $self->{logfile});
-        $self->addevent($self->get_option('logfilemissing'),
+        $self->addmatch($self->get_option('logfilemissing'),
             sprintf "could not find logfile %s",
             $self->{logfile});
       } else {
@@ -4150,12 +4213,12 @@ sub run {
   if (! $actionsuccess) {
     $self->{options}->{count} = 1;
     $self->{options}->{protocol} = 1;
-    $self->addevent('WARNING',
+    $self->addmatch('WARNING',
         sprintf "cannot execute %s", $self->{script});
   } elsif ($self->{options}->{smartscript}) {
     if ($actionrc) {
       $actionoutput = "prescript" if ! $actionoutput;
-      $self->addevent($actionrc, $actionoutput);
+      $self->addmatch($actionrc, $actionoutput);
     }
   }
   $self->{exitcode} = $actionrc;
@@ -4217,7 +4280,7 @@ sub run {
   if (! $actionsuccess) {
     $self->{options}->{count} = 1;
     $self->{options}->{protocol} = 1;
-    $self->addevent('WARNING',
+    $self->addmatch('WARNING',
         sprintf "cannot execute %s", $self->{script});
     $actionrc = 2;
   } elsif ($self->{options}->{smartscript}) {
@@ -4226,7 +4289,7 @@ sub run {
       #$actionoutput = "postscript" if ! $actionoutput;
       $actionoutput = "postscript"
           unless $actionoutput || $actionoutput =~ /0[0\.]*/;
-      $self->addevent($actionrc, $actionoutput);
+      $self->addmatch($actionrc, $actionoutput);
     }
   }
   $self->{exitcode} = $actionrc;

@@ -46,7 +46,9 @@ $action->{script} = sub {
 $action->{options}->{supersmartscript} = 1;
 $action->{options}->{smartscript} = 1;
 $action->{options}->{script} = 1;
+$cl->run(); #init
 $cl->reset();
+$cl->run();
 $action->loggercrap(undef, undef, 100);
 $action->logger(undef, undef, 1, "bla pat1 blub pat2kaas bla");
 $action->loggercrap(undef, undef, 100);

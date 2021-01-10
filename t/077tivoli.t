@@ -202,11 +202,11 @@ diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 3, 2, 0, 2));
 
-ok (${$tivtest->{matchlines}->{WARNING}}[0] eq "Screen Service EventID: 113 screen is black");
-ok (${$tivtest->{matchlines}->{WARNING}}[1] eq "Screen Service EventID: 113 screen is black");
-ok (${$tivtest->{matchlines}->{CRITICAL}}[0] eq "Raid kaputt: mirror broken"); # 6
-ok (${$tivtest->{matchlines}->{CRITICAL}}[1] eq "Raid kaputt: mirror broken");
-ok (${$tivtest->{matchlines}->{WARNING}}[2] eq "ServerView RAID: Drive Array Device Failure battery low");
+ok (${$tivtest->{matchlines}->{WARNING}}[0]->[1] eq "Screen Service EventID: 113 screen is black");
+ok (${$tivtest->{matchlines}->{WARNING}}[1]->[1] eq "Screen Service EventID: 113 screen is black");
+ok (${$tivtest->{matchlines}->{CRITICAL}}[0]->[1] eq "Raid kaputt: mirror broken"); # 6
+ok (${$tivtest->{matchlines}->{CRITICAL}}[1]->[1] eq "Raid kaputt: mirror broken");
+ok (${$tivtest->{matchlines}->{WARNING}}[2]->[1] eq "ServerView RAID: Drive Array Device Failure battery low");
 
 #diag(Data::Dumper::Dumper($tivtest->{matchlines}));
 #diag(Data::Dumper::Dumper($tivtest->{privatestate}));
@@ -234,9 +234,9 @@ sleep 1;
 $cl->run();
 diag("now run");
 #printf STDERR "%s\n", Data::Dumper::Dumper($tivtest->{matchlines});
-ok(${$tivtest->{matchlines}->{WARNING}}[0] =~
+ok(${$tivtest->{matchlines}->{WARNING}}[0]->[1] =~
     /.+ Event= 87:MLXEV_SYSDEV_CRITICAL$/);
-ok(${$tivtest->{matchlines}->{WARNING}}[1] eq
+ok(${$tivtest->{matchlines}->{WARNING}}[1]->[1] eq
     "SeqNo=8 ctl=0 chn=0 tgt=0 lun=0 Event= XY:MLXEV_SYSDEV_AECHZ");
 diag($cl->has_result());
 diag($cl->{exitmessage});

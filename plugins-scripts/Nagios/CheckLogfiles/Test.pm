@@ -190,6 +190,8 @@ sub reset {
   delete $self->{newdevino};
   delete $self->{newlogfile};
   delete $self->{tracebuffer};
+  delete $self->{laststate};
+  delete $self->{matchlines};
   $self->{relevantfiles} = [];
   $self->{logrotated} = 0;
   $self->{logmodified} = 0;
@@ -432,9 +434,9 @@ sub rotate_compress {
 sub dump_protocol {
   my $self = shift;
   foreach my $level (qw (OK WARNING CRITICAL UNKNOWN)) {
-    if (scalar(@{$self->{matchlines}->{$level}})) {
+    if ($self->getmatches($level)) {
       printf STDERR "%s errors in %s\n", $level, $self->{logbasename};
-      foreach (@{$self->{matchlines}->{$level}}) {
+      foreach ($self->getmatchmessages($level)) {
         printf STDERR "%s\n", $_;
       }
     }
