@@ -2650,7 +2650,7 @@ sub loadstate {
       if ($self->get_option('sticky')) {
         $self->{matchlines}->{$level} = [];
         if ($self->get_option("report") eq "short") {
-	  $self->{matchlines}->{$level."count"} = {};
+          $self->{matchlines}->{$level."count"} = {};
           if (exists $self->{laststate}->{matchlines}->{$level."count"}) {
             my @seconds = keys %{$self->{laststate}->{matchlines}->{$level."count"}};
             foreach my $second (@seconds) {
