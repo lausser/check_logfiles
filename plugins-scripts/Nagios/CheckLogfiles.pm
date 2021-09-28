@@ -36,7 +36,7 @@ eval "require Net::Domain;";
 {
   local $^W = 0; # shut up!
   eval "require 'syscall.ph'";
-  eval "require 'sys/resource.ph'";
+  ####  eval "require 'sys/resource.ph'";
 }
 
 sub new {
@@ -1948,7 +1948,8 @@ sub addfirstmatch {
   my $self = shift;
   my $level = shift;
   my $errormessage = shift;
-  my $when = shift // time;
+  my $when = shift;
+  $when = (defined $when) ? $when : time;
   if ($level =~ /^\d/) {
     $level = (qw(OK WARNING CRITICAL UNKNOWN))[$level];
   }
@@ -2942,7 +2943,8 @@ sub addmatch {
   my $self = shift;
   my $level = shift;
   my $errormessage = shift;
-  my $when = shift // time;
+  my $when = shift;
+  $when = (defined $when) ? $when : time;
   if (! defined $errormessage || $errormessage eq '') {
     $errormessage = '_(null)_';
   }
