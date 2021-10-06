@@ -36,7 +36,7 @@ eval "require Net::Domain;";
 {
   local $^W = 0; # shut up!
   eval "require 'syscall.ph'";
-  ####  eval "require 'sys/resource.ph'";
+  eval "require 'sys/resource.ph'";
 }
 
 sub new {

@@ -1,3 +1,5 @@
+* 4.0.1.2 2021-10-06
+  reenable sys/resource.ph
 * 4.0.1.1 2021-09-28
   rm the // operator which fails with perl 5.8
   normally i would not do this, but customers with a support contract get their
