@@ -1326,7 +1326,10 @@ sub getfilefingerprint {
             # aber als mahnmal fuer schlamperei und wegen des schoenen
             # beispiel-mounts bleibt das stehen.
         } @nfsmounts;
-        if (scalar(@mountpoints) && substr($mountpoints[0][2], 0, 3) eq "nfs") {
+        if ($self->get_option('randomdevno')) {
+          # issue #65, xfs and lvm and a kvm disk, device number changes on reboot
+          return sprintf "%d", (stat $file)[1];
+        } elsif (scalar(@mountpoints) && substr($mountpoints[0][2], 0, 3) eq "nfs") {
           # At least under RedHat 5 we saw a strange phenomenon:
           # The device number of an nfs-mounted volume changed from time 
           # to time, and so did the logfile fingerprint.
@@ -2137,6 +2140,7 @@ sub init {
       perfdata => 1, case => 1, sticky => 0, syslogclient => 0,
       savethresholdcount => 1, thresholdexpiry => 0, encoding => 0, maxlength => 0, 
       lookback => 0, context => 0, allyoucaneat => 0, randominode => 0,
+      randomdevno => 0,
       preferredlevel => 0,
       warningthreshold => 0, criticalthreshold => 0, unknownthreshold => 0,
       report => 'short',
