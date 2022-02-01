@@ -224,6 +224,8 @@ my @params = (
     "rotatewait",
     "rununique",
     "htmlencode",
+    "randominode",
+    "randomdevno",
 );
 if (! GetOptions(\%commandline, @params)) {
   print_help();
@@ -451,6 +453,8 @@ if (my $cl = Nagios::CheckLogfiles->new({
             $commandline{encoding} ? "encoding=".$commandline{encoding} : undef,
             defined $commandline{sticky} ? "sticky".($commandline{sticky} ? "=".$commandline{sticky} : "") : undef,
             $commandline{preferredlevel} ? "preferredlevel=".$commandline{preferredlevel} : undef,
+            $commandline{randominode} ? "randominode" : undef,
+            $commandline{randomdevno} ? "randomdevno" : undef,
         ),
         archivedir =>
             $commandline{archivedir} ?
