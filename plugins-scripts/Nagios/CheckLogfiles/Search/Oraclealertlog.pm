@@ -119,7 +119,7 @@ sub collectfiles {
     };
     if ($@) {
       $self->trace(sprintf "database operation failed: %s", $@);
-      $self->addevent('UNKNOWN', sprintf "database operation failed: %s", $@);
+      $self->addmatch('UNKNOWN', sprintf "database operation failed: %s", $@);
     }
     $self->trace(sprintf "read %d lines from database", $linesread);
     if ($linesread) {

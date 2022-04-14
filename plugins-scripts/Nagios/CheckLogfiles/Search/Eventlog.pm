@@ -206,7 +206,7 @@ sub rewind {
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }
-  $self->addevent(0, "reset");
+  $self->addmatch(0, "reset");
   $self->{eventlog}->{thissecond} = 1;
   $self->savestate();
   return $self;

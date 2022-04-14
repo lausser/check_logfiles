@@ -124,7 +124,7 @@ sub collectfiles {
           fingerprint => "0:0" });
     } else {
       $self->trace("cannot execute psloglist");
-      $self->addevent('UNKNOWN', "cannot execute psloglist");
+      $self->addmatch('UNKNOWN', "cannot execute psloglist");
     }
   }
 }

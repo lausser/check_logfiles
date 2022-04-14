@@ -50,12 +50,12 @@ sub collectfiles {
     if (-e $self->{logfile}) {
       #  permission problem
       $self->trace("could not open logfile %s", $self->{logfile});
-      $self->addevent('CRITICAL', sprintf "could not open logfile %s",
+      $self->addmatch('CRITICAL', sprintf "could not open logfile %s",
           $self->{logfile});
     } else {
       if ($self->get_option('logfilenocry')) {
         $self->trace("could not find scriptfile %s", $self->{logfile});
-        $self->addevent($self->get_option('logfilemissing'),
+        $self->addmatch($self->get_option('logfilemissing'),
             sprintf "could not find scriptfile %s",
             $self->{logfile});
       } else {

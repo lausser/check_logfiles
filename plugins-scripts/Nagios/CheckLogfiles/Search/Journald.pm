@@ -58,18 +58,18 @@ sub collectfiles {
           fingerprint => "0:0" });
     } else {
       $self->trace("cannot execute ".$cmdline);
-      $self->addevent('UNKNOWN', "cannot execute ".$cmdline);
+      $self->addmatch('UNKNOWN', "cannot execute ".$cmdline);
     }
   } else {
     if (-e $self->{logfile}) {
       #  permission problem
       $self->trace("could not open %s", $self->{logfile});
-      $self->addevent('CRITICAL', sprintf "could not open %s",
+      $self->addmatch('CRITICAL', sprintf "could not open %s",
           $self->{logfile});
     } else {
       if ($self->get_option('logfilenocry')) {
         $self->trace("could not find %s", $self->{logfile});
-        $self->addevent($self->get_option('logfilemissing'),
+        $self->addmatch($self->get_option('logfilemissing'),
             sprintf "could not find %s",
             $self->{logfile});
       } else {

@@ -1,3 +1,5 @@
+* 4.0.1.5 2022-03-25
+  bugfix in all external modules (errpt, wevtutil,...)
 * 4.0.1.4 2022-02-01
   randomdevno and randomino are now command line parameters
 * 4.0.1.3 2022-01-29

@@ -159,12 +159,12 @@ sub collectfiles {
       } else {
         chomp $@ if $@;
         $self->trace(sprintf 'unable to connect %s', $@);
-        $self->addevent('UNKNOWN', sprintf 'unable to connect %s', $@);
+        $self->addmatch('UNKNOWN', sprintf 'unable to connect %s', $@);
       }
     };
     if ($@) {
       $self->trace(sprintf "vi api operation failed: %s", $@);
-      $self->addevent('UNKNOWN', sprintf "vi api operation failed: %s", $@);
+      $self->addmatch('UNKNOWN', sprintf "vi api operation failed: %s", $@);
     }
     $self->trace(sprintf "read %d lines from esx server", $linesread);
     if ($linesread) {

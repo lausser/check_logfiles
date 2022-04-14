@@ -183,7 +183,7 @@ sub collectfiles {
           fingerprint => "0:0" });
     } else {
       $self->trace("cannot execute dumpel");
-      $self->addevent('UNKNOWN', "cannot execute dumpel");
+      $self->addmatch('UNKNOWN', "cannot execute dumpel");
     }
   }
 } 
@@ -217,7 +217,7 @@ sub rewind {
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }
-  $self->addevent(0, "reset");
+  $self->addmatch(0, "reset");
   # 1 geht nicht weil NT sonst eine Minute vor 1970 landet beim loadstate
   $self->{eventlog}->{thisminute} = time - 3600 * 24 * 10;
   $self->savestate();
