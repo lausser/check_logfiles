@@ -1048,3 +1048,60 @@ diag($cl->has_result());
 diag($cl->{exitmessage});
 ok($cl->expect_result(0, 0, 0, 0, 0));
 
+
+diag("now test unstick");
+$cl = Nagios::CheckLogfiles::Test->new({
+	protocolsdir => TESTDIR."/var/tmp",
+	seekfilesdir => TESTDIR."/var/tmp",
+	searches => [
+	    {
+	      tag => "door",
+	      logfile => TESTDIR."/var/adm/messages",
+	      criticalpatterns => ["door open", "window open"],
+	      warningpatterns => ["door unlocked", "window unlocked"],
+	      okpatterns => ["door closed", "window closed"],
+	      options => "sticky",
+	    }
+	]    });
+$door = $cl->get_search_by_tag("door");
+$door->delete_logfile();
+$door->delete_seekfile();
+$door->trace("deleted logfile and seekfile");
+
+# 1 logfile will be created. there is no seekfile. position at the end of file
+# and remember this as starting point for the next run.
+$door->trace(sprintf "+----------------------- test %d ------------------", 1);
+$door->logger(undef, undef, 2, "Failed password for invalid user1...");
+sleep 2;
+$door->loggercrap(undef, undef, 100);
+sleep 1;
+$door->trace("initial run");
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
+
+# 2 now find the two criticals
+$door->trace(sprintf "+----------------------- test %d ------------------", 2);
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$door->logger(undef, undef, 1, "the door open1");
+$door->logger(undef, undef, 1, "the door open2");
+$door->loggercrap(undef, undef, 10);
+sleep 1;
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 2, 0, 2));
+ok($cl->{exitmessage} =~ /2 errors in/);
+
+$door->unstick();
+
+$cl->reset();
+$door->loggercrap(undef, undef, 10);
+$cl->run();
+diag($cl->has_result());
+diag($cl->{exitmessage});
+ok($cl->expect_result(0, 0, 0, 0, 0));
+
+

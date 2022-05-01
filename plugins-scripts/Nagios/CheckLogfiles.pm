@@ -2502,12 +2502,12 @@ sub unstick {
   my $self = shift;
   $self->prepare();
   $self->loadstate();
+  $self->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   foreach (keys %{$self->{laststate}}) {
     $self->{newstate}->{$_} = $self->{laststate}->{$_};
   }
   $self->addmatch(0, "unstick");
   $self->trace("remove the sticky error with --unstick");
-  $self->{laststate}->{matchlines} = { OK => [], WARNING => [], CRITICAL => [], UNKNOWN => [] };
   $self->savestate();
   return $self;
 }
@@ -2859,23 +2859,23 @@ sub savestate {
       }
     } else {
       $self->trace("no sticky error from last run");
-        if ($self->get_option("report") eq "short") {
-          foreach my $level (qw(WARNING CRITICAL UNKNOWN)) {
-            my @matches = $self->getmatches($level);
-            foreach my $event (@matches) {
-              if (exists $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]}) {
-                $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]} += 1;
-              } else {
-                $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]} = 1;
-              }
-            }
-            if (@matches) {
-              $self->{newstate}->{matchlines}->{$level} = [
-                  pop(@matches)
-              ];
+      if ($self->get_option("report") eq "short") {
+        foreach my $level (qw(WARNING CRITICAL UNKNOWN)) {
+          my @matches = $self->getmatches($level);
+          foreach my $event (@matches) {
+            if (exists $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]}) {
+              $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]} += 1;
+            } else {
+              $self->{newstate}->{matchlines}->{$level."count"}->{$event->[0]} = 1;
             }
           }
+          if (@matches) {
+            $self->{newstate}->{matchlines}->{$level} = [
+                pop(@matches)
+            ];
+          }
         }
+      }
     }
   }  
   # save threshold counts if a threshold exists for a level
