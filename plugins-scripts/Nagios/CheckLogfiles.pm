@@ -1972,6 +1972,49 @@ sub removelastmatch {
       ${$self->{matchlines}->{$level}}[$#{$self->{matchlines}->{$level}}]->[1];
 }
 
+sub is_ec2 {
+  my $self = shift;
+  return 0 if $^O !~ /linux/;
+  my $ec2 = 0;
+  if (-f "/etc/os-release") {
+    open(OSRELEASE, "/etc/os-release");
+    my @osrelease = <OSRELEASE>;
+    close OSRELEASE;
+    if (grep { /amazon/i } @osrelease) {
+      $ec2 = 1;
+    }
+    return $ec2;
+  }
+  if (-f "/etc/passwd") {
+    open(PASSWD, "/etc/passwd");
+    my @passwd = <PASSWD>;
+    close PASSWD;
+    if (grep { /^ec2-instance-connect/ } @passwd) {
+      $ec2 = 1;
+    }
+    return $ec2;
+  }
+  if (-r "/sys/hypervisor/uuid") {
+    open(UUID, "/sys/hypervisor/uuid");
+    my @uuid = <UUID>;
+    close UUID;
+    if (@uuid and $uuid[0] =~ /^ec2/i) {
+      $ec2 = 1;
+    }
+    return $ec2;
+  }
+  if (-r "/sys/devices/virtual/dmi/id/product_uuid") {
+    open(UUID, "/sys/devices/virtual/dmi/id/product_uuid");
+    my @uuid = <UUID>;
+    close UUID;
+    if (@uuid and $uuid[0] =~ /^ec2/i) {
+      $ec2 = 1;
+    }
+    return $ec2;
+  }
+  return $ec2;
+}
+
 
 package Nagios::CheckLogfiles::Search;
 
