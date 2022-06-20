@@ -1,3 +1,5 @@
+* 4.1 2022-06-20
+  new type dmesg
 * 4.0.1.7 2022-06-09
   errpt no longer uses it's own unstick
 * 4.0.1.6 2022-05-01

@@ -8,7 +8,8 @@ EXTRA_MODULES=\
   Nagios/CheckLogfiles/Search/Esxdiag.pm \
   Nagios/CheckLogfiles/Search/Executable.pm \
   Nagios/CheckLogfiles/Search/Dummy.pm \
-  Nagios/CheckLogfiles/Search/Journald.pm
+  Nagios/CheckLogfiles/Search/Journald.pm \
+  Nagios/CheckLogfiles/Search/Dmesg.pm
 
 TEST_MODULES=\
   Nagios/CheckLogfiles/Test.pm
