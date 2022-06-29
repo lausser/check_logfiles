@@ -41,13 +41,13 @@ sub init {
   $self->{dmesg} = {
       path => $params->{dmesg}->{path} ? $params->{dmesg}->{path} :
           "/bin/dmesg",
+      currentsecond => time,
   };
 }
     
 sub prepare {
   my $self = shift;
   $self->{options}->{nologfilenocry} = 1;
-  $self->{dmesg}->{currentsecond} = time;
   $self->trace(sprintf "i will discard messages newer or equal than %s", 
       scalar localtime $self->{dmesg}->{currentsecond});
 }
@@ -147,7 +147,7 @@ sub finish {
 
 sub rewind {
   my $self = shift;
-  $self->{dmesg}->{currentsecond} = 0;
+  $self->{dmesg}->{currentsecond} = 1;
   $self->SUPER::rewind();
   return $self;
 }
