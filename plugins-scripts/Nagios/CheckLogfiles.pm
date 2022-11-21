@@ -1466,8 +1466,7 @@ sub construct_pidfile {
     $macrostring =~ s/\s/_/g;
     $self->{pidfilebase} .= "_".$macrostring;
   }
-  return sprintf "%s/%s.pid", $self->{seekfilesdir},
-      $self->{pidfilebase};
+  return sprintf "%s/%s.pid", $self->{seekfilesdir}, $self->{pidfilebase};
 }
 
 sub write_pidfile {
@@ -2495,6 +2494,7 @@ sub construct_seekfile {
   $self->{seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{seekfilebase},
       $self->{tag} eq "default" ? "seek" : $self->{seekfiletag};
+  $self->{seekfile} = $self->trim_seekfile($self->{seekfile});
   $self->{pre3seekfile} = sprintf "/tmp/%s.%s.%s",
       $self->{cfgbase}, $self->{seekfilebase},
       $self->{tag} eq "default" ? "seek" : $self->{seekfiletag};
@@ -2506,6 +2506,26 @@ sub construct_seekfile {
         $self->{cfgbase}, $self->{seekfilebase},
         $self->{tag} eq "default" ? "seek" : $self->{tag};
   }
+}
+
+sub trim_seekfile {
+  my ($self, $path) = @_;
+  my $dir = dirname($path);
+  my $file = basename($path);
+  if (length($file) > 200) {
+    # delete every 3rd letter
+    require Digest::MD5;
+    import Digest::MD5 'md5_hex';
+    my $hash = substr(md5_hex($file), 0, 4);
+    $file =~ s/(([a-zA-Z0-9][a-zA-Z0-9])[a-zA-Z0-9])/$2/g;
+    if (length($file) > 200) {
+      # if it is still too long, cut off > 200
+      $file = substr($file, 0, 200);
+    }
+    $file .= "-".$hash;
+    $path = $dir."/".$file;
+  }
+  return $path;
 }
 
 sub force_cfgbase {
@@ -4115,6 +4135,7 @@ sub construct_seekfile {
   $self->{seekfile} = sprintf "%s/%s.%s.%s", $self->{seekfilesdir},
       $self->{cfgbase}, $self->{seekfilebase},
       $self->{tag} eq "default" ? "seek" : $self->{tag};
+  $self->{seekfile} = $self->trim_seekfile($self->{seekfile});
   $self->{pre3seekfile} = sprintf "/tmp/%s.%s.%s",
       $self->{cfgbase}, $self->{seekfilebase},
       $self->{tag} eq "default" ? "seek" : $self->{tag};
