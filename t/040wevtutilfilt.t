@@ -10,7 +10,6 @@ use Test::More;
 use Cwd;
 use lib "../plugins-scripts";
 use Nagios::CheckLogfiles::Test;
-use Nagios::CheckLogfiles::Search::Eventlog;
 use constant TESTDIR => ".";
 use Data::Dumper;
 
@@ -30,6 +29,8 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
 } else {
   plan tests => 4;
 }
+
+use Nagios::CheckLogfiles::Search::Eventlog;
 
 my $cl = Nagios::CheckLogfiles::Test->new({
 	protocolsdir => TESTDIR."/var/tmp",
