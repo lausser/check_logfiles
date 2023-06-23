@@ -19,7 +19,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   plan tests => 7;
 }
 
-use Nagios::CheckLogfiles::Search::Eventlog;
+require Nagios::CheckLogfiles::Search::Eventlog;
 
 ######################################################
 # 

@@ -19,7 +19,7 @@ if (($^O ne "cygwin") and ($^O !~ /MSWin/)) {
   plan tests => 12;
 }
 
-use Nagios::CheckLogfiles::Search::Eventlog;
+require Nagios::CheckLogfiles::Search::Eventlog;
 
 my $cl = Nagios::CheckLogfiles::Test->new({
 	protocolsdir => TESTDIR."/var/tmp",
