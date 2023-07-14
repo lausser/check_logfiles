@@ -49,7 +49,7 @@ sub collectfiles {
     if ($self->{journaldunit}) {
       $cmdline = $cmdline." --unit '".$self->{journaldunit}."'";
     }
-    $cmdline = $cmdline." --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
+    $cmdline = $cmdline." -q --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
     if ($fh->open($cmdline)) {
       push(@{$self->{relevantfiles}},
         { filename => $self->{logfile},
