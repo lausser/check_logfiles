@@ -26,6 +26,7 @@ sub init {
   if ($self->{journaldunit} and $self->{tag} eq "default") {
     $self->{tag} = $self->{journaldunit};
   }
+  $self->{journaldidentifier} = $params->{journald}->{identifier};
   $self->default_options({ exeargs => "", });
   $self->SUPER::init($params);
 }
@@ -48,6 +49,9 @@ sub collectfiles {
     my $cmdline = $self->{logfile};
     if ($self->{journaldunit}) {
       $cmdline = $cmdline." --unit '".$self->{journaldunit}."'";
+    }
+    if ($self->{journaldidentifier}) {
+      $cmdline = $cmdline." --identifier '".$self->{journaldidentifier}."'";
     }
     $cmdline = $cmdline." --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
     if ($fh->open($cmdline)) {
