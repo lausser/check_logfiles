@@ -20,22 +20,24 @@ check_logfiles.exe
    perl -MCPAN -eshell
    install PAR
    install PAR::Packer
-   You will see error messages and the installation will fail. 
+   
+   Tested without errors with Strawberry 5.26.0.1 32-bit, PAR 1.015 and PAR::Packer 1.037
+   You may see error messages with previous versions of Strawberry/PAR/PAR::Packer, and the installation will fail. 
    No problem! We can repair it.
    cd C:\strawberry\cpan\build
- a) 
-   cd PAR-0.980-<a lot of crap>
-   perl Makefile.PL
-   dmake
-   dmake install
- b)
-   cd PAR-Packer-0.980-<a lot of crap>
-   edit myldr/Makefile.PL and add
-   $file =~ s/^lib// if $^O eq "MSWin32"; 
-   after line 142.
-   perl Makefile.PL
-   dmake
-   dmake install
+   a) 
+     cd PAR-0.980-<a lot of crap>
+     perl Makefile.PL
+     dmake
+     dmake install
+   b)
+     cd PAR-Packer-0.980-<a lot of crap>
+     edit myldr/Makefile.PL and add
+     $file =~ s/^lib// if $^O eq "MSWin32"; 
+     after line 142.
+     perl Makefile.PL
+     dmake
+     dmake install
 
 4) Build the plugin
    cd check_logfiles-x.x.x.x
