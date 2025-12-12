@@ -34,7 +34,7 @@ $opt_with_trusted_path = '' if ! $opt_with_trusted_path;
 $opt_with_perl = 'C:\strawberry\perl\bin\perl' if ! $opt_with_perl;
 $opt_with_gzip = '' if ! $opt_with_gzip;
 if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
-  printf CHECKLOGFILES "#! %s -w\n", $opt_with_perl;
+  printf CHECKLOGFILES "#! %s\n", $opt_with_perl;
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/Tivoli/Config/Logfile.pm') {
     printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/Nagios/Tivoli/Config/Logfile.pm';
     while(defined($_=<CHECKLOGFILESPM>)) {
