@@ -36,7 +36,8 @@ $opt_with_gzip = '' if ! $opt_with_gzip;
 if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
   printf CHECKLOGFILES "#! %s -w\n", $opt_with_perl;
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/Tivoli/Config/Logfile.pm') {
-    while(<CHECKLOGFILESPM>) {
+    printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/Nagios/Tivoli/Config/Logfile.pm';
+    while(defined($_=<CHECKLOGFILESPM>)) {
       s/^1;//g;
       s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
       s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
@@ -47,7 +48,8 @@ if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
     close CHECKLOGFILESPM;
   }
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/CheckLogfiles.pm') {
-    while(<CHECKLOGFILESPM>) {
+    printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/Nagios/CheckLogfiles.pm';
+    while(defined($_=<CHECKLOGFILESPM>)) {
       s/^1;//g;
       s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
       s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
@@ -58,7 +60,8 @@ if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
     close CHECKLOGFILESPM;
   }
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/CheckLogfiles/Search/Psloglist.pm') {
-    while(<CHECKLOGFILESPM>) {
+    printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/Nagios/CheckLogfiles/Search/Psloglist.pm';
+    while(defined($_=<CHECKLOGFILESPM>)) {
       s/^1;//g;
       s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
       s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
@@ -69,7 +72,8 @@ if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
     close CHECKLOGFILESPM;
   }
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/CheckLogfiles/Search/Dumpel.pm') {
-    while(<CHECKLOGFILESPM>) {
+    printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/Nagios/CheckLogfiles/Search/Dumpel.pm';
+    while(defined($_=<CHECKLOGFILESPM>)) {
       s/^1;//g;
       s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
       s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
@@ -80,7 +84,8 @@ if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
     close CHECKLOGFILESPM;
   }
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/CheckLogfiles/Search/Eventlog.pm') {
-    while(<CHECKLOGFILESPM>) {
+    printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/Nagios/CheckLogfiles/Search/Eventlog.pm';
+    while(defined($_=<CHECKLOGFILESPM>)) {
       s/^1;//g;
       s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
       s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
@@ -91,7 +96,8 @@ if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
     close CHECKLOGFILESPM;
   }
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/CheckLogfiles/Search/Wevtutil.pm') {
-    while(<CHECKLOGFILESPM>) {
+    printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/Nagios/CheckLogfiles/Search/Wevtutil.pm';
+    while(defined($_=<CHECKLOGFILESPM>)) {
       s/^1;//g;
       s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
       s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
@@ -102,7 +108,8 @@ if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
     close CHECKLOGFILESPM;
   }
   if (open CHECKLOGFILESPM, './plugins-scripts/Nagios/CheckLogfiles/Search/Dummy.pm') {
-    while(<CHECKLOGFILESPM>) {
+    printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/Nagios/CheckLogfiles/Search/Dummy.pm';
+    while(defined($_=<CHECKLOGFILESPM>)) {
       s/^1;//g;
       s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
       s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
@@ -113,7 +120,8 @@ if (open CHECKLOGFILES, ">./plugins-scripts/check_logfiles") {
     close CHECKLOGFILESPM;
   }
   if (open CHECKLOGFILESPL, './plugins-scripts/check_logfiles.pl') {
-    while(<CHECKLOGFILESPL>) {
+    printf CHECKLOGFILES qq{# line %d "%s"\n}, 1, './plugins-scripts/check_logfiles.pl';
+    while(defined($_=<CHECKLOGFILESPL>)) {
       s/^1;//g;
       s/#SEEKFILES_DIR#/$opt_with_seekfiles_dir/g;
       s/#PROTOCOLS_DIR#/$opt_with_protocols_dir/g;
