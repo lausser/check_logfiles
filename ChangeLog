@@ -1,5 +1,6 @@
-* next
+* 4.2 2025-12-15
   eventlog: avoid RPC calls when talking with local machine
+  PR# 83 "Win11/Win2025", thanks datamuc
 * 4.1.1 2022-11-21
   shorten/truncate seekfile filenames exceeding a length of 250 characters
 * 4.1.0.1 2022-06-29
