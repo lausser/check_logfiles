@@ -5,6 +5,8 @@
 #          tivoli config files and
 #          return it as hash structure
 #
+# John Lines  update to filter on journald:identifier
+#  to allow, for example --type=journald:identifier='postfix/smtp'
 package Nagios::Tivoli::Config::Logfile;
 
 use strict;
