@@ -280,7 +280,7 @@ sub TIEHANDLE {
   # Bei einem Server 2008 kann dies ein lokaler Benutzer sein,
   # der zur Gruppe Ereignisprotokolleser gehoert
   #
-  if ($eventlog->{computer} ne Win32::NodeName) {
+  if (lc($eventlog->{computer}) ne lc(Win32::NodeName)) {
     my @harmlesscodes = (1219);
     # 1219 Mehrfache Verbindungen zu einem Server oder ....
     # net use \\remote\IPC$ /USER:Administrator adminpw
@@ -327,7 +327,7 @@ sub TIEHANDLE {
     my @haseventlogs = ("application", "system", "security");
     eval {
       my $data = undef;
-      if ($eventlog->{computer} ne Win32::NodeName()) {
+      if (lc($eventlog->{computer}) ne lc(Win32::NodeName())) {
         trace("looking into remote registry");
         $data = $Registry->Connect( $eventlog->{computer},
             'HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services/EventLog/',
