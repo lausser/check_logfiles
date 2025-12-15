@@ -28,7 +28,28 @@ jobs:
     - run: perl winconfig.pl
     - run: |
         cd plugins-scripts
-        pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::NetResource -M Win32::Daemon -M Time::Piece -M Time::Local -M Win32::EventLog -M Win32::TieRegistry -M Win32::WinError -M Date::Manip -M Win32::OLE -o check_logfiles.exe check_logfiles
+
+        pp `
+        -M PerlIO `
+        -M Digest::MD5 `
+        -M Encode::Encoding `
+        -M Encode::Unicode `
+        -M Encode::Unicode::UTF7 `
+        -M Net::Domain `
+        -M Win32::NetResource `
+        -M Win32::Daemon `
+        -M Time::Piece `
+        -M Time::Local `
+        -M Win32::EventLog `
+        -M Win32::TieRegistry `
+        -M Win32::WinError `
+        -M Date::Manip `
+        -M Win32::OLE `
+        -o check_logfiles.exe `
+        check_logfiles
+
+        .\check_logfiles.exe --type eventlog:eventlog=System
+        echo $LASTEXITCODE
       shell: pwsh
     - uses: actions/upload-artifact@v4
       with:
