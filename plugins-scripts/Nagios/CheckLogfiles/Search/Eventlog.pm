@@ -280,7 +280,7 @@ sub TIEHANDLE {
   # Bei einem Server 2008 kann dies ein lokaler Benutzer sein,
   # der zur Gruppe Ereignisprotokolleser gehoert
   #
-  if ($eventlog->{computer} ne Win32::NodeName) {
+  if (lc($eventlog->{computer}) ne lc(Win32::NodeName)) {
     my @harmlesscodes = (1219);
     # 1219 Mehrfache Verbindungen zu einem Server oder ....
     # net use \\remote\IPC$ /USER:Administrator adminpw
@@ -327,7 +327,7 @@ sub TIEHANDLE {
     my @haseventlogs = ("application", "system", "security");
     eval {
       my $data = undef;
-      if ($eventlog->{computer} ne Win32::NodeName()) {
+      if (lc($eventlog->{computer}) ne lc(Win32::NodeName())) {
         trace("looking into remote registry");
         $data = $Registry->Connect( $eventlog->{computer},
             'HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services/EventLog/',
@@ -366,8 +366,17 @@ sub TIEHANDLE {
   if (! $mustabort) {
     my @harmlesscodes = (0, 997);
     trace(sprintf "opening handle to eventlog %s", $eventlog->{eventlog});
-    $handle =
-        Win32::EventLog->new($eventlog->{eventlog}, $eventlog->{computer});
+    my $computer = $eventlog->{computer};
+    $computer = undef if lc(Win32::NodeName) eq lc($computer);
+
+    # The Win32 API is the primordial soup from which modern Windows sprang,
+    # and it still reeks of its chaotic, incremental birth. It redefines the
+    # meaning of legacy baggage, chaining modern applications to decades-old
+    # design compromises. It's a Frankenstein's monster of C-style structs and
+    # handles, and its sheer volume alone is enough to induce panic.
+    Win32::SetLastError(0);
+
+    $handle = Win32::EventLog->new($eventlog->{eventlog}, $computer);
     $lasterror = Win32::GetLastError();
     #    0 Der Vorgang wurde erfolgreich beendet
     #  997 überlappender E/A-Vorgang wird verarbeitet.
