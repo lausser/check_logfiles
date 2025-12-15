@@ -1,3 +1,5 @@
+* next
+  eventlog: avoid RPC calls when talking with local machine
 * 4.1.1 2022-11-21
   shorten/truncate seekfile filenames exceeding a length of 250 characters
 * 4.1.0.1 2022-06-29
