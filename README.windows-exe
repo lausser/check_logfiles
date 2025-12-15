@@ -1,44 +1,24 @@
-How to create a windows native binary
-check_logfiles.exe
+How to create a windows native binary check_logfiles.exe
 
-0) Deinstall ActiveState Perl VMWare Remote CLI
-   and any other Perl packages you can find.
-   
-1) Install Strawberry Perl
+
+1) Install Strawberry Perl (Portable Edition)
    from http://strawberryperl.com/
+   It comes in a zip file, which you extract wherever you want.
+   In my case the target is D:\tmp\strawberry-perl-5.32.1.1-64bit-portable
 
-2) Prepare your environment so that strawberry perl
-   is the preferred perl interpreter.
-   $env:STRAWDIR = "C:\Users\lausser\Documents\Software\strawberry-perl-5.26.2.1-64bit-portable"
-   $env:Path = $env:STRAWDIR + '\perl\bin;' + $env:Path
-   $env:Path = $env:STRAWDIR + '\perl\site\bin;' + $env:Path
-   $env:Path = $env:STRAWDIR + '\c\bin;' + $env:Path
-   $env:Path = $env:STRAWDIR + '\perl\site\bin;' + $env:Path
-   Better: Deinstall ActiveState Perl and any other Perl packages you can find.
+2) Enter the perl environment
+   cd D:\tmp\strawberry-perl-5.32.1.1-64bit-portable
+   .\portableshell.bat
+   inside this portable shell you better start another powershell, otherwise a path length limit may be hit.
 
 3) Install PAR::Packer 
-   perl -MCPAN -eshell
-   install PAR
-   install PAR::Packer
-   You will see error messages and the installation will fail. 
-   No problem! We can repair it.
-   cd C:\strawberry\cpan\build
- a) 
-   cd PAR-0.980-<a lot of crap>
-   perl Makefile.PL
-   dmake
-   dmake install
- b)
-   cd PAR-Packer-0.980-<a lot of crap>
-   edit myldr/Makefile.PL and add
-   $file =~ s/^lib// if $^O eq "MSWin32"; 
-   after line 142.
-   perl Makefile.PL
-   dmake
-   dmake install
+   cpan install PAR
+   cpan install PAR::Packer
+   The installation will probably fail if your installation path is a long one.
+   (You have a limit of 260 characters, which you can extend by setting Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled to 1.)
 
 4) Build the plugin
-   cd check_logfiles-x.x.x.x
+   cd check_logfiles-x.x.x.x or wherever you unpacked the check_logfiles tgz
    perl winconfig.pl
 
 5) Compile the plugin
@@ -46,6 +26,9 @@ check_logfiles.exe
    pp -M PerlIO -M Digest::MD5 -M Encode::Encoding -M Encode::Unicode -M Encode::Unicode::UTF7 -M Net::Domain -M Win32::NetResource -M Win32::Daemon -M Time::Piece -M Time::Local -M Win32::EventLog -M Win32::TieRegistry -M Win32::WinError -M Date::Manip -M Win32::OLE -o check_logfiles.exe check_logfiles
    (maybe you need to install Win32::NetResource and Win32::Daemon)
    (Win32::Service is useful, too)
+   And when pp complains "Cannot find module Date/Manip.pm", then you install
+   cpan install Date::Manip
+   Ma moinad, do kannt oana vo selwa draafkema. Moinad ma. Douns owa ned.
 
 6) Package the plugin
    C:\Programme\WinZip\WINZIP32.EXE -a check_logfiles.zip plugins-scripts\check_logfiles
