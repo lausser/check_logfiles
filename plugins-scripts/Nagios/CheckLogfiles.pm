@@ -996,10 +996,12 @@ sub refresh_options {
 sub trace {
   my $self = shift;
   my $format = shift;
+  my ($package, $filename, $line) = caller(0);
   $self->{tracebuffer} = [] unless exists $self->{tracebuffer};
   push(@{$self->{tracebuffer}}, @_);
   if ($self->{verbose}) {
     printf("%s: ", scalar localtime);
+    printf("$filename:$line ");
     printf($format."\n", @_);
   }
   if ($self->{trace}) {
