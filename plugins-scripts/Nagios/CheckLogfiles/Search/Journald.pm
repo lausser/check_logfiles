@@ -23,8 +23,12 @@ sub init {
   my $params = shift;
   $self->{logfile} = "/usr/bin/journalctl";
   $self->{journaldunit} = $params->{journald}->{unit};
+  $self->{journaldpriority} = $params->{journald}->{priority} ? $params->{journald}->{priority} : "debug";
   if ($self->{journaldunit} and $self->{tag} eq "default") {
-    $self->{tag} = $self->{journaldunit};
+    $self->{tag} = $self->{journaldunit}."_priority_".$self->{journaldpriority};
+  }
+  if ($self->{journaldpriority} and $self->{tag} eq "default") {
+    $self->{tag} = "priority_".$self->{journaldpriority};
   }
   $self->default_options({ exeargs => "", });
   $self->SUPER::init($params);
@@ -49,7 +53,7 @@ sub collectfiles {
     if ($self->{journaldunit}) {
       $cmdline = $cmdline." --unit '".$self->{journaldunit}."'";
     }
-    $cmdline = $cmdline." --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
+    $cmdline = $cmdline." -q -p ".$self->{journaldpriority}." --since '".strftime("%Y-%m-%d %H:%M:%S", localtime($self->{journald}->{since}))."'|";
     if ($fh->open($cmdline)) {
       push(@{$self->{relevantfiles}},
         { filename => $self->{logfile},
